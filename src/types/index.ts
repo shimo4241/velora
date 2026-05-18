@@ -18,23 +18,27 @@ export type ConnectionMethod = "nfc" | "qr" | "whatsapp" | "link" | "nearby";
 /* ── User Profile ── */
 export interface VeloraProfile {
   id: string;
-  username: string;
+  username: string; // @handle
   fullName: string;
   title: string;
-  company: string;
+  company?: string;
   location: string;
   bio: string;
-  avatarUrl: string;
-  coverUrl?: string;
-  phone?: string;
+  phone?: string; // Legacy optional field
+  whatsapp?: string;
+  instagram?: string;
   email?: string;
   website?: string;
+  avatarUrl: string;
+  coverUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
   socialLinks: SocialLink[];
   professionalMode: ProfessionalMode;
   isVerified: boolean;
   isPremium: boolean;
   isNoir: boolean;
-  locale: Locale;
+  locale: "fr" | "en" | "ar";
 }
 
 /* ── Social Link ── */

@@ -30,7 +30,7 @@ import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
 interface ProfileHeroProps {
   name: string;
   title: string;
-  company: string;
+  company?: string;
   location: string;
   bio: string;
   avatarUrl: string;

@@ -9,7 +9,7 @@ import { ProfileScreen } from "@/components/screens/ProfileScreen";
 import { ShareScreen } from "@/components/screens/ShareScreen";
 import { NetworkScreen } from "@/components/screens/NetworkScreen";
 import { AnalyticsScreen } from "@/components/screens/AnalyticsScreen";
-import { LoginScreen } from "@/components/screens/LoginScreen";
+import { WelcomeScreen } from "@/components/screens/WelcomeScreen";
 import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
 import { AuthProvider, useAuth } from "@/components/providers/AuthProvider";
 import { useProfileNullable } from "@/hooks/useProfile";
@@ -18,7 +18,7 @@ import type { AppTab } from "@/types";
 
 /* ═══════════════════════════════════════════════════
    VELORA — App Orchestrator
-   Splash → Login → Setup → Onboarding → App
+   Splash → Welcome → Setup → Onboarding → App
    ═══════════════════════════════════════════════════ */
 
 const screens: Record<AppTab, () => React.JSX.Element> = {
@@ -33,7 +33,7 @@ function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfileNullable();
   
-  const [phase, setPhase] = useState<"splash" | "login" | "setup" | "onboarding" | "app">("splash");
+  const [phase, setPhase] = useState<"splash" | "welcome" | "setup" | "onboarding" | "app">("splash");
   const [splashFinished, setSplashFinished] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
 
@@ -43,7 +43,7 @@ function VeloraAppInner() {
     if (authLoading) return;
 
     if (!user) {
-      setPhase("login");
+      setPhase("welcome");
       return;
     }
 
@@ -76,7 +76,7 @@ function VeloraAppInner() {
   // Show a generic loading screen if splash is done but data is still fetching
   const isDataLoading = splashFinished && (authLoading || (user && profileLoading));
 
-  if (isDataLoading && phase !== "login" && phase !== "setup" && phase !== "app") {
+  if (isDataLoading && phase !== "welcome" && phase !== "setup" && phase !== "app") {
     return <LoadingScreen />;
   }
 
@@ -92,10 +92,10 @@ function VeloraAppInner() {
         )}
       </AnimatePresence>
 
-      {/* Login */}
+      {/* Welcome (Anonymous Auth) */}
       <AnimatePresence>
-        {phase === "login" && (
-          <LoginScreen onSuccess={() => {}} />
+        {phase === "welcome" && (
+          <WelcomeScreen onSuccess={() => setPhase("setup")} />
         )}
       </AnimatePresence>
 

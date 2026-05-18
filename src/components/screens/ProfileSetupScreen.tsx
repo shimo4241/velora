@@ -7,7 +7,6 @@ import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { updateProfile, uploadAvatar } from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { formatMoroccanPhone } from "@/lib/auth";
 import type { VeloraProfile } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -23,7 +22,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     title: "",
     bio: "",
     location: "Casablanca, Morocco",
-    whatsapp: user?.phoneNumber ? formatMoroccanPhone(user.phoneNumber) : "",
+    whatsapp: "",
     instagram: "",
     professionalMode: "entrepreneur" as VeloraProfile["professionalMode"],
   });
@@ -49,7 +48,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!form.fullName || !form.title) return; // Basic validation
+    if (!form.fullName || !form.title || !form.whatsapp) return; // Basic validation
 
     setSaving(true);
     try {
@@ -72,6 +71,10 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         isPremium: false,
         isNoir: false,
         locale: "fr",
+        whatsapp: form.whatsapp,
+        instagram: form.instagram,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       onComplete();
@@ -145,7 +148,22 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Nom Complet
+                Numéro WhatsApp *
+              </label>
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={(e) => handleChange("whatsapp", e.target.value)}
+                placeholder="+212 6 XX XX XX XX"
+                className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
+              />
+            </GlassCard>
+          </StaggerItem>
+
+          <StaggerItem>
+            <GlassCard className="p-4" hover={false}>
+              <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
+                Nom Complet *
               </label>
               <input
                 type="text"
@@ -160,7 +178,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Titre Professionnel
+                Titre Professionnel *
               </label>
               <input
                 type="text"
@@ -183,6 +201,21 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
                 placeholder="Une courte description de votre parcours..."
                 rows={3}
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none resize-none"
+              />
+            </GlassCard>
+          </StaggerItem>
+
+          <StaggerItem>
+            <GlassCard className="p-4" hover={false}>
+              <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
+                Instagram (Optionnel)
+              </label>
+              <input
+                type="text"
+                value={form.instagram}
+                onChange={(e) => handleChange("instagram", e.target.value)}
+                placeholder="@username"
+                className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
               />
             </GlassCard>
           </StaggerItem>
@@ -215,7 +248,8 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
                 <option value="entrepreneur" className="bg-velora-black text-velora-text">Entrepreneur</option>
                 <option value="corporate" className="bg-velora-black text-velora-text">Corporate</option>
                 <option value="creative" className="bg-velora-black text-velora-text">Créatif</option>
-                <option value="freelance" className="bg-velora-black text-velora-text">Freelance</option>
+                <option value="luxury" className="bg-velora-black text-velora-text">Luxury</option>
+                <option value="nightlife" className="bg-velora-black text-velora-text">Nightlife</option>
               </select>
             </GlassCard>
           </StaggerItem>
@@ -225,7 +259,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <GoldButton
             fullWidth
             onClick={handleSubmit}
-            disabled={!form.fullName || !form.title || saving || uploading}
+            disabled={!form.fullName || !form.title || !form.whatsapp || saving || uploading}
           >
             {saving || uploading ? (
               <Loader2 size={16} className="animate-spin" />
