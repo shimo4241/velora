@@ -603,3 +603,85 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   12. PHONE NUMBER INPUT (VELORA OVERRIDES)
+   Custom styling for react-phone-number-input to match glassmorphism
+   ─────────────────────────────────────────────────────────────── */
+
+.velora-phone-input {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.velora-phone-input .PhoneInputCountry {
+  margin-right: 12px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.velora-phone-input .PhoneInputCountryIcon {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  border: 1px solid var(--color-velora-border);
+}
+
+.velora-phone-input .PhoneInputCountryIconImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.velora-phone-input .PhoneInputCountrySelectArrow {
+  width: 5px;
+  height: 5px;
+  border-right: 1px solid var(--color-velora-text-muted);
+  border-bottom: 1px solid var(--color-velora-text-muted);
+  transform: rotate(45deg);
+  margin-left: 6px;
+  margin-bottom: 2px;
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.velora-phone-input .PhoneInputCountrySelect:focus + .PhoneInputCountryIcon + .PhoneInputCountrySelectArrow,
+.velora-phone-input .PhoneInputCountrySelect:active + .PhoneInputCountryIcon + .PhoneInputCountrySelectArrow {
+  opacity: 1;
+  border-color: var(--color-velora-gold);
+}
+
+.velora-phone-input .PhoneInputCountrySelect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.velora-phone-input .PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 0.875rem; /* text-sm */
+  color: var(--color-velora-text);
+}
+
+.velora-phone-input .PhoneInputInput::placeholder {
+  color: rgba(99, 94, 82, 0.3); /* text-velora-text-muted/30 */
+}
+
+.velora-phone-input .PhoneInputInput:focus {
+  outline: none;
+}
+

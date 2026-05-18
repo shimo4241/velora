@@ -8,6 +8,8 @@ import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animat
 import { updateProfile, uploadAvatar } from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
 import type { VeloraProfile } from "@/types";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 /* ═══════════════════════════════════════════════════
    VELORA — First-Time Profile Setup
@@ -150,12 +152,12 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
                 Numéro WhatsApp *
               </label>
-              <input
-                type="tel"
+              <PhoneInput
+                international
+                defaultCountry="MA"
                 value={form.whatsapp}
-                onChange={(e) => handleChange("whatsapp", e.target.value)}
-                placeholder="+212 6 XX XX XX XX"
-                className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
+                onChange={(value) => handleChange("whatsapp", value || "")}
+                className="velora-phone-input"
               />
             </GlassCard>
           </StaggerItem>
@@ -259,7 +261,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <GoldButton
             fullWidth
             onClick={handleSubmit}
-            disabled={!form.fullName || !form.title || !form.whatsapp || saving || uploading}
+            disabled={!form.fullName || !form.title || !form.whatsapp || !isValidPhoneNumber(form.whatsapp || "") || saving || uploading}
           >
             {saving || uploading ? (
               <Loader2 size={16} className="animate-spin" />
