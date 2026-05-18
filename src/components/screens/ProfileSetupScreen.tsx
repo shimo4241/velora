@@ -49,17 +49,33 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
-    if (!form.fullName || !form.title || !form.whatsapp) return; // Basic validation
+    console.log("[ProfileSetup] Initiating profile setup submission...");
+    if (!user) {
+      console.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
+      return;
+    }
+    if (!form.fullName || !form.title || !form.whatsapp) {
+      console.warn("[ProfileSetup Warning] Submission aborted: Missing required fields.", {
+        fullName: !!form.fullName,
+        title: !!form.title,
+        whatsapp: !!form.whatsapp
+      });
+      return;
+    }
 
+    console.log(`[ProfileSetup] User authenticated (UID: ${user.uid}). Proceeding with upload/save...`);
     setSaving(true);
     try {
       let finalAvatarUrl = "";
       if (avatarFile) {
+        console.log("[ProfileSetup] Avatar file detected. Uploading to Storage...");
         setUploading(true);
         finalAvatarUrl = await uploadAvatar(user.uid, avatarFile);
+        console.log("[ProfileSetup] Avatar uploaded successfully.", finalAvatarUrl);
         setUploading(false);
       }
+
+      console.log("[ProfileSetup] Saving profile data to Firestore...", form);
 
       await updateProfile(user.uid, {
         fullName: form.fullName,
@@ -79,9 +95,10 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         updatedAt: new Date().toISOString(),
       });
 
+      console.log("[ProfileSetup] Profile creation/update completed successfully.");
       onComplete();
     } catch (err) {
-      console.error("Setup failed:", err);
+      console.error("[ProfileSetup Error] Critical failure during setup:", err);
       setSaving(false);
     }
   };

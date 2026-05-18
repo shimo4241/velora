@@ -65,15 +65,26 @@ export function onProfileChange(
   });
 }
 
-/** Update profile fields */
+/** Update profile fields (creates if it doesn't exist) */
 export async function updateProfile(
   uid: string,
   data: Partial<Omit<VeloraProfile, "id">>
 ): Promise<void> {
-  await updateDoc(doc(db, "users", uid), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+  try {
+    console.log(`[Firestore] Attempting to update/create profile for UID: ${uid}`);
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        ...data,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    console.log(`[Firestore] Successfully updated/created profile for UID: ${uid}`);
+  } catch (error) {
+    console.error(`[Firestore Error] Failed to update/create profile for UID: ${uid}`, error);
+    throw error;
+  }
 }
 
 /** Upload avatar to Storage and update profile */
