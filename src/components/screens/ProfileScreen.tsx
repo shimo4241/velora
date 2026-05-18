@@ -14,7 +14,9 @@ import {
   ContactActions,
 } from "@/components/profile";
 import { useProfile } from "@/hooks/useProfile";
-import { Sparkles } from "lucide-react";
+import { Sparkles, LogOut } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Screen (Identity)
@@ -66,6 +68,21 @@ export function ProfileScreen() {
               Améliorer avec l&apos;IA
             </GoldButton>
           </GlassCard>
+        </FadeUp>
+      </div>
+
+      <Divider className="mx-5" />
+
+      {/* Settings / Logout */}
+      <div className="px-5 py-8 pb-32">
+        <FadeUp delay={1.8}>
+          <button
+            onClick={() => signOut(auth)}
+            className="flex items-center gap-2 text-sm text-velora-rose/80 hover:text-velora-rose transition-colors mx-auto"
+          >
+            <LogOut size={14} />
+            Déconnexion
+          </button>
         </FadeUp>
       </div>
     </div>

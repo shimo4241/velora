@@ -17,37 +17,20 @@ import type { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
    Real-time profile data from Firestore
    ═══════════════════════════════════════════════════ */
 
-const DEFAULT_PROFILE: VeloraProfile = {
-  id: "",
-  username: "",
-  fullName: "",
-  title: "",
-  company: "",
-  location: "Casablanca, Morocco",
-  bio: "",
-  avatarUrl: "",
-  socialLinks: [],
-  professionalMode: "entrepreneur",
-  isVerified: false,
-  isPremium: false,
-  isNoir: false,
-  locale: "fr",
-};
-
-export function useProfile() {
+export function useProfileNullable() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<VeloraProfile>(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState<VeloraProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
-      setProfile(DEFAULT_PROFILE);
+      setProfile(null);
       setLoading(false);
       return;
     }
 
     const unsubscribe = onProfileChange(user.uid, (p) => {
-      setProfile(p || DEFAULT_PROFILE);
+      setProfile(p);
       setLoading(false);
     });
 
@@ -70,6 +53,14 @@ export function useProfile() {
   };
 
   return { profile, loading, updateProfile, uploadAvatar, uploadPortfolioImage };
+}
+
+/**
+ * Hook to be used inside the main app phase where profile is guaranteed to exist.
+ */
+export function useProfile() {
+  const context = useProfileNullable();
+  return { ...context, profile: context.profile as VeloraProfile };
 }
 
 export function usePortfolio() {

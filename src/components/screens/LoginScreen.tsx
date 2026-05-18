@@ -138,6 +138,18 @@ export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
                   )}
                 </GoldButton>
 
+                {/* TEST MODE ONLY - Beta Development Bypass */}
+                {process.env.NODE_ENV !== "production" && (
+                  <button
+                    onClick={() => {
+                      setPhone("612345678"); // Needs to match Firebase Console Test Numbers: +212612345678
+                    }}
+                    className="w-full mt-3 py-2 text-[10px] text-velora-gold/60 uppercase tracking-widest font-semibold border border-velora-gold/20 rounded-md hover:bg-velora-gold/5 transition-colors"
+                  >
+                    Use Test Number
+                  </button>
+                )}
+
                 <div className="flex items-center gap-1.5 justify-center mt-4">
                   <Shield size={10} className="text-velora-text-muted/40" />
                   <span className="text-[9px] text-velora-text-muted/40">
@@ -213,6 +225,16 @@ export function LoginScreen({ onSuccess }: { onSuccess: () => void }) {
                     </>
                   )}
                 </GoldButton>
+
+                {/* TEST MODE ONLY - Beta Development Bypass */}
+                {process.env.NODE_ENV !== "production" && (
+                  <button
+                    onClick={() => setOtp("123456")}
+                    className="w-full mt-3 py-2 text-[10px] text-velora-gold/60 uppercase tracking-widest font-semibold border border-velora-gold/20 rounded-md hover:bg-velora-gold/5 transition-colors"
+                  >
+                    Fill Test OTP (123456)
+                  </button>
+                )}
               </GlassCard>
             </ScaleIn>
           </motion.div>

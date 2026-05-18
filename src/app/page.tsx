@@ -10,15 +10,15 @@ import { ShareScreen } from "@/components/screens/ShareScreen";
 import { NetworkScreen } from "@/components/screens/NetworkScreen";
 import { AnalyticsScreen } from "@/components/screens/AnalyticsScreen";
 import { LoginScreen } from "@/components/screens/LoginScreen";
+import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
 import { AuthProvider, useAuth } from "@/components/providers/AuthProvider";
+import { useProfileNullable } from "@/hooks/useProfile";
 import { LoadingScreen } from "@/components/ui/States";
 import type { AppTab } from "@/types";
 
 /* ═══════════════════════════════════════════════════
    VELORA — App Orchestrator
-
-   Thin routing layer. No business logic here.
-   Splash → Onboarding → Login → App (5 tabs)
+   Splash → Login → Setup → Onboarding → App
    ═══════════════════════════════════════════════════ */
 
 const screens: Record<AppTab, () => React.JSX.Element> = {
@@ -31,69 +31,78 @@ const screens: Record<AppTab, () => React.JSX.Element> = {
 
 function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
-  const [phase, setPhase] = useState<"splash" | "onboarding" | "login" | "app">("splash");
+  const { profile, loading: profileLoading } = useProfileNullable();
+  
+  const [phase, setPhase] = useState<"splash" | "login" | "setup" | "onboarding" | "app">("splash");
+  const [splashFinished, setSplashFinished] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
 
-  // After auth resolves, determine phase
+  // Main Orchestration Effect
   useEffect(() => {
+    if (!splashFinished) return;
     if (authLoading) return;
-    if (phase === "splash") return; // Let splash finish naturally
 
-    if (user) {
-      // Check if onboarding was completed
-      const onboarded = typeof window !== "undefined" && localStorage.getItem("velora_onboarded");
-      if (onboarded) {
-        setPhase("app");
-      } else if (phase === "login") {
-        // Just logged in, show onboarding
-        setPhase("onboarding");
-      }
-    } else if (phase === "app" || phase === "onboarding") {
-      // User signed out
+    if (!user) {
       setPhase("login");
+      return;
     }
-  }, [user, authLoading, phase]);
 
-  // After splash completes
-  const handleSplashComplete = () => {
-    if (authLoading) return; // Wait for auth
-    if (user) {
-      const onboarded = typeof window !== "undefined" && localStorage.getItem("velora_onboarded");
-      setPhase(onboarded ? "app" : "onboarding");
+    if (profileLoading) return;
+
+    if (!profile) {
+      setPhase("setup");
+      return;
+    }
+
+    const onboarded = typeof window !== "undefined" && localStorage.getItem("velora_onboarded");
+    if (!onboarded) {
+      setPhase("onboarding");
     } else {
-      setPhase("login");
+      setPhase("app");
     }
+  }, [splashFinished, user, authLoading, profile, profileLoading]);
+
+  const handleSplashComplete = () => {
+    setSplashFinished(true);
   };
 
-  // After onboarding completes
   const handleOnboardingComplete = () => {
     if (typeof window !== "undefined") {
       localStorage.setItem("velora_onboarded", "true");
     }
-    if (user) {
-      setPhase("app");
-    } else {
-      setPhase("login");
-    }
+    setPhase("app");
   };
 
-  // After login succeeds
-  const handleLoginSuccess = () => {
-    const onboarded = typeof window !== "undefined" && localStorage.getItem("velora_onboarded");
-    setPhase(onboarded ? "app" : "onboarding");
-  };
+  // Show a generic loading screen if splash is done but data is still fetching
+  const isDataLoading = splashFinished && (authLoading || (user && profileLoading));
 
-  // Show loading while auth initializes during splash
-  if (authLoading && phase !== "splash") {
+  if (isDataLoading && phase !== "login" && phase !== "setup" && phase !== "app") {
     return <LoadingScreen />;
   }
+
+  // Ensure we don't render app components if profile is strictly null (e.g., during transition to setup)
+  const renderApp = phase === "app" && profile !== null;
 
   return (
     <div className="app-container">
       {/* Splash */}
       <AnimatePresence>
-        {phase === "splash" && (
+        {phase === "splash" && !splashFinished && (
           <SplashScreen onComplete={handleSplashComplete} />
+        )}
+      </AnimatePresence>
+
+      {/* Login */}
+      <AnimatePresence>
+        {phase === "login" && (
+          <LoginScreen onSuccess={() => {}} />
+        )}
+      </AnimatePresence>
+
+      {/* Setup */}
+      <AnimatePresence>
+        {phase === "setup" && (
+          <ProfileSetupScreen onComplete={() => setPhase("onboarding")} />
         )}
       </AnimatePresence>
 
@@ -104,15 +113,8 @@ function VeloraAppInner() {
         )}
       </AnimatePresence>
 
-      {/* Login */}
-      <AnimatePresence>
-        {phase === "login" && (
-          <LoginScreen onSuccess={handleLoginSuccess} />
-        )}
-      </AnimatePresence>
-
       {/* Main app */}
-      {phase === "app" && user && (
+      {renderApp && (
         <>
           <AnimatePresence mode="wait">
             <motion.div
