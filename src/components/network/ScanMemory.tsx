@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { GlassCard, GoldBadge } from "../ui";
 import { useTranslation } from "@/lib/i18n";
-import { MOCK_USER } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
 import type { VeloraConnection } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -78,7 +78,8 @@ export function ConnectionCard({
 }: {
   connection: VeloraConnection;
 }) {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
   const method = METHOD_CONFIG[connection.method] || METHOD_CONFIG.nfc;
   const MethodIcon = method.icon;
   const initials = connection.profile.fullName

@@ -8,7 +8,7 @@ import {
   EngagementBreakdown,
 } from "@/components/analytics";
 import { useTranslation } from "@/lib/i18n";
-import { MOCK_USER } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
 import { Crown } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -17,7 +17,8 @@ import { Crown } from "lucide-react";
    ═══════════════════════════════════════════════════ */
 
 export function AnalyticsScreen() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">

@@ -4,15 +4,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { GlassCard, GoldButton, ProgressRing } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import {
-  MOCK_USER,
-  MOCK_ACTIVITY,
-  MOCK_STATS,
-  MOCK_CONNECTIONS,
-  PROFESSIONAL_MODES,
-  MOTION,
-} from "@/lib/constants";
+import { PROFESSIONAL_MODES, MOTION } from "@/lib/constants";
 import { useTranslation, getGreetingKey } from "@/lib/i18n";
+import { useProfile } from "@/hooks/useProfile";
+import { useConnections } from "@/hooks/useConnections";
+import { useStats, useActivity } from "@/hooks/useStats";
 import {
   ChevronRight,
   Nfc,
@@ -90,8 +86,10 @@ const quickActions = [
 
 /* ── Networking Pulse Card ── */
 function NetworkingPulse() {
-  const { t } = useTranslation(MOCK_USER.locale);
-  const recentConnection = MOCK_CONNECTIONS[0];
+  const { profile } = useProfile();
+  const { connections } = useConnections();
+  const { t } = useTranslation(profile.locale);
+  const recentConnection = connections[0];
 
   return (
     <FadeUp delay={0.5}>
@@ -109,7 +107,7 @@ function NetworkingPulse() {
           <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-velora-emerald/10">
             <ArrowUpRight size={10} className="text-velora-emerald" />
             <span className="text-[10px] text-velora-emerald font-mono font-medium">
-              +18%
+              +{connections.length > 0 ? "18" : "0"}%
             </span>
           </div>
         </div>
@@ -117,9 +115,9 @@ function NetworkingPulse() {
         {/* Weekly stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
-            { value: "12", label: "This week", sub: "connections" },
-            { value: "47", label: "This month", sub: "interactions" },
-            { value: "3", label: "Pending", sub: "follow-ups" },
+            { value: String(connections.length), label: "This week", sub: "connections" },
+            { value: "0", label: "This month", sub: "interactions" },
+            { value: String(connections.filter((c) => !c.followUpSent).length), label: "Pending", sub: "follow-ups" },
           ].map((stat, i) => (
             <div
               key={i}
@@ -138,7 +136,6 @@ function NetworkingPulse() {
         {/* Latest connection */}
         {recentConnection && (
           <div className="flex items-center gap-3 p-2.5 rounded-[var(--radius-sm)] bg-velora-surface/30 border border-velora-border/50">
-            {/* Avatar placeholder */}
             <div className="w-9 h-9 rounded-full bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-semibold text-velora-gold">
                 {recentConnection.profile.fullName
@@ -227,9 +224,19 @@ function UpcomingEvents() {
 
 /* ── Main Home Screen ── */
 export function HomeScreen() {
-  const [selectedMode, setSelectedMode] = useState(MOCK_USER.professionalMode);
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { stats } = useStats();
+  const { activity } = useActivity();
+  const [selectedMode, setSelectedMode] = useState(profile.professionalMode);
+  const { t } = useTranslation(profile.locale);
   const greetingKey = getGreetingKey();
+
+  const firstName = profile.fullName?.split(" ")[0] || "VELORA";
+
+  // Calculate profile completion
+  const fields = [profile.fullName, profile.title, profile.company, profile.bio, profile.avatarUrl, profile.phone, profile.website];
+  const filled = fields.filter(Boolean).length;
+  const completion = Math.round((filled / fields.length) * 100);
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
@@ -242,7 +249,7 @@ export function HomeScreen() {
                 {t(greetingKey)}
               </div>
               <h1 className="text-display text-2xl text-velora-text">
-                {MOCK_USER.fullName.split(" ")[0]}
+                {firstName}
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -271,13 +278,13 @@ export function HomeScreen() {
         <FadeUp delay={0.1}>
           <GlassCard className="p-4" gold>
             <div className="flex items-center gap-4">
-              <ProgressRing progress={78} size={52} strokeWidth={2.5} />
+              <ProgressRing progress={completion} size={52} strokeWidth={2.5} />
               <div className="flex-1">
                 <div className="text-sm font-semibold text-velora-text font-[family-name:var(--font-display)]">
-                  {t("profile_completion")} 78%
+                  {t("profile_completion")} {completion}%
                 </div>
                 <div className="text-xs text-velora-text-muted mt-0.5">
-                  Add your portfolio to reach 100%
+                  {completion < 100 ? "Complétez votre profil pour plus de visibilité" : "Profil complet ✓"}
                 </div>
               </div>
               <ChevronRight size={16} className="text-velora-gold/40" />
@@ -390,10 +397,10 @@ export function HomeScreen() {
             </div>
             <div className="flex items-center justify-between">
               {[
-                { value: MOCK_STATS.views, label: t("views") },
-                { value: MOCK_STATS.taps, label: t("taps") },
-                { value: MOCK_STATS.scans, label: t("scans") },
-                { value: MOCK_STATS.clicks, label: t("clicks") },
+                { value: stats.views, label: t("views") },
+                { value: stats.taps, label: t("taps") },
+                { value: stats.scans, label: t("scans") },
+                { value: stats.clicks, label: t("clicks") },
               ].map((stat, i) => (
                 <div key={i} className="text-center">
                   <div className="text-data text-lg text-velora-text font-semibold">
@@ -425,26 +432,34 @@ export function HomeScreen() {
         </FadeUp>
 
         <StaggerChildren staggerDelay={0.06} delay={0.75} className="space-y-2">
-          {MOCK_ACTIVITY.map((activity) => {
-            const Icon = ACTIVITY_ICONS[activity.icon] || Eye;
-            return (
-              <StaggerItem key={activity.id}>
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-sm)] glass">
-                  <div className="w-8 h-8 rounded-lg bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
-                    <Icon size={14} className="text-velora-gold/60" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-velora-text-secondary truncate">
-                      {activity.text}
+          {activity.length > 0 ? (
+            activity.map((activityItem) => {
+              const Icon = ACTIVITY_ICONS[activityItem.icon] || Eye;
+              return (
+                <StaggerItem key={activityItem.id}>
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-sm)] glass">
+                    <div className="w-8 h-8 rounded-lg bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
+                      <Icon size={14} className="text-velora-gold/60" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-velora-text-secondary truncate">
+                        {activityItem.text}
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-velora-text-muted flex-shrink-0">
+                      {activityItem.time}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-velora-text-muted flex-shrink-0">
-                    {activity.time}
-                  </span>
-                </div>
-              </StaggerItem>
-            );
-          })}
+                </StaggerItem>
+              );
+            })
+          ) : (
+            <StaggerItem>
+              <div className="text-center py-6 text-xs text-velora-text-muted">
+                Partagez votre profil pour voir l&apos;activité ici
+              </div>
+            </StaggerItem>
+          )}
         </StaggerChildren>
       </div>
     </div>

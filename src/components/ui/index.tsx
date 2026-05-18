@@ -50,6 +50,7 @@ interface GoldButtonProps {
   size?: "sm" | "md" | "lg";
   variant?: "solid" | "outline";
   className?: string;
+  disabled?: boolean;
 }
 
 export function GoldButton({
@@ -59,6 +60,7 @@ export function GoldButton({
   size = "md",
   variant = "solid",
   className = "",
+  disabled = false,
 }: GoldButtonProps) {
   const sizeStyles = {
     sm: "px-4 py-2 text-xs gap-1.5",
@@ -73,8 +75,9 @@ export function GoldButton({
 
   return (
     <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.97 }}
+      onClick={disabled ? undefined : onClick}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
+      disabled={disabled}
       className={`
         inline-flex items-center justify-center
         rounded-[var(--radius-md)] font-[family-name:var(--font-display)]
@@ -82,6 +85,7 @@ export function GoldButton({
         ${sizeStyles[size]}
         ${variantStyles}
         ${fullWidth ? "w-full" : ""}
+        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
         ${className}
       `}
     >

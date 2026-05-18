@@ -18,7 +18,8 @@ import {
 import { GlassCard, GoldButton } from "../ui";
 import { FadeUp, ScaleIn, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useTranslation } from "@/lib/i18n";
-import { MOCK_USER, APP_CONFIG } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
+import { useSharing, getProfileUrl, getProfileShortUrl } from "@/hooks/useSharing";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Share Components
@@ -27,13 +28,14 @@ import { MOCK_USER, APP_CONFIG } from "@/lib/constants";
 
 /* ── QR Code Generator with Premium Gold Frame ── */
 export function QRGenerator({
-  url = "https://velora.app/u/youssef",
-  name = "Youssef El Amrani",
+  url = "https://velora.app",
+  name = "VELORA User",
 }: {
   url?: string;
   name?: string;
 }) {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <FadeUp delay={0.2}>
@@ -92,7 +94,8 @@ export function QRGenerator({
 
 /* ── NFC Tap Prompt — Calm, not aggressive ── */
 export function NFCPrompt() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <FadeUp delay={0.4}>
@@ -147,19 +150,26 @@ export function NFCPrompt() {
 /* ── WhatsApp Hero + Share Actions ── */
 export function ShareActions() {
   const [copied, setCopied] = useState(false);
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { shareViaWhatsApp, copyProfileLink } = useSharing();
+  const { t } = useTranslation(profile.locale);
+
+  const handleWhatsApp = () => {
+    shareViaWhatsApp(profile);
+  };
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(APP_CONFIG.fullProfileUrl);
+    copyProfileLink(profile.username);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="px-5 py-4">
-      {/* WhatsApp Hero CTA */}
+      {/* WhatsApp Hero CTA — now functional */}
       <FadeUp delay={0.55}>
         <motion.button
+          onClick={handleWhatsApp}
           whileTap={{ scale: 0.97 }}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-[var(--radius-card)] bg-velora-whatsapp/12 border border-velora-whatsapp/20 mb-3"
         >
@@ -225,7 +235,9 @@ export function ShareActions() {
 
 /* ── Share Link Preview ── */
 export function ShareLinkPreview() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
+  const shortUrl = getProfileShortUrl(profile.username);
 
   return (
     <FadeUp delay={0.8}>
@@ -239,7 +251,7 @@ export function ShareLinkPreview() {
               {t("profile_link")}
             </div>
             <div className="text-xs text-velora-text font-mono truncate">
-              {APP_CONFIG.profileUrl}
+              {shortUrl}
             </div>
           </div>
           <GoldButton variant="outline" size="sm">

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Divider } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { RadarDiscovery, NearbyList } from "@/components/network";
 import { ConnectionCard } from "@/components/network/ScanMemory";
+import { EmptyState } from "@/components/ui/States";
 import { useTranslation } from "@/lib/i18n";
-import { MOCK_USER, MOCK_CONNECTIONS } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
+import { useConnections } from "@/hooks/useConnections";
 import { Radar, BookOpen } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -19,7 +20,9 @@ type DiscoverTab = "nearby" | "memory";
 
 export function NetworkScreen() {
   const [tab, setTab] = useState<DiscoverTab>("nearby");
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { connections, count } = useConnections();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
@@ -92,20 +95,27 @@ export function NetworkScreen() {
                   {t("your_connections")}
                 </h2>
                 <span className="text-caption text-velora-gold">
-                  {MOCK_CONNECTIONS.length}
+                  {count}
                 </span>
               </div>
             </FadeUp>
           </div>
 
           <div className="px-5 py-2">
-            <StaggerChildren staggerDelay={0.1} delay={0.3} className="space-y-3">
-              {MOCK_CONNECTIONS.map((connection) => (
-                <StaggerItem key={connection.id}>
-                  <ConnectionCard connection={connection} />
-                </StaggerItem>
-              ))}
-            </StaggerChildren>
+            {connections.length > 0 ? (
+              <StaggerChildren staggerDelay={0.1} delay={0.3} className="space-y-3">
+                {connections.map((connection) => (
+                  <StaggerItem key={connection.id}>
+                    <ConnectionCard connection={connection} />
+                  </StaggerItem>
+                ))}
+              </StaggerChildren>
+            ) : (
+              <EmptyState
+                title="Aucune connexion"
+                description="Scannez un QR code ou partagez votre profil pour commencer."
+              />
+            )}
           </div>
         </>
       )}

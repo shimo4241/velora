@@ -13,7 +13,7 @@ import {
   SocialLinks,
   ContactActions,
 } from "@/components/profile";
-import { MOCK_USER } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
 import { Sparkles } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -22,18 +22,20 @@ import { Sparkles } from "lucide-react";
    ═══════════════════════════════════════════════════ */
 
 export function ProfileScreen() {
+  const { profile } = useProfile();
+
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
       <ProfileHero
-        name={MOCK_USER.fullName}
-        title={MOCK_USER.title}
-        company={MOCK_USER.company}
-        location={MOCK_USER.location}
-        bio={MOCK_USER.bio}
-        avatarUrl={MOCK_USER.avatarUrl}
-        isVerified={MOCK_USER.isVerified}
-        isPremium={MOCK_USER.isPremium}
-        mode="Entrepreneur"
+        name={profile.fullName || "VELORA User"}
+        title={profile.title}
+        company={profile.company}
+        location={profile.location}
+        bio={profile.bio}
+        avatarUrl={profile.avatarUrl}
+        isVerified={profile.isVerified}
+        isPremium={profile.isPremium}
+        mode={profile.professionalMode === "entrepreneur" ? "Entrepreneur" : profile.professionalMode}
       />
 
       <Divider className="mx-5" />

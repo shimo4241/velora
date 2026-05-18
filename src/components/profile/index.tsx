@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { GlassCard, GoldBadge, GoldButton } from "../ui";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motion/animations";
-import { MOCK_EXPERIENCE, MOCK_PORTFOLIO, MOCK_USER } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
+import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Components
@@ -50,7 +50,8 @@ export function ProfileHero({
   isPremium = true,
   mode = "Entrepreneur",
 }: ProfileHeroProps) {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="relative">
@@ -235,7 +236,9 @@ const PORTFOLIO_GRADIENTS: Record<string, string> = {
 };
 
 export function PortfolioGallery() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { portfolio } = usePortfolio();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="px-5 py-5">
@@ -246,7 +249,7 @@ export function PortfolioGallery() {
       </FadeUp>
 
       <StaggerChildren staggerDelay={0.08} delay={0.85} className="grid grid-cols-2 gap-3">
-        {MOCK_PORTFOLIO.map((project) => {
+        {portfolio.map((project) => {
           const Icon = PORTFOLIO_ICONS[project.category] || Award;
           const gradient = PORTFOLIO_GRADIENTS[project.category] || "from-amber-900/30 to-yellow-900/15";
 
@@ -285,7 +288,9 @@ export function PortfolioGallery() {
 
 /* ── CV Timeline ── */
 export function CVTimeline() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { experience } = useExperience();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="px-5 py-5">
@@ -300,7 +305,7 @@ export function CVTimeline() {
         <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-velora-gold/30 via-velora-gold/15 to-transparent" />
 
         <div className="space-y-4">
-          {MOCK_EXPERIENCE.map((item, i) => (
+          {experience.map((item, i) => (
             <SlideIn key={item.id} delay={1.05 + i * 0.1}>
               <div className="flex gap-3.5 group">
                 {/* Dot */}
@@ -349,7 +354,8 @@ export function CVTimeline() {
 
 /* ── Social Links ── */
 export function SocialLinks() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   return (
     <div className="px-5 py-4">
@@ -361,7 +367,7 @@ export function SocialLinks() {
 
       <FadeUp delay={1.35}>
         <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
-          {MOCK_USER.socialLinks.map((link, i) => (
+          {(profile.socialLinks || []).map((link, i) => (
             <motion.button
               key={i}
               whileTap={{ scale: 0.92 }}
@@ -387,7 +393,8 @@ export function SocialLinks() {
 
 /* ── Contact Actions — WhatsApp Primary ── */
 export function ContactActions() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
 
   const actions = [
     {

@@ -9,7 +9,8 @@ import {
   ShareLinkPreview,
 } from "@/components/share";
 import { useTranslation } from "@/lib/i18n";
-import { MOCK_USER, APP_CONFIG } from "@/lib/constants";
+import { useProfile } from "@/hooks/useProfile";
+import { getProfileUrl, getProfileShortUrl } from "@/hooks/useSharing";
 import { Crown, Wallet } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -18,7 +19,9 @@ import { Crown, Wallet } from "lucide-react";
    ═══════════════════════════════════════════════════ */
 
 export function ShareScreen() {
-  const { t } = useTranslation(MOCK_USER.locale);
+  const { profile } = useProfile();
+  const { t } = useTranslation(profile.locale);
+  const profileUrl = getProfileUrl(profile.username);
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
@@ -36,11 +39,11 @@ export function ShareScreen() {
         </FadeUp>
       </div>
 
-      {/* QR Code */}
+      {/* QR Code — real profile URL */}
       <div className="section">
         <QRGenerator
-          url={APP_CONFIG.fullProfileUrl}
-          name={MOCK_USER.fullName}
+          url={profileUrl}
+          name={profile.fullName || "VELORA User"}
         />
       </div>
 
