@@ -1,26 +1,605 @@
+/* ═══════════════════════════════════════════════════════════════
+   VELORA — Design System
+   Aesthetic: Modern Moroccan Luxury
+   Philosophy: Quiet. Expensive. Intentional.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ───────────────────────────────────────────────────────────────
+   1. THEME TOKENS
+   All design decisions live here. Nothing is ad-hoc.
+   ─────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Surface System ──
+     Warm espresso undertone across all blacks.
+     Inspired by dark Moroccan tadelakt walls. */
+  --color-velora-black: #070705;
+  --color-velora-dark: #0D0D0A;
+  --color-velora-surface: #141310;
+  --color-velora-card: #1A1915;
+  --color-velora-card-hover: #21201A;
+  --color-velora-elevated: #28261F;
+  --color-velora-border: #2E2C24;
+
+  /* ── Gold System ──
+     Moroccan brass. Warm, matte, not yellow.
+     Reference: aged brass tea trays, not crypto coins. */
+  --color-velora-gold: #C4A265;
+  --color-velora-gold-light: #DCC088;
+  --color-velora-gold-muted: #C4A26540;
+  --color-velora-gold-dim: #C4A26518;
+  --color-velora-gold-glow: #C4A26525;
+
+  /* ── Text Hierarchy ──
+     Warm whites. Never pure #FFF — too clinical. */
+  --color-velora-text: #F5F3EE;
+  --color-velora-text-secondary: #A09A8C;
+  --color-velora-text-muted: #635E52;
+
+  /* ── Semantic Accents ──
+     Restrained. Used sparingly for status indicators only. */
+  --color-velora-emerald: #6BBF8A;
+  --color-velora-blue: #7BA8D4;
+  --color-velora-rose: #D4737B;
+  --color-velora-violet: #A78FCA;
+  --color-velora-whatsapp: #25D366;
+
+  /* ── Glass System ──
+     Opacity tokens for glassmorphism tiers. */
+  --color-velora-glass: #FFFFFF06;
+  --color-velora-glass-border: #FFFFFF0C;
+  --color-velora-glass-strong: #FFFFFF0A;
+  --color-velora-glass-strong-border: #FFFFFF14;
+
+  /* ── Typography ──
+     Latin: Outfit (display) + Inter (body) + JetBrains Mono (data)
+     Arabic: Noto Sans Arabic */
+  --font-display: "Outfit", "Noto Sans Arabic", system-ui, sans-serif;
+  --font-body: "Inter", "Noto Sans Arabic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-arabic: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
+
+  /* ── Spacing ──
+     Page gutters and safe areas. */
+  --spacing-page: 20px;
+  --spacing-page-lg: 24px;
+
+  /* ── Radius ──
+     Generous but not bubbly. Luxury is smooth, not cute. */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-card: 18px;
+  --radius-lg: 22px;
+  --radius-full: 9999px;
+
+  /* ── Shadows ──
+     Barely visible. Depth through layering, not drop-shadow. */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-gold: 0 0 20px var(--color-velora-gold-dim), 0 0 40px var(--color-velora-gold-dim);
+
+  /* ── Motion ──
+     Luxury motion is slow confidence. Never playful. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+  --duration-entrance: 700ms;
+
+  /* ── Z-Index Scale ── */
+  --z-base: 1;
+  --z-card: 10;
+  --z-nav: 50;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-splash: 300;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+/* ───────────────────────────────────────────────────────────────
+   2. BASE RESET
+   Minimal. Only what the browser gets wrong.
+   ─────────────────────────────────────────────────────────────── */
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  background: var(--color-velora-black);
+  color: var(--color-velora-text);
+  overflow-x: hidden;
+  min-height: 100dvh;
+  line-height: 1.5;
 }
+
+::selection {
+  background: var(--color-velora-gold);
+  color: var(--color-velora-black);
+}
+
+/* Scrollbar — invisible until hovered */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-velora-glass-strong);
+  border-radius: var(--radius-full);
+}
+
+/* Hide horizontal scroll overflow on containers */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+/* ───────────────────────────────────────────────────────────────
+   3. GLASSMORPHISM SYSTEM
+   Three tiers. Each has a clear purpose.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Tier 1: Standard card — subtle, ambient */
+.glass {
+  background: var(--color-velora-glass);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--color-velora-glass-border);
+}
+
+/* Tier 2: Elevated — navigation, modals */
+.glass-strong {
+  background: var(--color-velora-glass-strong);
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border: 1px solid var(--color-velora-glass-strong-border);
+}
+
+/* Tier 3: Gold-tinted — premium CTAs, featured cards */
+.glass-gold {
+  background: linear-gradient(
+    135deg,
+    var(--color-velora-gold-dim),
+    var(--color-velora-glass)
+  );
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--color-velora-gold-glow);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   4. GOLD SYSTEM
+   Quiet luxury. Gold is an accent, never a shout.
+   ─────────────────────────────────────────────────────────────── */
+
+.gold-text {
+  background: linear-gradient(
+    135deg,
+    var(--color-velora-gold),
+    var(--color-velora-gold-light)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-border {
+  border: 1px solid var(--color-velora-gold-glow);
+}
+
+.gold-glow {
+  box-shadow: var(--shadow-gold);
+}
+
+.gold-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-velora-gold),
+    var(--color-velora-gold-light),
+    var(--color-velora-gold)
+  );
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   5. TYPOGRAPHY SYSTEM
+   Display → Heading → Body → Caption → Data
+   Each has ONE job. No ambiguity.
+   ─────────────────────────────────────────────────────────────── */
+
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.text-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.text-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.text-caption {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-velora-text-muted);
+}
+
+.text-data {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Arabic typography — used inline, not page-wide RTL */
+.text-arabic {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  line-height: 1.6;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   6. ANIMATION SYSTEM
+   Strict constraints. Luxury is calm.
+   
+   Rules:
+   - Max 700ms for entrances (splash exempted)
+   - GPU-safe only: transform, opacity, filter
+   - No spring/bounce easing
+   - No infinite loops (except ambient breathing)
+   - Stagger: 60ms between siblings
+   ─────────────────────────────────────────────────────────────── */
+
+/* Entrance: Fade up with subtle blur dissolve */
+@keyframes v-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Entrance: Scale in from center */
+@keyframes v-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Entrance: Slide from left */
+@keyframes v-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Ambient: Gentle breathing for persistent glows */
+@keyframes v-breathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ambient: Gold shimmer for loading states */
+@keyframes v-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* NFC: Calm ripple expansion */
+@keyframes v-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Utility animation classes */
+.animate-fade-up {
+  animation: v-fade-up var(--duration-entrance) var(--ease-out) both;
+}
+
+.animate-scale-in {
+  animation: v-scale-in var(--duration-slow) var(--ease-out) both;
+}
+
+.animate-breathe {
+  animation: v-breathe 3s var(--ease-in-out) infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-velora-gold-dim) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: v-shimmer 2s var(--ease-in-out) infinite;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   7. TEXTURE OVERLAYS
+   Subtle noise adds physical depth. Like paper grain.
+   Zellige pattern adds cultural identity.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Film grain — applied to body via layout */
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.012;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+}
+
+/* Zellige-inspired geometric overlay — barely visible cultural texture */
+.zellige-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.008;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C4A265' fill-opacity='1'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' stroke='%23C4A265' stroke-width='0.5' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 40px 40px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   8. LAYOUT UTILITIES
+   Mobile-first. Safe areas. Consistent spacing.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Bottom navigation safe area */
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+}
+
+/* Page entrance animation */
+.page-enter {
+  animation: v-fade-up var(--duration-entrance) var(--ease-out) both;
+}
+
+/* Bottom navigation container */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-nav);
+  padding: 8px 16px calc(env(safe-area-inset-bottom, 8px) + 8px);
+  background: linear-gradient(
+    to top,
+    var(--color-velora-black) 60%,
+    transparent
+  );
+}
+
+.bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--color-velora-glass-strong);
+  backdrop-filter: blur(32px) saturate(1.8);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  border: 1px solid var(--color-velora-glass-strong-border);
+  border-radius: var(--radius-lg);
+  padding: 6px 8px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Status bar spacer for iOS PWA */
+.status-bar-spacer {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Max-width container for mobile-first */
+.app-container {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-velora-black);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   9. COMPONENT CONVENTIONS
+   Reusable patterns. Applied via className composition.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Interactive card — hover lifts subtly */
+.card-interactive {
+  transition: transform var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out);
+}
+.card-interactive:hover {
+  transform: translateY(-1px);
+}
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Section spacing — consistent vertical rhythm */
+.section {
+  padding: 0 var(--spacing-page);
+  margin-bottom: 24px;
+}
+
+.section-header {
+  margin-bottom: 14px;
+  padding: 0 2px;
+}
+
+/* Divider — barely there */
+.divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-velora-border),
+    transparent
+  );
+  margin: 4px 0;
+}
+
+/* Focus ring — gold, accessible */
+:focus-visible {
+  outline: 2px solid var(--color-velora-gold-muted);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   10. ACCESSIBILITY
+   WCAG AA compliant. Luxury is inclusive.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Reduced motion — disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   11. CAPACITOR / MOBILE OPTIMIZATION
+   Native feel. 60fps. No jitter.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Smooth native-like scrolling */
+html {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prevent unwanted text selection on UI elements */
+button,
+[role="button"],
+nav {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Disable tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch action optimization */
+.touch-pan-y {
+  touch-action: pan-y;
+}
+
+/* Keyboard open — shrink viewport */
+body.keyboard-open {
+  padding-bottom: 0 !important;
+}
+
+body.keyboard-open .safe-bottom {
+  padding-bottom: 0 !important;
+}
+
+/* Standalone PWA — extra top padding for status bar */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Capacitor notch safety */
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-left {
+  padding-left: max(0px, env(safe-area-inset-left));
+}
+
+.safe-right {
+  padding-right: max(0px, env(safe-area-inset-right));
+}
+
+/* GPU acceleration for animated elements */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Prevent overscroll bounce on iOS */
+body {
+  overscroll-behavior-y: none;
+}
+
