@@ -32,7 +32,7 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
 }
 
 function VeloraAppInner() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAuthReady } = useAuth();
   const {
     profile,
     isLoading: profileLoading,
@@ -53,10 +53,12 @@ function VeloraAppInner() {
     onboardingAcknowledged ||
     hasStoredOnboarding
   );
+  const isAuthRestoring = authLoading || !isAuthReady;
+  const isProfileHydrating = Boolean(user && profileLoading);
 
   let phase: "splash" | "loading" | "welcome" | "setup" | "onboarding" | "app" | "error" = "splash";
   if (splashFinished) {
-    if (authLoading || (user && profileLoading)) {
+    if (isAuthRestoring || isProfileHydrating) {
       phase = "loading";
     } else if (user && profileError) {
       phase = "error";
@@ -97,11 +99,14 @@ function VeloraAppInner() {
   };
 
   if (phase === "loading") {
-    return <LoadingScreen />;
+    return (
+      <LoadingScreen
+        message={isAuthRestoring ? "Restauration de session..." : "Chargement du profil..."}
+      />
+    );
   }
 
-  // Ensure we don't render app components if profile is strictly null or loading
-  const renderApp = phase === "app" && isProfileReady;
+  const renderApp = phase === "app" && Boolean(user) && isProfileReady && Boolean(profile);
 
   return (
     <div className="app-container">

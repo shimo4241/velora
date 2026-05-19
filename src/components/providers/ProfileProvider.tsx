@@ -36,8 +36,9 @@ export interface ProfileContextValue {
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAuthReady } = useAuth();
   const uid = user?.uid ?? null;
+  const authReady = isAuthReady && !authLoading;
   const [profileState, setProfileState] = useState<{
     uid: string | null;
     profile: VeloraProfile | null;
@@ -50,8 +51,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    if (authLoading) {
+    if (!authReady) {
       activeUidRef.current = null;
+      console.debug("[Profile] waiting for auth hydration");
       return () => {
         active = false;
       };
@@ -59,21 +61,31 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     if (!uid || !user) {
       activeUidRef.current = null;
+      bootstrapUidRef.current = null;
+      console.debug("[Profile] cleared unauthenticated state");
       return () => {
         active = false;
       };
     }
 
     activeUidRef.current = uid;
+    console.debug("[Profile] hydration:start", { uid });
 
     const unsubscribe = onProfileChange(uid, async (p) => {
       if (!active) return;
 
       if (p) {
+        console.debug("[Profile] hydration:snapshot", {
+          uid,
+          username: p.username || null,
+          profileSetupComplete: p.onboarding?.profileSetupComplete ?? false,
+          productTourComplete: p.onboarding?.productTourComplete ?? false,
+        });
         setProfileState({ uid, profile: p, isLoading: false, error: null });
         return;
       }
 
+      console.debug("[Profile] hydration:missing profile, bootstrapping", { uid });
       setProfileState({ uid, profile: null, isLoading: true, error: null });
 
       if (bootstrapUidRef.current === uid) return;
@@ -82,6 +94,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       try {
         const bootstrappedProfile = await ensureGoogleUserProfile(user);
         if (!active) return;
+        console.debug("[Profile] hydration:bootstrapped", {
+          uid,
+          username: bootstrappedProfile.username || null,
+        });
         setProfileState({ uid, profile: bootstrappedProfile, isLoading: false, error: null });
       } catch (bootstrapError) {
         bootstrapUidRef.current = null;
@@ -90,10 +106,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           bootstrapError instanceof Error
             ? bootstrapError
             : new Error("Failed to initialize profile");
+        console.debug("[Profile] hydration:error", {
+          uid,
+          message: normalizedError.message,
+        });
         setProfileState({ uid, profile: null, isLoading: false, error: normalizedError });
       }
     }, (listenerError) => {
       if (!active) return;
+      console.debug("[Profile] hydration:listener error", {
+        uid,
+        message: listenerError.message,
+      });
       setProfileState({ uid, profile: null, isLoading: false, error: listenerError });
     });
 
@@ -101,7 +125,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe?.();
     };
-  }, [authLoading, uid, user]);
+  }, [authReady, uid, user]);
 
   const refreshProfile = useCallback(async () => {
     if (!uid) {
@@ -151,9 +175,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [uid]);
 
   const isCurrentProfile = profileState.uid === uid;
-  const profile = !authLoading && uid && isCurrentProfile ? profileState.profile : null;
-  const error = !authLoading && uid && isCurrentProfile ? profileState.error : null;
-  const isLoading = authLoading || Boolean(uid && (!isCurrentProfile || profileState.isLoading));
+  const profile = authReady && uid && isCurrentProfile ? profileState.profile : null;
+  const error = authReady && uid && isCurrentProfile ? profileState.error : null;
+  const isLoading = !authReady || Boolean(uid && (!isCurrentProfile || profileState.isLoading));
   const hasCompletedProfileSetup = Boolean(
     profile?.onboarding?.profileSetupComplete ||
     (profile?.title && (profile?.whatsapp || profile?.phone))

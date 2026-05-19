@@ -68,29 +68,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!active) return;
 
+      try {
+        const redirectResult = await completeGoogleRedirectSignIn();
+        if (!active) return;
+
+        if (redirectResult?.user) {
+          console.debug("[Auth] redirect user restored", {
+            uid: redirectResult.user.uid,
+          });
+          setUser(redirectResult.user);
+        }
+      } catch (redirectError) {
+        if (!active) return;
+        setError(getAuthErrorMessage(redirectError));
+      }
+
+      if (!active) return;
+
       unsubscribe = onAuthChange(async (firebaseUser) => {
         if (!active) return;
 
+        console.debug("[Auth] auth hydration", {
+          uid: firebaseUser?.uid ?? null,
+          isAnonymous: firebaseUser?.isAnonymous ?? false,
+        });
+        console.debug("[Auth] current user uid", {
+          uid: firebaseUser?.uid ?? null,
+        });
+
         if (firebaseUser?.isAnonymous) {
           setError("Les sessions anonymes ne sont plus prises en charge.");
-          await signOutUser();
-          if (!active) return;
-          setUser(null);
-          setLoading(false);
+          try {
+            await signOutUser();
+          } finally {
+            if (!active) return;
+            setUser(null);
+            setLoading(false);
+          }
           return;
         }
 
         setUser(firebaseUser);
         setLoading(false);
       });
-
-      try {
-        await completeGoogleRedirectSignIn();
-      } catch (redirectError) {
-        if (!active) return;
-        setError(getAuthErrorMessage(redirectError));
-        setLoading(false);
-      }
     }
 
     void initializeAuth();
