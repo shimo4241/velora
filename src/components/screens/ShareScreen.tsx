@@ -10,7 +10,7 @@ import {
 } from "@/components/share";
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
-import { getProfileUrl, getProfileShortUrl } from "@/hooks/useSharing";
+import { getProfileUrl } from "@/hooks/useSharing";
 import { Crown, Wallet } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════

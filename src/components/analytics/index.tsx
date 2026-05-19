@@ -12,11 +12,18 @@ import {
 } from "lucide-react";
 import { GlassCard } from "../ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "../motion/animations";
-import { useStats, useActivity } from "@/hooks/useStats";
+import type { DailyStats } from "@/types";
+
+const EMPTY_STATS: DailyStats = { views: 0, taps: 0, scans: 0, clicks: 0 };
 
 /* ── Stats Grid — Real Firestore Data ── */
-export function StatsGrid() {
-  const { stats, loading } = useStats();
+export function StatsGrid({
+  stats = EMPTY_STATS,
+  loading = false,
+}: {
+  stats?: DailyStats;
+  loading?: boolean;
+}) {
 
   const statCards = [
     {
@@ -78,8 +85,13 @@ export function StatsGrid() {
 }
 
 /* ── Views Chart — Real data or empty state ── */
-export function ViewsChart() {
-  const { stats, loading } = useStats();
+export function ViewsChart({
+  stats = EMPTY_STATS,
+  loading = false,
+}: {
+  stats?: DailyStats;
+  loading?: boolean;
+}) {
   const totalActivity = stats.views + stats.taps + stats.scans + stats.clicks;
 
   if (!loading && totalActivity === 0) {
@@ -157,8 +169,13 @@ export function ViewsChart() {
 }
 
 /* ── Engagement Breakdown — Real data or empty state ── */
-export function EngagementBreakdown() {
-  const { stats, loading } = useStats();
+export function EngagementBreakdown({
+  stats = EMPTY_STATS,
+  loading = false,
+}: {
+  stats?: DailyStats;
+  loading?: boolean;
+}) {
   const total = stats.views + stats.taps + stats.scans + stats.clicks;
 
   if (!loading && total === 0) {

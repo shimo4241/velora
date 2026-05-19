@@ -2,15 +2,15 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { GlassCard, GoldButton, ProgressRing } from "@/components/ui";
+import { GlassCard, ProgressRing } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { PROFESSIONAL_MODES, MOTION } from "@/lib/constants";
+import { PROFESSIONAL_MODES } from "@/lib/constants";
 import { useTranslation, getGreetingKey } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import { useConnections } from "@/hooks/useConnections";
 import { useStats, useActivity } from "@/hooks/useStats";
 import { useSharing } from "@/hooks/useSharing";
-import type { AppTab } from "@/types";
+import type { AppTab, VeloraProfile } from "@/types";
 import {
   ChevronRight,
   Nfc,
@@ -195,21 +195,21 @@ export function HomeScreen({ onTabChange }: { onTabChange?: (tab: AppTab) => voi
   const { stats } = useStats();
   const { activity } = useActivity();
   const { shareViaWhatsApp, copyProfileLink } = useSharing();
-  const [selectedMode, setSelectedMode] = useState(profile?.professionalMode || "entrepreneur");
+  const [selectedModeOverride, setSelectedModeOverride] = useState<VeloraProfile["professionalMode"] | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const { t } = useTranslation(profile?.locale || "fr");
   const greetingKey = getGreetingKey();
-  const [showEdit, setShowEdit] = useState(false);
+  const selectedMode = selectedModeOverride || profile?.professionalMode || "entrepreneur";
+
+  // Professional mode change persists to Firestore
+  const handleModeChange = useCallback((modeId: string) => {
+    setSelectedModeOverride(modeId as NonNullable<VeloraProfile["professionalMode"]>);
+    updateProfile({ professionalMode: modeId as NonNullable<VeloraProfile["professionalMode"]> });
+  }, [updateProfile]);
 
   if (!isProfileReady || !profile) return null;
 
   const firstName = profile?.fullName?.split(" ")[0] || "VELORA";
-
-  // Professional mode change persists to Firestore
-  const handleModeChange = useCallback((modeId: string) => {
-    setSelectedMode(modeId as any);
-    updateProfile({ professionalMode: modeId as any });
-  }, [updateProfile]);
 
   // Quick share handlers
   const handleQuickWhatsApp = () => shareViaWhatsApp(profile);

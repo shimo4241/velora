@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppProviders } from "@/components/providers/AppProviders";
 import "./globals.css";
 
 /* ═══════════════════════════════════════════════════
@@ -127,7 +128,7 @@ export default function RootLayout({
         />
       </head>
       <body className="noise-overlay zellige-overlay antialiased">
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

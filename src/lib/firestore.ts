@@ -19,6 +19,7 @@ import {
   onSnapshot,
   serverTimestamp,
   type DocumentData,
+  type DocumentSnapshot,
   type Unsubscribe,
   Timestamp,
   startAfter,
@@ -35,6 +36,123 @@ import type {
   ActivityItem,
 } from "@/types";
 
+const DEFAULT_LOCALE: VeloraProfile["locale"] = "fr";
+const DEFAULT_MODE: VeloraProfile["professionalMode"] = "entrepreneur";
+
+function asString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asBoolean(value: unknown): boolean {
+  return Boolean(value);
+}
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function normalizeLocale(value: unknown): VeloraProfile["locale"] {
+  return value === "en" || value === "ar" || value === "fr" ? value : DEFAULT_LOCALE;
+}
+
+function normalizeProfessionalMode(value: unknown): VeloraProfile["professionalMode"] {
+  return value === "corporate" ||
+    value === "creative" ||
+    value === "nightlife" ||
+    value === "luxury" ||
+    value === "entrepreneur"
+    ? value
+    : DEFAULT_MODE;
+}
+
+function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile>): VeloraProfile {
+  return {
+    id,
+    username: asString(data.username),
+    fullName: asString(data.fullName),
+    title: asString(data.title),
+    company: asString(data.company),
+    location: asString(data.location),
+    bio: asString(data.bio),
+    phone: asString(data.phone),
+    whatsapp: asString(data.whatsapp),
+    instagram: asString(data.instagram),
+    email: asString(data.email),
+    website: asString(data.website),
+    avatarUrl: asString(data.avatarUrl),
+    coverUrl: asString(data.coverUrl),
+    createdAt: asString(data.createdAt),
+    updatedAt: asString(data.updatedAt),
+    socialLinks: asArray(data.socialLinks),
+    professionalMode: normalizeProfessionalMode(data.professionalMode),
+    role: data.role as VeloraProfile["role"],
+    isVerified: asBoolean(data.isVerified),
+    isPremium: asBoolean(data.isPremium),
+    isNoir: asBoolean(data.isNoir),
+    locale: normalizeLocale(data.locale),
+  };
+}
+
+function dateValueToIso(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (value instanceof Timestamp) return value.toDate().toISOString();
+  if (typeof value === "object" && value !== null && "toDate" in value) {
+    const maybeDate = (value as { toDate?: () => Date }).toDate?.();
+    if (maybeDate instanceof Date && !Number.isNaN(maybeDate.getTime())) {
+      return maybeDate.toISOString();
+    }
+  }
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+  }
+  return new Date().toISOString();
+}
+
+function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
+  const rawProfile =
+    typeof data.connectedProfile === "object" && data.connectedProfile !== null
+      ? data.connectedProfile
+      : typeof data.profile === "object" && data.profile !== null
+        ? data.profile
+        : {};
+
+  return {
+    id,
+    profile: normalizeProfile(asString(data.connectedUserId, id), rawProfile as DocumentData),
+    method: (data.method || "link") as ConnectionMethod,
+    contextLabel: asString(data.contextLabel, asString(data.locationName)),
+    introducedBy: asString(data.introducedBy),
+    personalNote: asString(data.personalNote),
+    metAt: dateValueToIso(data.metAt || data.createdAt),
+    locationName: asString(data.locationName),
+    followUpSent: asBoolean(data.followUpSent),
+  };
+}
+
+function normalizePortfolioItem(id: string, data: DocumentData): PortfolioItem {
+  return {
+    id,
+    title: asString(data.title),
+    category: asString(data.category, "General"),
+    description: asString(data.description),
+    imageUrl: asString(data.imageUrl),
+    link: asString(data.link),
+  };
+}
+
+function normalizeExperienceEntry(id: string, data: DocumentData): ExperienceEntry {
+  return {
+    id,
+    role: asString(data.role),
+    company: asString(data.company),
+    description: asString(data.description),
+    startYear: typeof data.startYear === "number" ? data.startYear : new Date().getFullYear(),
+    endYear: typeof data.endYear === "number" ? data.endYear : undefined,
+    isCurrent: asBoolean(data.isCurrent),
+  };
+}
+
 /* ═══════════════════════════════════════════
    PROFILES
    ═══════════════════════════════════════════ */
@@ -43,7 +161,7 @@ import type {
 export async function getProfile(uid: string): Promise<VeloraProfile | null> {
   const snap = await getDoc(doc(db, "users", uid));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as VeloraProfile;
+  return normalizeProfile(snap.id, snap.data());
 }
 
 /** Get user profile by username */
@@ -52,7 +170,7 @@ export async function getProfileByUsername(username: string): Promise<VeloraProf
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
-  return { id: docSnap.id, ...docSnap.data() } as VeloraProfile;
+  return normalizeProfile(docSnap.id, docSnap.data());
 }
 
 /** Check if a username is already taken */
@@ -83,11 +201,15 @@ export async function generateUniqueUsername(fullName: string): Promise<string> 
 /** Real-time profile listener */
 export function onProfileChange(
   uid: string,
-  callback: (profile: VeloraProfile | null) => void
+  callback: (profile: VeloraProfile | null) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   return onSnapshot(doc(db, "users", uid), (snap) => {
     if (!snap.exists()) return callback(null);
-    callback({ id: snap.id, ...snap.data() } as VeloraProfile);
+    callback(normalizeProfile(snap.id, snap.data()));
+  }, (error) => {
+    console.error(`[Firestore Error] Profile listener failed for UID: ${uid}`, error);
+    onError?.(error);
   });
 }
 
@@ -117,8 +239,10 @@ export async function updateProfile(
 async function compressImage(file: File, maxWidth = 800): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       const canvas = document.createElement("canvas");
       let width = img.width;
       let height = img.height;
@@ -140,17 +264,25 @@ async function compressImage(file: File, maxWidth = 800): Promise<Blob> {
         0.85
       );
     };
-    img.onerror = () => reject(new Error("Image load error"));
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Image load error"));
+    };
   });
+}
+
+/** Upload avatar image without mutating the profile document */
+export async function uploadAvatarImage(uid: string, file: File): Promise<string> {
+  const compressedBlob = await compressImage(file, 600);
+  const storageRef = ref(storage, `avatars/${uid}/${Date.now()}.jpg`);
+  await uploadBytes(storageRef, compressedBlob);
+  return getDownloadURL(storageRef);
 }
 
 /** Upload avatar to Storage and update profile */
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
   try {
-    const compressedBlob = await compressImage(file, 600);
-    const storageRef = ref(storage, `avatars/${uid}/${Date.now()}.jpg`);
-    await uploadBytes(storageRef, compressedBlob);
-    const url = await getDownloadURL(storageRef);
+    const url = await uploadAvatarImage(uid, file);
     await updateProfile(uid, { avatarUrl: url });
     return url;
   } catch (error) {
@@ -174,16 +306,20 @@ export async function uploadPortfolioImage(uid: string, file: File): Promise<str
 export async function getPortfolio(uid: string): Promise<PortfolioItem[]> {
   const q = query(collection(db, "users", uid, "portfolio"), orderBy("order", "asc"));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as PortfolioItem);
+  return snap.docs.map((d) => normalizePortfolioItem(d.id, d.data()));
 }
 
 export function onPortfolioChange(
   uid: string,
-  callback: (items: PortfolioItem[]) => void
+  callback: (items: PortfolioItem[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(collection(db, "users", uid, "portfolio"), orderBy("order", "asc"));
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as PortfolioItem));
+    callback(snap.docs.map((d) => normalizePortfolioItem(d.id, d.data())));
+  }, (error) => {
+    console.error(`[Firestore Error] Portfolio listener failed for UID: ${uid}`, error);
+    onError?.(error);
   });
 }
 
@@ -206,16 +342,20 @@ export async function deletePortfolioItem(uid: string, itemId: string): Promise<
 export async function getExperience(uid: string): Promise<ExperienceEntry[]> {
   const q = query(collection(db, "users", uid, "experience"), orderBy("startYear", "desc"));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ExperienceEntry);
+  return snap.docs.map((d) => normalizeExperienceEntry(d.id, d.data()));
 }
 
 export function onExperienceChange(
   uid: string,
-  callback: (entries: ExperienceEntry[]) => void
+  callback: (entries: ExperienceEntry[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(collection(db, "users", uid, "experience"), orderBy("startYear", "desc"));
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ExperienceEntry));
+    callback(snap.docs.map((d) => normalizeExperienceEntry(d.id, d.data())));
+  }, (error) => {
+    console.error(`[Firestore Error] Experience listener failed for UID: ${uid}`, error);
+    onError?.(error);
   });
 }
 
@@ -225,7 +365,8 @@ export function onExperienceChange(
 
 export function onConnectionsChange(
   uid: string,
-  callback: (connections: VeloraConnection[]) => void
+  callback: (connections: VeloraConnection[]) => void,
+  onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(
     collection(db, "connections"),
@@ -234,7 +375,10 @@ export function onConnectionsChange(
     limit(50)
   );
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as VeloraConnection));
+    callback(snap.docs.map((d) => normalizeConnection(d.id, d.data())));
+  }, (error) => {
+    console.error(`[Firestore Error] Connections listener failed for UID: ${uid}`, error);
+    onError?.(error);
   });
 }
 
@@ -367,8 +511,8 @@ export async function getRecentActivity(uid: string, count = 10): Promise<Activi
 export async function getDiscoverUsers(
   currentUserId: string,
   pageSize = 10,
-  lastDocSnap?: any
-): Promise<{ users: VeloraProfile[]; lastDoc: any }> {
+  lastDocSnap?: DocumentSnapshot
+): Promise<{ users: VeloraProfile[]; lastDoc: DocumentSnapshot | null }> {
   let q = query(
     collection(db, "users"),
     orderBy("fullName"),
@@ -389,7 +533,7 @@ export async function getDiscoverUsers(
   
   snap.forEach((doc) => {
     if (doc.id !== currentUserId) {
-      users.push({ id: doc.id, ...doc.data() } as VeloraProfile);
+      users.push(normalizeProfile(doc.id, doc.data()));
     }
   });
 

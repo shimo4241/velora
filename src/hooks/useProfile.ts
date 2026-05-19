@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useProfileContext } from "@/components/providers/ProfileProvider";
 import {
-  onProfileChange,
   onPortfolioChange,
   onExperienceChange,
-  updateProfile as updateProfileFn,
-  uploadAvatar as uploadAvatarFn,
-  uploadPortfolioImage as uploadPortfolioImageFn,
 } from "@/lib/firestore";
-import type { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
+import type { PortfolioItem, ExperienceEntry } from "@/types";
 
 /* ═══════════════════════════════════════════════════
    VELORA — useProfile Hook
@@ -18,104 +15,89 @@ import type { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
    ═══════════════════════════════════════════════════ */
 
 export function useProfileNullable() {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<VeloraProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onProfileChange(user.uid, (p) => {
-      setProfile(p);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  const updateProfile = async (data: Partial<Omit<VeloraProfile, "id">>) => {
-    if (!user) return;
-    await updateProfileFn(user.uid, data);
-  };
-
-  const uploadAvatar = async (file: File): Promise<string> => {
-    if (!user) throw new Error("Not authenticated");
-    return uploadAvatarFn(user.uid, file);
-  };
-
-  const uploadPortfolioImage = async (file: File): Promise<string> => {
-    if (!user) throw new Error("Not authenticated");
-    return uploadPortfolioImageFn(user.uid, file);
-  };
-
-  return { profile, loading, updateProfile, uploadAvatar, uploadPortfolioImage };
+  return useProfileContext();
 }
 
-const defaultProfile: VeloraProfile = {
-  id: "",
-  fullName: "",
-  title: "",
-  bio: "",
-  location: "",
-  avatarUrl: "",
-  username: "",
-  whatsapp: "",
-  instagram: "",
-  socialLinks: [],
-  professionalMode: "entrepreneur",
-  isVerified: false,
-  isPremium: false,
-  isNoir: false,
-  locale: "fr"
-};
-
 /**
- * Hook to be used inside the main app phase where profile is guaranteed to exist.
+ * Shared profile context hook.
+ * The ProfileProvider owns the only profile document listener.
  */
 export function useProfile() {
-  const context = useProfileNullable();
-  const isProfileReady = !context.loading && context.profile !== null;
-  return { 
-    ...context, 
-    profile: context.profile || defaultProfile,
-    isProfileReady
-  };
+  return useProfileNullable();
 }
 
 export function usePortfolio() {
   const { user } = useAuth();
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid ?? null;
+  const [state, setState] = useState<{
+    uid: string | null;
+    portfolio: PortfolioItem[];
+  }>({ uid: null, portfolio: [] });
 
   useEffect(() => {
-    if (!user) { setPortfolio([]); setLoading(false); return; }
-    const unsub = onPortfolioChange(user.uid, (items) => {
-      setPortfolio(items);
-      setLoading(false);
+    let active = true;
+
+    if (!uid) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const unsubscribe = onPortfolioChange(uid, (items) => {
+      if (!active) return;
+      setState({ uid, portfolio: items });
+    }, () => {
+      if (!active) return;
+      setState({ uid, portfolio: [] });
     });
-    return unsub;
-  }, [user]);
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [uid]);
+
+  const isCurrent = state.uid === uid;
+  const portfolio = uid && isCurrent ? state.portfolio : [];
+  const loading = Boolean(uid && !isCurrent);
 
   return { portfolio, loading };
 }
 
 export function useExperience() {
   const { user } = useAuth();
-  const [experience, setExperience] = useState<ExperienceEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid ?? null;
+  const [state, setState] = useState<{
+    uid: string | null;
+    experience: ExperienceEntry[];
+  }>({ uid: null, experience: [] });
 
   useEffect(() => {
-    if (!user) { setExperience([]); setLoading(false); return; }
-    const unsub = onExperienceChange(user.uid, (entries) => {
-      setExperience(entries);
-      setLoading(false);
+    let active = true;
+
+    if (!uid) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const unsubscribe = onExperienceChange(uid, (entries) => {
+      if (!active) return;
+      setState({ uid, experience: entries });
+    }, () => {
+      if (!active) return;
+      setState({ uid, experience: [] });
     });
-    return unsub;
-  }, [user]);
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [uid]);
+
+  const isCurrent = state.uid === uid;
+  const experience = uid && isCurrent ? state.experience : [];
+  const loading = Boolean(uid && !isCurrent);
 
   return { experience, loading };
 }

@@ -2,7 +2,6 @@
    VELORA — Core Type Definitions
    ═══════════════════════════════════════════════════ */
 
-import type { Locale } from "@/lib/i18n";
 
 /* ── Professional Modes ── */
 export type ProfessionalMode =

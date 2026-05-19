@@ -16,12 +16,12 @@ import {
   ExternalLink,
   Bookmark,
 } from "lucide-react";
-import { GlassCard, GoldBadge, GoldButton } from "../ui";
+import { GoldBadge } from "../ui";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useTranslation } from "@/lib/i18n";
-import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
-import { useConnections } from "@/hooks/useConnections";
+import { useProfile } from "@/hooks/useProfile";
 import { useSharing } from "@/hooks/useSharing";
+import type { ExperienceEntry, PortfolioItem } from "@/types";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Components
@@ -39,6 +39,8 @@ interface ProfileHeroProps {
   isVerified?: boolean;
   isPremium?: boolean;
   mode?: string;
+  connectionsCount?: number;
+  portfolioCount?: number;
 }
 
 export function ProfileHero({
@@ -51,10 +53,10 @@ export function ProfileHero({
   isVerified = true,
   isPremium = true,
   mode = "Entrepreneur",
+  connectionsCount = 0,
+  portfolioCount = 0,
 }: ProfileHeroProps) {
   const { profile, isProfileReady } = useProfile();
-  const { count: connectionsCount } = useConnections();
-  const { portfolio } = usePortfolio();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
@@ -209,7 +211,7 @@ export function ProfileHero({
           <div className="flex items-center justify-center gap-8 mt-5">
             {[
               { value: String(connectionsCount), label: t("connections") },
-              { value: String(portfolio?.length || 0), label: t("portfolio") },
+              { value: String(portfolioCount), label: t("portfolio") },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <div className="text-data text-lg text-velora-text font-semibold">
@@ -240,9 +242,8 @@ const PORTFOLIO_GRADIENTS: Record<string, string> = {
   Events: "from-rose-900/30 to-pink-900/15",
 };
 
-export function PortfolioGallery() {
+export function PortfolioGallery({ portfolio = [] }: { portfolio?: PortfolioItem[] }) {
   const { profile, isProfileReady } = useProfile();
-  const { portfolio } = usePortfolio();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
@@ -294,9 +295,8 @@ export function PortfolioGallery() {
 }
 
 /* ── CV Timeline ── */
-export function CVTimeline() {
+export function CVTimeline({ experience = [] }: { experience?: ExperienceEntry[] }) {
   const { profile, isProfileReady } = useProfile();
-  const { experience } = useExperience();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;

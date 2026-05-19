@@ -9,7 +9,7 @@ import {
   Shield,
   Star,
 } from "lucide-react";
-import { GlassCard, GoldBadge } from "../ui";
+import { GlassCard } from "../ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
@@ -240,21 +240,42 @@ export function ProfessionalCard({
 /* ── Nearby Professionals List ── */
 export function NearbyList({ onCountChange }: { onCountChange?: (count: number) => void }) {
   const { profile, isProfileReady } = useProfile();
-  const [professionals, setProfessionals] = useState<VeloraProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const currentUserId = isProfileReady ? profile?.id || null : null;
+  const [state, setState] = useState<{
+    userId: string | null;
+    professionals: VeloraProfile[];
+  }>({ userId: null, professionals: [] });
 
   useEffect(() => {
-    if (!isProfileReady || !profile?.id) return;
+    let active = true;
+
+    if (!currentUserId) {
+      return () => {
+        active = false;
+      };
+    }
     
-    getDiscoverUsers(profile.id, 10).then(({ users }) => {
-      setProfessionals(users);
-      onCountChange?.(users.length);
-      setLoading(false);
-    }).catch(err => {
-      console.error("Error fetching discover users:", err);
-      setLoading(false);
-    });
-  }, [profile?.id, isProfileReady, onCountChange]);
+    getDiscoverUsers(currentUserId, 10)
+      .then(({ users }) => {
+        if (!active) return;
+        setState({ userId: currentUserId, professionals: users });
+        onCountChange?.(users.length);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("Error fetching discover users:", err);
+        setState({ userId: currentUserId, professionals: [] });
+        onCountChange?.(0);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentUserId, onCountChange]);
+
+  const isCurrent = state.userId === currentUserId;
+  const professionals = currentUserId && isCurrent ? state.professionals : [];
+  const loading = Boolean(currentUserId && !isCurrent);
 
   if (loading) {
     return (

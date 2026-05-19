@@ -29,7 +29,7 @@ const config: CapacitorConfig = {
       overlaysWebView: true,
     },
     Keyboard: {
-      resize: "body" as "body",
+      resize: "body" as const,
       resizeOnFullScreen: true,
     },
     Haptics: {},

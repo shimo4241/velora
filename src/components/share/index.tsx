@@ -21,6 +21,15 @@ import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharing, getProfileUrl, getProfileShortUrl } from "@/hooks/useSharing";
 
+type NDEFWriter = {
+  write: (message: { records: Array<{ recordType: "url"; data: string }> }) => Promise<void>;
+};
+
+type WebNFCWindow = Window &
+  typeof globalThis & {
+    NDEFReader?: new () => NDEFWriter;
+  };
+
 /* ═══════════════════════════════════════════════════
    VELORA — Share Components
    WhatsApp-first · QR · NFC · Link sharing
@@ -128,10 +137,10 @@ export function NFCPrompt() {
 
   const handleNFCTap = async () => {
     try {
-      if ("NDEFReader" in window) {
+      const nfcWindow = window as WebNFCWindow;
+      if (nfcWindow.NDEFReader) {
         setNfcStatus("writing");
-        // @ts-ignore
-        const ndef = new window.NDEFReader();
+        const ndef = new nfcWindow.NDEFReader();
         await ndef.write({
           records: [{ recordType: "url", data: getProfileUrl(profile.username) }]
         });
@@ -142,9 +151,9 @@ export function NFCPrompt() {
         setNfcError("NFC sharing is unsupported on this device or browser.");
         setTimeout(() => setNfcStatus("idle"), 3000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setNfcStatus("error");
-      setNfcError(error.message || "Failed to write to NFC tag.");
+      setNfcError(error instanceof Error ? error.message : "Failed to write to NFC tag.");
       setTimeout(() => setNfcStatus("idle"), 3000);
     }
   };

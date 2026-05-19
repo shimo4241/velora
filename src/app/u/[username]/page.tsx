@@ -13,9 +13,10 @@ export const revalidate = 60;
 export async function generateMetadata({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const profile = await getProfileByUsername(params.username);
+  const { username } = await params;
+  const profile = await getProfileByUsername(username);
   
   if (!profile) {
     return {
@@ -50,9 +51,10 @@ export async function generateMetadata({
 export default async function PublicProfilePage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
-  const profile = await getProfileByUsername(params.username);
+  const { username } = await params;
+  const profile = await getProfileByUsername(username);
   
   if (!profile) {
     notFound();

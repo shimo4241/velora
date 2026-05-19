@@ -22,7 +22,6 @@ export function NetworkScreen() {
   const [tab, setTab] = useState<DiscoverTab>("nearby");
   const [nearbyCount, setNearbyCount] = useState(0);
   const { profile, isProfileReady } = useProfile();
-  const { connections, count } = useConnections();
   const { t } = useTranslation(profile?.locale || "fr");
 
   const handleNearbyCount = useCallback((n: number) => setNearbyCount(n), []);
@@ -93,39 +92,52 @@ export function NetworkScreen() {
           <NearbyList onCountChange={handleNearbyCount} />
         </>
       ) : (
-        <>
-          {/* Scan Memory */}
-          <div className="px-5 pt-4 pb-2">
-            <FadeUp delay={0.2}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-heading text-base text-velora-text">
-                  {t("your_connections")}
-                </h2>
-                <span className="text-caption text-velora-gold">
-                  {count}
-                </span>
-              </div>
-            </FadeUp>
-          </div>
-
-          <div className="px-5 py-2">
-            {connections?.length > 0 ? (
-              <StaggerChildren staggerDelay={0.1} delay={0.3} className="space-y-3">
-                {connections.map((connection) => (
-                  <StaggerItem key={connection.id}>
-                    <ConnectionCard connection={connection} />
-                  </StaggerItem>
-                ))}
-              </StaggerChildren>
-            ) : (
-              <EmptyState
-                title="Aucune connexion"
-                description="Scannez un QR code ou partagez votre profil pour commencer."
-              />
-            )}
-          </div>
-        </>
+        <ScanMemoryList />
       )}
     </div>
+  );
+}
+
+function ScanMemoryList() {
+  const { profile } = useProfile();
+  const { connections, count, loading } = useConnections();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  return (
+    <>
+      <div className="px-5 pt-4 pb-2">
+        <FadeUp delay={0.2}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-heading text-base text-velora-text">
+              {t("your_connections")}
+            </h2>
+            <span className="text-caption text-velora-gold">
+              {count}
+            </span>
+          </div>
+        </FadeUp>
+      </div>
+
+      <div className="px-5 py-2">
+        {loading ? (
+          <div className="py-8 text-center text-sm text-velora-text-muted">
+            Chargement...
+          </div>
+        ) : connections.length > 0 ? (
+          <StaggerChildren staggerDelay={0.1} delay={0.3} className="space-y-3">
+            {connections.map((connection) => (
+              <StaggerItem key={connection.id}>
+                <ConnectionCard connection={connection} />
+              </StaggerItem>
+            ))}
+          </StaggerChildren>
+        ) : (
+          <EmptyState
+            title="Aucune connexion"
+            description="Scannez un QR code ou partagez votre profil pour commencer."
+          />
+        )}
+      </div>
+    </>
   );
 }

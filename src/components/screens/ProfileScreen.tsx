@@ -12,7 +12,8 @@ import {
   SocialLinks,
   ContactActions,
 } from "@/components/profile";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
+import { useConnections } from "@/hooks/useConnections";
 import { Sparkles, LogOut } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -24,6 +25,9 @@ import { signOut } from "firebase/auth";
 
 export function ProfileScreen() {
   const { profile, isProfileReady } = useProfile();
+  const { portfolio } = usePortfolio();
+  const { experience } = useExperience();
+  const { count: connectionsCount } = useConnections();
   
   if (!isProfileReady || !profile) return null;
 
@@ -39,16 +43,18 @@ export function ProfileScreen() {
         isVerified={Boolean(profile?.isVerified)}
         isPremium={Boolean(profile?.isPremium)}
         mode={profile?.professionalMode === "entrepreneur" ? "Entrepreneur" : profile?.professionalMode || ""}
+        connectionsCount={connectionsCount}
+        portfolioCount={portfolio.length}
       />
 
       <Divider className="mx-5" />
       <ContactActions />
 
       <Divider className="mx-5" />
-      <PortfolioGallery />
+      <PortfolioGallery portfolio={portfolio} />
 
       <Divider className="mx-5" />
-      <CVTimeline />
+      <CVTimeline experience={experience} />
 
       <Divider className="mx-5" />
       <SocialLinks />

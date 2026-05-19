@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SplashScreen, OnboardingScreen } from "@/components/onboarding";
@@ -11,8 +11,8 @@ import { NetworkScreen } from "@/components/screens/NetworkScreen";
 import { AnalyticsScreen } from "@/components/screens/AnalyticsScreen";
 import { WelcomeScreen } from "@/components/screens/WelcomeScreen";
 import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
-import { AuthProvider, useAuth } from "@/components/providers/AuthProvider";
-import { useProfileNullable, useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useProfileNullable } from "@/hooks/useProfile";
 import { LoadingScreen } from "@/components/ui/States";
 import type { AppTab } from "@/types";
 
@@ -33,36 +33,30 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
 
 function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, isProfileReady } = useProfile();
+  const { profile, isLoading: profileLoading, isProfileReady } = useProfileNullable();
   
-  const [phase, setPhase] = useState<"splash" | "welcome" | "setup" | "onboarding" | "app">("splash");
   const [splashFinished, setSplashFinished] = useState(false);
+  const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
+  const screens = useMemo(() => getScreens(setActiveTab), []);
+  const hasStoredOnboarding =
+    typeof window !== "undefined" && localStorage.getItem("velora_onboarded") === "true";
+  const hasCompletedOnboarding = onboardingAcknowledged || hasStoredOnboarding;
 
-  // Main Orchestration Effect
-  useEffect(() => {
-    if (!splashFinished) return;
-    if (authLoading) return;
-
-    if (!user) {
-      setPhase("welcome");
-      return;
-    }
-
-    if (profileLoading) return;
-
-    if (!profile) {
-      setPhase("setup");
-      return;
-    }
-
-    const onboarded = typeof window !== "undefined" && localStorage.getItem("velora_onboarded");
-    if (!onboarded) {
-      setPhase("onboarding");
+  let phase: "splash" | "loading" | "welcome" | "setup" | "onboarding" | "app" = "splash";
+  if (splashFinished) {
+    if (authLoading || (user && profileLoading)) {
+      phase = "loading";
+    } else if (!user) {
+      phase = "welcome";
+    } else if (!isProfileReady || !profile) {
+      phase = "setup";
+    } else if (!hasCompletedOnboarding) {
+      phase = "onboarding";
     } else {
-      setPhase("app");
+      phase = "app";
     }
-  }, [splashFinished, user, authLoading, profile, profileLoading]);
+  }
 
   const handleSplashComplete = () => {
     setSplashFinished(true);
@@ -72,13 +66,10 @@ function VeloraAppInner() {
     if (typeof window !== "undefined") {
       localStorage.setItem("velora_onboarded", "true");
     }
-    setPhase("app");
+    setOnboardingAcknowledged(true);
   };
 
-  // Show a generic loading screen if splash is done but data is still fetching
-  const isDataLoading = splashFinished && (authLoading || (user && profileLoading));
-
-  if (isDataLoading && phase !== "welcome" && phase !== "setup" && phase !== "app") {
+  if (phase === "loading") {
     return <LoadingScreen />;
   }
 
@@ -97,14 +88,14 @@ function VeloraAppInner() {
       {/* Welcome (Anonymous Auth) */}
       <AnimatePresence>
         {phase === "welcome" && (
-          <WelcomeScreen onSuccess={() => setPhase("setup")} />
+          <WelcomeScreen onSuccess={() => undefined} />
         )}
       </AnimatePresence>
 
       {/* Setup */}
       <AnimatePresence>
         {phase === "setup" && (
-          <ProfileSetupScreen onComplete={() => setPhase("onboarding")} />
+          <ProfileSetupScreen onComplete={() => undefined} />
         )}
       </AnimatePresence>
 
@@ -126,7 +117,7 @@ function VeloraAppInner() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
-              {getScreens(setActiveTab)[activeTab]()}
+              {screens[activeTab]()}
             </motion.div>
           </AnimatePresence>
 
@@ -138,9 +129,5 @@ function VeloraAppInner() {
 }
 
 export default function VeloraApp() {
-  return (
-    <AuthProvider>
-      <VeloraAppInner />
-    </AuthProvider>
-  );
+  return <VeloraAppInner />;
 }

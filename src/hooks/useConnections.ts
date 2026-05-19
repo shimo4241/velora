@@ -12,17 +12,39 @@ import type { VeloraConnection } from "@/types";
 
 export function useConnections() {
   const { user } = useAuth();
-  const [connections, setConnections] = useState<VeloraConnection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid ?? null;
+  const [state, setState] = useState<{
+    uid: string | null;
+    connections: VeloraConnection[];
+    loading: boolean;
+  }>({ uid: null, connections: [], loading: false });
 
   useEffect(() => {
-    if (!user) { setConnections([]); setLoading(false); return; }
-    const unsub = onConnectionsChange(user.uid, (conns) => {
-      setConnections(conns);
-      setLoading(false);
+    let active = true;
+
+    if (!uid) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const unsubscribe = onConnectionsChange(uid, (conns) => {
+      if (!active) return;
+      setState({ uid, connections: conns, loading: false });
+    }, () => {
+      if (!active) return;
+      setState({ uid, connections: [], loading: false });
     });
-    return unsub;
-  }, [user]);
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [uid]);
+
+  const isCurrent = state.uid === uid;
+  const connections = uid && isCurrent ? state.connections : [];
+  const loading = Boolean(uid && (!isCurrent || state.loading));
 
   return { connections, loading, count: connections.length };
 }

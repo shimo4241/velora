@@ -11,12 +11,9 @@ import {
   Camera,
   MessageCircle,
   Mail,
-  Phone,
-  CalendarDays,
   ExternalLink,
-  Bookmark,
 } from "lucide-react";
-import { GlassCard, GoldBadge, GoldButton, Divider } from "@/components/ui";
+import { GoldBadge, Divider } from "@/components/ui";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { useTranslation } from "@/lib/i18n";
 import type { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";

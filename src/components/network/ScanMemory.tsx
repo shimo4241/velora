@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Clock,
 } from "lucide-react";
-import { GlassCard, GoldBadge } from "../ui";
+import { GlassCard } from "../ui";
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import type { VeloraConnection } from "@/types";
@@ -60,6 +60,7 @@ const METHOD_CONFIG = {
 
 function formatRelativeDate(dateStr: string): string {
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "Recently";
   const now = new Date();
   const diffDays = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
@@ -82,10 +83,12 @@ export function ConnectionCard({
   const { t } = useTranslation(profile?.locale || "fr");
   const method = METHOD_CONFIG[connection.method] || METHOD_CONFIG.nfc;
   const MethodIcon = method.icon;
-  const initials = connection.profile.fullName
+  const connectionProfile = connection.profile;
+  const initials = (connectionProfile?.fullName || "V")
     .split(" ")
     .map((n) => n[0])
-    .join("");
+    .join("")
+    .slice(0, 2);
 
   return (
     <motion.div whileTap={{ scale: 0.98 }}>
@@ -99,7 +102,7 @@ export function ConnectionCard({
                 {initials}
               </span>
             </div>
-            {connection.profile.isVerified && (
+            {Boolean(connectionProfile?.isVerified) && (
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-velora-black flex items-center justify-center border border-velora-gold/30">
                 <Shield
                   size={8}
@@ -114,9 +117,9 @@ export function ConnectionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <h3 className="text-sm font-semibold text-velora-text truncate font-[family-name:var(--font-display)]">
-                {connection.profile.fullName}
+                {connectionProfile?.fullName || "Unknown User"}
               </h3>
-              {connection.profile.isPremium && (
+              {Boolean(connectionProfile?.isPremium) && (
                 <Star
                   size={10}
                   className="text-velora-gold flex-shrink-0"
@@ -125,7 +128,7 @@ export function ConnectionCard({
               )}
             </div>
             <div className="text-xs text-velora-text-secondary mt-0.5 truncate">
-              {connection.profile.title} · {connection.profile.company}
+              {connectionProfile?.title || "Professional"} · {connectionProfile?.company || "Independent"}
             </div>
           </div>
 

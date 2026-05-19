@@ -10,6 +10,7 @@ import {
 } from "@/components/analytics";
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
+import { useStats } from "@/hooks/useStats";
 import { Crown } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -19,6 +20,7 @@ import { Crown } from "lucide-react";
 
 export function AnalyticsScreen() {
   const { profile, isProfileReady } = useProfile();
+  const { stats, loading: statsLoading } = useStats();
   const { t } = useTranslation(profile?.locale || "fr");
   const [activePeriod, setActivePeriod] = useState(0);
 
@@ -70,9 +72,9 @@ export function AnalyticsScreen() {
         </FadeUp>
       </div>
 
-      <StatsGrid />
-      <ViewsChart />
-      <EngagementBreakdown />
+      <StatsGrid stats={stats} loading={statsLoading} />
+      <ViewsChart stats={stats} loading={statsLoading} />
+      <EngagementBreakdown stats={stats} loading={statsLoading} />
 
       {/* Premium CTA — disabled until premium system exists */}
       <div className="section py-6">

@@ -3,13 +3,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, ArrowRight, Sparkles } from "lucide-react";
-import { auth } from "@/lib/firebase";
 import { signInAnonymously } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { FadeUp, ScaleIn } from "@/components/motion/animations";
-
-/* ═══════════════════════════════════════════════════
-   VELORA — Welcome Screen (Frictionless Onboarding)
-   ═══════════════════════════════════════════════════ */
 
 interface WelcomeScreenProps {
   onSuccess: () => void;
@@ -24,12 +20,11 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
     setError("");
 
     try {
-      // Instantly generate a secure, anonymous session
       await signInAnonymously(auth);
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auth error:", err);
-      setError("Impossible d'initialiser l'identité. Veuillez réessayer.");
+      setError("Impossible d'initialiser l'identite. Veuillez reessayer.");
       setLoading(false);
     }
   };
@@ -42,23 +37,15 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="fixed inset-0 z-50 flex flex-col justify-between bg-velora-black overflow-hidden"
     >
-      {/* Cinematic Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-velora-gold/10 via-velora-black to-velora-black" />
-        {/* Soft geometric light wash */}
         <motion.div
-          animate={{
-            rotate: [0, 5, -5, 0],
-            scale: [1, 1.05, 1],
-          }}
+          animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className="absolute -top-[30%] -right-[30%] w-[80%] h-[80%] rounded-full bg-velora-gold/5 blur-[120px]"
         />
         <motion.div
-          animate={{
-            rotate: [0, -5, 5, 0],
-            scale: [1, 1.1, 1],
-          }}
+          animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
           className="absolute -bottom-[20%] -left-[20%] w-[70%] h-[70%] rounded-full bg-velora-gold/5 blur-[100px]"
         />
@@ -74,13 +61,13 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
         <FadeUp delay={0.4}>
           <div className="text-center mb-2">
             <h1 className="text-display text-4xl text-velora-text tracking-tight mb-4">
-              Votre identité <br />
+              Votre identite <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-velora-gold via-velora-gold-light to-velora-gold">
                 professionnelle
               </span>
             </h1>
             <p className="text-velora-text-muted/80 text-sm max-w-[260px] mx-auto leading-relaxed">
-              Le réseau exclusif des créateurs et entrepreneurs au Maroc.
+              Le reseau exclusif des createurs et entrepreneurs au Maroc.
             </p>
           </div>
         </FadeUp>
@@ -100,15 +87,13 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
               disabled={loading}
               className="relative w-full h-12 flex items-center justify-center gap-2 bg-velora-gold text-velora-black rounded-xl font-medium tracking-wide shadow-[0_0_20px_rgba(196,162,101,0.3)] hover:shadow-[0_0_30px_rgba(196,162,101,0.5)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
             >
-              {/* Shine effect */}
               <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              
               {loading ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (
                 <>
                   <Sparkles size={16} className="text-velora-black" />
-                  <span>Créer mon identité</span>
+                  <span>Creer mon identite</span>
                   <ArrowRight size={16} className="text-velora-black/80" />
                 </>
               )}
@@ -116,7 +101,7 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
 
             <div className="mt-4 text-center">
               <p className="text-[10px] text-velora-text-muted/50 leading-relaxed px-4">
-                En continuant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+                En continuant, vous acceptez nos conditions d&apos;utilisation et notre politique de confidentialite.
               </p>
             </div>
           </div>

@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { updateProfile, uploadAvatar, generateUniqueUsername, checkUsernameExists } from "@/lib/firestore";
+import { uploadAvatarImage, generateUniqueUsername, checkUsernameExists } from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useProfile } from "@/hooks/useProfile";
 import type { VeloraProfile, VeloraRole } from "@/types";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -17,6 +18,7 @@ import "react-phone-number-input/style.css";
 
 export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
+  const { updateProfile, refreshProfile } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -75,10 +77,8 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     try {
       let finalAvatarUrl = "";
       if (avatarFile) {
-
         setUploading(true);
-        finalAvatarUrl = await uploadAvatar(user.uid, avatarFile);
-
+        finalAvatarUrl = await uploadAvatarImage(user.uid, avatarFile);
         setUploading(false);
       }
 
@@ -103,7 +103,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         }
       }
 
-      await updateProfile(user.uid, {
+      await updateProfile({
         fullName: form.fullName,
         username: finalUsername,
         title: form.title,
@@ -122,11 +122,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         updatedAt: new Date().toISOString(),
       });
 
+      await refreshProfile();
 
       onComplete();
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
       setSaving(false);
+      setUploading(false);
     }
   };
 
