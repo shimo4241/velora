@@ -1,17 +1,6 @@
 /* ═══════════════════════════════════════════════════
-   VELORA — Constants & Mock Data
-   Phase 1: All data is local. Supabase in Phase 2.
+   VELORA — Constants & Configuration
    ═══════════════════════════════════════════════════ */
-
-import type {
-  VeloraProfile,
-  PortfolioItem,
-  ExperienceEntry,
-  VeloraConnection,
-  ActivityItem,
-  DailyStats,
-  SocialLink,
-} from "@/types";
 
 /* ── Motion Constants ── */
 export const MOTION = {
@@ -26,8 +15,6 @@ export const MOTION = {
   stagger: 0.06,
 } as const;
 
-
-
 /* ── Professional Modes ── */
 export const PROFESSIONAL_MODES = [
   { id: "entrepreneur" as const, labelKey: "Entrepreneur" },
@@ -41,7 +28,6 @@ export const PROFESSIONAL_MODES = [
 export const APP_CONFIG = {
   name: "VELORA",
   tagline: "Your identity, elevated",
-  profileUrl: "velora.app/u/youssef",
-  fullProfileUrl: "https://velora.app/u/youssef",
+  baseUrl: "https://velora.app",
   splashDuration: 2800,
 } as const;

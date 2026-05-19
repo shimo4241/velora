@@ -17,7 +17,7 @@ import { getDiscoverUsers } from "@/lib/firestore";
 import type { VeloraProfile } from "@/types";
 
 /* ── Radar Discovery Animation ── */
-export function RadarDiscovery() {
+export function RadarDiscovery({ count = 0 }: { count?: number }) {
   return (
     <FadeUp delay={0.2}>
       <div className="flex flex-col items-center py-8">
@@ -90,34 +90,38 @@ export function RadarDiscovery() {
           </div>
 
           {/* Discovered professionals */}
-          {[
-            { x: 25, y: 20, delay: 1.5 },
-            { x: 75, y: 30, delay: 2.2 },
-            { x: 60, y: 70, delay: 3.0 },
-            { x: 20, y: 65, delay: 1.8 },
-            { x: 80, y: 55, delay: 2.8 },
-          ].map((dot, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2.5 h-2.5 rounded-full bg-velora-gold/60"
-              style={{
-                left: `${dot.x}%`,
-                top: `${dot.y}%`,
-                boxShadow: "0 0 8px rgba(201,168,76,0.3)",
-              }}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: [0, 0.8, 0.4],
-                scale: [0, 1.2, 1],
-              }}
-              transition={{
-                duration: 1,
-                delay: dot.delay,
-                repeat: Infinity,
-                repeatDelay: 3,
-              }}
-            />
-          ))}
+          {count > 0 && [...Array(Math.min(count, 5))].map((_, i) => {
+            const positions = [
+              { x: 25, y: 20, delay: 1.5 },
+              { x: 75, y: 30, delay: 2.2 },
+              { x: 60, y: 70, delay: 3.0 },
+              { x: 20, y: 65, delay: 1.8 },
+              { x: 80, y: 55, delay: 2.8 },
+            ];
+            const dot = positions[i];
+            return (
+              <motion.div
+                key={i}
+                className="absolute w-2.5 h-2.5 rounded-full bg-velora-gold/60"
+                style={{
+                  left: `${dot.x}%`,
+                  top: `${dot.y}%`,
+                  boxShadow: "0 0 8px rgba(201,168,76,0.3)",
+                }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{
+                  opacity: [0, 0.8, 0.4],
+                  scale: [0, 1.2, 1],
+                }}
+                transition={{
+                  duration: 1,
+                  delay: dot.delay,
+                  repeat: Infinity,
+                  repeatDelay: 3,
+                }}
+              />
+            );
+          })}
         </div>
 
         <motion.div
@@ -127,10 +131,10 @@ export function RadarDiscovery() {
           transition={{ delay: 0.5, duration: 0.6 }}
         >
           <div className="text-heading text-base text-velora-text">
-            Scanning nearby...
+            {count > 0 ? "Professionnels découverts" : "Recherche en cours..."}
           </div>
           <div className="text-xs text-velora-text-muted mt-1">
-            5 professionals discovered within 50m
+            {count > 0 ? `${count} professionnel${count > 1 ? "s" : ""} trouvé${count > 1 ? "s" : ""}` : "Explorez les profils sur VELORA"}
           </div>
         </motion.div>
       </div>
@@ -234,7 +238,7 @@ export function ProfessionalCard({
 }
 
 /* ── Nearby Professionals List ── */
-export function NearbyList() {
+export function NearbyList({ onCountChange }: { onCountChange?: (count: number) => void }) {
   const { profile, isProfileReady } = useProfile();
   const [professionals, setProfessionals] = useState<VeloraProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,12 +248,13 @@ export function NearbyList() {
     
     getDiscoverUsers(profile.id, 10).then(({ users }) => {
       setProfessionals(users);
+      onCountChange?.(users.length);
       setLoading(false);
     }).catch(err => {
       console.error("Error fetching discover users:", err);
       setLoading(false);
     });
-  }, [profile?.id, isProfileReady]);
+  }, [profile?.id, isProfileReady, onCountChange]);
 
   if (loading) {
     return (

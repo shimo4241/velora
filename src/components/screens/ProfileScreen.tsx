@@ -2,7 +2,6 @@
 
 import {
   GlassCard,
-  GoldButton,
   Divider,
 } from "@/components/ui";
 import { FadeUp } from "@/components/motion/animations";
@@ -54,10 +53,10 @@ export function ProfileScreen() {
       <Divider className="mx-5" />
       <SocialLinks />
 
-      {/* AI Enhancement CTA */}
+      {/* AI Enhancement — Coming Soon */}
       <div className="section py-5">
         <FadeUp delay={1.7}>
-          <GlassCard className="p-5 text-center" gold>
+          <GlassCard className="p-5 text-center opacity-60" gold>
             <Sparkles size={18} className="text-velora-gold mx-auto mb-2.5" />
             <h3 className="text-heading text-sm text-velora-text mb-1">
               Amélioration IA
@@ -65,10 +64,12 @@ export function ProfileScreen() {
             <p className="text-[11px] text-velora-text-muted mb-3.5 max-w-[220px] mx-auto leading-relaxed">
               Optimisez votre bio, descriptions de portfolio et branding professionnel
             </p>
-            <GoldButton size="sm">
-              <Sparkles size={11} />
-              Améliorer avec l&apos;IA
-            </GoldButton>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-velora-gold-dim border border-velora-gold/15">
+              <Sparkles size={9} className="text-velora-gold" />
+              <span className="text-[9px] text-velora-gold font-medium tracking-wider uppercase">
+                Bientôt disponible
+              </span>
+            </div>
           </GlassCard>
         </FadeUp>
       </div>

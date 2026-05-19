@@ -1,6 +1,7 @@
 "use client";
 
-import { GlassCard, GoldButton, GoldBadge } from "@/components/ui";
+import { useState } from "react";
+import { GlassCard, GoldBadge } from "@/components/ui";
 import { FadeUp } from "@/components/motion/animations";
 import {
   StatsGrid,
@@ -19,6 +20,7 @@ import { Crown } from "lucide-react";
 export function AnalyticsScreen() {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
+  const [activePeriod, setActivePeriod] = useState(0);
 
   if (!isProfileReady || !profile) return null;
 
@@ -44,20 +46,24 @@ export function AnalyticsScreen() {
         </FadeUp>
       </div>
 
-      {/* Period toggle */}
+      {/* Period toggle — visual only, 7 Days active */}
       <div className="section">
         <FadeUp delay={0.1}>
           <div className="flex gap-1 p-1 rounded-[var(--radius-sm)] glass">
             {["7 Days", "30 Days", "90 Days"].map((period, i) => (
               <button
                 key={i}
+                onClick={() => setActivePeriod(i)}
                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                  i === 0
+                  activePeriod === i
                     ? "bg-velora-gold-dim text-velora-gold"
                     : "text-velora-text-muted"
                 }`}
               >
                 {period}
+                {i > 0 && (
+                  <span className="ml-1 text-[8px] opacity-50">soon</span>
+                )}
               </button>
             ))}
           </div>
@@ -68,21 +74,22 @@ export function AnalyticsScreen() {
       <ViewsChart />
       <EngagementBreakdown />
 
-      {/* Premium CTA */}
+      {/* Premium CTA — disabled until premium system exists */}
       <div className="section py-6">
         <FadeUp delay={1.2}>
-          <GlassCard className="p-5 text-center" gold>
+          <GlassCard className="p-5 text-center opacity-60" gold>
             <Crown size={20} className="text-velora-gold mx-auto mb-3" />
             <h3 className="text-heading text-sm text-velora-text mb-1.5">
-              Unlock Advanced Analytics
+              Advanced Analytics
             </h3>
             <p className="text-xs text-velora-text-muted mb-4 max-w-[240px] mx-auto">
-              Get detailed insights, visitor demographics, and networking intelligence
+              Detailed insights, visitor demographics, and networking intelligence
             </p>
-            <GoldButton size="sm">
-              <Crown size={12} />
-              Upgrade to Premium
-            </GoldButton>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-velora-gold-dim border border-velora-gold/15">
+              <span className="text-[9px] text-velora-gold font-medium tracking-wider uppercase">
+                Coming Soon
+              </span>
+            </div>
           </GlassCard>
         </FadeUp>
       </div>

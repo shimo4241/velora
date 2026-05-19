@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Divider } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { RadarDiscovery, NearbyList } from "@/components/network";
@@ -20,9 +20,12 @@ type DiscoverTab = "nearby" | "memory";
 
 export function NetworkScreen() {
   const [tab, setTab] = useState<DiscoverTab>("nearby");
+  const [nearbyCount, setNearbyCount] = useState(0);
   const { profile, isProfileReady } = useProfile();
   const { connections, count } = useConnections();
   const { t } = useTranslation(profile?.locale || "fr");
+
+  const handleNearbyCount = useCallback((n: number) => setNearbyCount(n), []);
 
   if (!isProfileReady || !profile) return null;
 
@@ -73,7 +76,7 @@ export function NetworkScreen() {
       {/* Content */}
       {tab === "nearby" ? (
         <>
-          <RadarDiscovery />
+          <RadarDiscovery count={nearbyCount} />
           <Divider className="mx-5" />
           <div className="px-5 pt-5 pb-2">
             <FadeUp delay={0.6}>
@@ -81,11 +84,13 @@ export function NetworkScreen() {
                 <h2 className="text-heading text-base text-velora-text">
                   Nearby Professionals
                 </h2>
-                <span className="text-caption text-velora-gold">5 found</span>
+                <span className="text-caption text-velora-gold">
+                  {nearbyCount > 0 ? `${nearbyCount} found` : "Searching..."}
+                </span>
               </div>
             </FadeUp>
           </div>
-          <NearbyList />
+          <NearbyList onCountChange={handleNearbyCount} />
         </>
       ) : (
         <>

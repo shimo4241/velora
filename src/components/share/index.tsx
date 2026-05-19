@@ -52,7 +52,7 @@ export function QRGenerator({
           </div>
 
           <ScaleIn delay={0.35}>
-            <div className="bg-white rounded-2xl p-4">
+            <div className="bg-white rounded-2xl p-4" id="velora-qr-container">
               <QRCodeSVG
                 value={url}
                 size={180}
@@ -79,10 +79,33 @@ export function QRGenerator({
           </div>
         </motion.div>
 
-        {/* Download QR button */}
+        {/* Download QR button — real canvas export */}
         <FadeUp delay={0.7}>
           <motion.button
             whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              const container = document.getElementById("velora-qr-container");
+              if (!container) return;
+              const svg = container.querySelector("svg");
+              if (!svg) return;
+              const svgData = new XMLSerializer().serializeToString(svg);
+              const canvas = document.createElement("canvas");
+              canvas.width = 360;
+              canvas.height = 360;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) return;
+              ctx.fillStyle = "#FFFFFF";
+              ctx.fillRect(0, 0, 360, 360);
+              const img = new Image();
+              img.onload = () => {
+                ctx.drawImage(img, 0, 0, 360, 360);
+                const link = document.createElement("a");
+                link.download = `velora-qr-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+              };
+              img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+            }}
             className="flex items-center gap-2 mt-4 px-4 py-2 rounded-full glass text-xs text-velora-text-secondary font-medium"
           >
             <Download size={12} />
@@ -187,7 +210,7 @@ export function NFCPrompt() {
 export function ShareActions() {
   const [copied, setCopied] = useState(false);
   const { profile, isProfileReady } = useProfile();
-  const { shareViaWhatsApp, copyProfileLink } = useSharing();
+  const { shareViaWhatsApp, copyProfileLink, trackShare } = useSharing();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
@@ -200,6 +223,31 @@ export function ShareActions() {
     copyProfileLink(profile?.username || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleWebShare = async () => {
+    const url = getProfileUrl(profile.username);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${profile.fullName} — VELORA`,
+          text: `${profile.fullName} · ${profile.title}`,
+          url,
+        });
+        await trackShare("link");
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      // Fallback to copy
+      handleCopy();
+    }
+  };
+
+  const handleSMS = () => {
+    const url = getProfileUrl(profile.username);
+    const body = encodeURIComponent(`Découvrez mon profil VELORA: ${url}`);
+    window.open(`sms:?body=${body}`, "_self");
   };
 
   return (
@@ -229,10 +277,11 @@ export function ShareActions() {
         {[
           {
             icon: Share2,
-            label: "AirDrop",
+            label: "Share",
             color: "text-velora-blue",
             bg: "bg-velora-blue/10",
             border: "border-velora-blue/12",
+            onClick: handleWebShare,
           },
           {
             icon: Smartphone,
@@ -240,6 +289,7 @@ export function ShareActions() {
             color: "text-cyan-400",
             bg: "bg-cyan-500/8",
             border: "border-cyan-500/12",
+            onClick: handleSMS,
           },
           {
             icon: copied ? Check : Copy,

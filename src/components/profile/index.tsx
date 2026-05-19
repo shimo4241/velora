@@ -20,6 +20,8 @@ import { GlassCard, GoldBadge, GoldButton } from "../ui";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useTranslation } from "@/lib/i18n";
 import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
+import { useConnections } from "@/hooks/useConnections";
+import { useSharing } from "@/hooks/useSharing";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Components
@@ -51,6 +53,8 @@ export function ProfileHero({
   mode = "Entrepreneur",
 }: ProfileHeroProps) {
   const { profile, isProfileReady } = useProfile();
+  const { count: connectionsCount } = useConnections();
+  const { portfolio } = usePortfolio();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
@@ -58,7 +62,7 @@ export function ProfileHero({
   return (
     <div className="relative">
       {/* ── Cinematic Background — Warm Espresso ── */}
-      <div className="relative h-[320px] overflow-hidden">
+      <div className="relative h-[320px]">
         {/* Warm gradient backdrop */}
         <motion.div
           className="absolute inset-0"
@@ -200,13 +204,12 @@ export function ProfileHero({
           </p>
         </FadeUp>
 
-        {/* Stats row */}
+        {/* Stats row — real Firestore data */}
         <FadeUp delay={0.7}>
           <div className="flex items-center justify-center gap-8 mt-5">
             {[
-              { value: "2.4K", label: "Connections" },
-              { value: "89", label: "Projects" },
-              { value: "4.9", label: "Rating" },
+              { value: String(connectionsCount), label: t("connections") },
+              { value: String(portfolio?.length || 0), label: t("portfolio") },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <div className="text-data text-lg text-velora-text font-semibold">
@@ -402,26 +405,37 @@ export function SocialLinks() {
 /* ── Contact Actions — WhatsApp Primary ── */
 export function ContactActions() {
   const { profile, isProfileReady } = useProfile();
+  const { shareViaWhatsApp } = useSharing();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
 
-  const actions = [
-    {
-      label: t("whatsapp"),
-      icon: MessageCircle,
-      color: "text-velora-whatsapp",
-      bg: "bg-velora-whatsapp/10",
-      border: "border-velora-whatsapp/20",
-      primary: true,
-    },
+  const handleWhatsApp = () => {
+    shareViaWhatsApp(profile);
+  };
+
+  const handleEmail = () => {
+    if (profile.email) {
+      window.open(`mailto:${profile.email}`, "_blank");
+    }
+  };
+
+  const handleCall = () => {
+    const phone = profile.whatsapp || profile.phone;
+    if (phone) {
+      window.open(`tel:${phone}`, "_blank");
+    }
+  };
+
+  const secondaryActions = [
     {
       label: t("email"),
       icon: Mail,
       color: "text-velora-blue",
       bg: "bg-velora-blue/10",
       border: "border-velora-blue/15",
-      primary: false,
+      onClick: handleEmail,
+      disabled: !profile.email,
     },
     {
       label: t("call"),
@@ -429,7 +443,8 @@ export function ContactActions() {
       color: "text-velora-gold",
       bg: "bg-velora-gold-dim",
       border: "border-velora-gold/15",
-      primary: false,
+      onClick: handleCall,
+      disabled: !profile.whatsapp && !profile.phone,
     },
     {
       label: t("book"),
@@ -437,7 +452,8 @@ export function ContactActions() {
       color: "text-velora-violet",
       bg: "bg-velora-violet/10",
       border: "border-velora-violet/15",
-      primary: false,
+      onClick: undefined as (() => void) | undefined,
+      disabled: true,
     },
   ];
 
@@ -446,6 +462,7 @@ export function ContactActions() {
       {/* WhatsApp Hero CTA */}
       <FadeUp delay={1.5}>
         <motion.button
+          onClick={handleWhatsApp}
           whileTap={{ scale: 0.97 }}
           className="w-full flex items-center justify-center gap-3 py-3.5 rounded-[var(--radius-card)] bg-velora-whatsapp/12 border border-velora-whatsapp/20 mb-3"
         >
@@ -459,13 +476,15 @@ export function ContactActions() {
       {/* Secondary actions */}
       <FadeUp delay={1.55}>
         <div className="grid grid-cols-3 gap-2.5">
-          {actions.slice(1).map((action, i) => {
+          {secondaryActions.map((action, i) => {
             const Icon = action.icon;
             return (
               <motion.button
                 key={i}
-                whileTap={{ scale: 0.95 }}
-                className={`flex flex-col items-center gap-1.5 py-3 rounded-[var(--radius-card)] ${action.bg} border ${action.border}`}
+                onClick={action.onClick}
+                disabled={action.disabled}
+                whileTap={action.disabled ? undefined : { scale: 0.95 }}
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-[var(--radius-card)] ${action.bg} border ${action.border} ${action.disabled ? "opacity-40" : ""}`}
               >
                 <Icon size={18} className={action.color} />
                 <span className={`text-[10px] font-medium ${action.color}`}>
@@ -481,7 +500,8 @@ export function ContactActions() {
       <FadeUp delay={1.6}>
         <motion.button
           whileTap={{ scale: 0.97 }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 mt-3 rounded-[var(--radius-sm)] glass text-velora-text-muted text-xs"
+          className="w-full flex items-center justify-center gap-2 py-2.5 mt-3 rounded-[var(--radius-sm)] glass text-velora-text-muted text-xs opacity-40"
+          disabled
         >
           <Bookmark size={13} />
           {t("save_contact")}

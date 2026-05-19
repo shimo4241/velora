@@ -21,13 +21,15 @@ import type { AppTab } from "@/types";
    Splash → Welcome → Setup → Onboarding → App
    ═══════════════════════════════════════════════════ */
 
-const screens: Record<AppTab, () => React.JSX.Element> = {
-  home: () => <HomeScreen />,
-  identity: () => <ProfileScreen />,
-  share: () => <ShareScreen />,
-  discover: () => <NetworkScreen />,
-  insights: () => <AnalyticsScreen />,
-};
+function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => React.JSX.Element> {
+  return {
+    home: () => <HomeScreen onTabChange={onTabChange} />,
+    identity: () => <ProfileScreen />,
+    share: () => <ShareScreen />,
+    discover: () => <NetworkScreen />,
+    insights: () => <AnalyticsScreen />,
+  };
+}
 
 function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
@@ -124,7 +126,7 @@ function VeloraAppInner() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             >
-              {screens[activeTab]()}
+              {getScreens(setActiveTab)[activeTab]()}
             </motion.div>
           </AnimatePresence>
 

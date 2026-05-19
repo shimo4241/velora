@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { GlassCard, GoldButton, ProgressRing } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
@@ -9,6 +9,8 @@ import { useTranslation, getGreetingKey } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import { useConnections } from "@/hooks/useConnections";
 import { useStats, useActivity } from "@/hooks/useStats";
+import { useSharing } from "@/hooks/useSharing";
+import type { AppTab } from "@/types";
 import {
   ChevronRight,
   Nfc,
@@ -23,12 +25,11 @@ import {
   Music,
   Gem,
   TrendingUp,
-  Bell,
   Search,
-  ArrowUpRight,
   Wifi,
   Calendar,
   MapPin,
+  Clock,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
@@ -106,20 +107,14 @@ function NetworkingPulse() {
               Networking Pulse
             </span>
           </div>
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-velora-emerald/10">
-            <ArrowUpRight size={10} className="text-velora-emerald" />
-            <span className="text-[10px] text-velora-emerald font-mono font-medium">
-              +{connections?.length > 0 ? "18" : "0"}%
-            </span>
-          </div>
         </div>
 
         {/* Weekly stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
-            { value: String(connections?.length || 0), label: "This week", sub: "connections" },
-            { value: "0", label: "This month", sub: "interactions" },
+            { value: String(connections?.length || 0), label: "Total", sub: "connections" },
             { value: String(connections?.filter((c) => !c.followUpSent)?.length || 0), label: "Pending", sub: "follow-ups" },
+            { value: String(connections?.filter((c) => c.followUpSent)?.length || 0), label: "Done", sub: "follow-ups" },
           ].map((stat, i) => (
             <div
               key={i}
@@ -167,57 +162,27 @@ function NetworkingPulse() {
   );
 }
 
-/* ── Upcoming Section ── */
+/* ── Upcoming Section — Coming Soon ── */
 function UpcomingEvents() {
   return (
     <FadeUp delay={0.6}>
-      <GlassCard className="p-4" hover={false}>
-        <div className="flex items-center gap-2 mb-3">
-          <Calendar size={14} className="text-velora-gold" />
+      <GlassCard className="p-5 text-center" hover={false}>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <Calendar size={14} className="text-velora-gold/60" />
           <span className="text-heading text-sm text-velora-text">
-            Upcoming
+            Événements
           </span>
         </div>
-
-        <div className="space-y-2.5">
-          {[
-            {
-              name: "Hive Networking Café",
-              date: "Tomorrow · 18h",
-              attendees: "23 professionals",
-              location: "Casablanca",
-            },
-            {
-              name: "GITEX Africa Side Event",
-              date: "May 24 · 10h",
-              attendees: "127 professionals",
-              location: "Marrakech",
-            },
-          ].map((event, i) => (
-            <motion.div
-              key={i}
-              className="flex items-center gap-3 p-2.5 rounded-[var(--radius-sm)] bg-velora-surface/30"
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="w-10 h-10 rounded-[var(--radius-sm)] bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
-                <Calendar size={16} className="text-velora-gold/70" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-velora-text truncate">
-                  {event.name}
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-velora-gold">
-                    {event.date}
-                  </span>
-                  <span className="text-[10px] text-velora-text-muted">
-                    · {event.attendees}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight size={14} className="text-velora-text-muted/40 flex-shrink-0" />
-            </motion.div>
-          ))}
+        <div className="w-12 h-12 rounded-2xl glass flex items-center justify-center mx-auto mb-3">
+          <Clock size={20} className="text-velora-text-muted" />
+        </div>
+        <p className="text-xs text-velora-text-muted leading-relaxed max-w-[220px] mx-auto">
+          Les événements de networking seront bientôt disponibles.
+        </p>
+        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-velora-gold-dim border border-velora-gold/15">
+          <span className="text-[9px] text-velora-gold font-medium tracking-wider uppercase">
+            Coming Soon
+          </span>
         </div>
       </GlassCard>
     </FadeUp>
@@ -225,17 +190,36 @@ function UpcomingEvents() {
 }
 
 /* ── Main Home Screen ── */
-export function HomeScreen() {
-  const { profile, isProfileReady } = useProfile();
+export function HomeScreen({ onTabChange }: { onTabChange?: (tab: AppTab) => void }) {
+  const { profile, isProfileReady, updateProfile } = useProfile();
   const { stats } = useStats();
   const { activity } = useActivity();
+  const { shareViaWhatsApp, copyProfileLink } = useSharing();
   const [selectedMode, setSelectedMode] = useState(profile?.professionalMode || "entrepreneur");
+  const [linkCopied, setLinkCopied] = useState(false);
   const { t } = useTranslation(profile?.locale || "fr");
   const greetingKey = getGreetingKey();
+  const [showEdit, setShowEdit] = useState(false);
 
   if (!isProfileReady || !profile) return null;
 
   const firstName = profile?.fullName?.split(" ")[0] || "VELORA";
+
+  // Professional mode change persists to Firestore
+  const handleModeChange = useCallback((modeId: string) => {
+    setSelectedMode(modeId as any);
+    updateProfile({ professionalMode: modeId as any });
+  }, [updateProfile]);
+
+  // Quick share handlers
+  const handleQuickWhatsApp = () => shareViaWhatsApp(profile);
+  const handleQuickNFC = () => onTabChange?.("share");
+  const handleQuickQR = () => onTabChange?.("share");
+  const handleQuickLink = async () => {
+    await copyProfileLink(profile.username);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   // Calculate profile completion
   const fields = [profile?.fullName, profile?.title, profile?.company, profile?.bio, profile?.avatarUrl, profile?.whatsapp, profile?.instagram, profile?.location];
@@ -259,18 +243,11 @@ export function HomeScreen() {
             <div className="flex items-center gap-2">
               <motion.button
                 whileTap={{ scale: 0.92 }}
+                onClick={() => onTabChange?.("discover")}
                 className="w-10 h-10 rounded-[var(--radius-sm)] glass flex items-center justify-center"
                 aria-label="Search"
               >
                 <Search size={18} className="text-velora-text-secondary" />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                className="w-10 h-10 rounded-[var(--radius-sm)] glass flex items-center justify-center relative"
-                aria-label="Notifications"
-              >
-                <Bell size={18} className="text-velora-text-secondary" />
-                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-velora-rose" />
               </motion.button>
             </div>
           </div>
@@ -280,20 +257,22 @@ export function HomeScreen() {
       {/* Profile completion */}
       <div className="section">
         <FadeUp delay={0.1}>
-          <GlassCard className="p-4" gold>
-            <div className="flex items-center gap-4">
-              <ProgressRing progress={completion} size={52} strokeWidth={2.5} />
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-velora-text font-[family-name:var(--font-display)]">
-                  {t("profile_completion")} {completion}%
+          <motion.div whileTap={{ scale: 0.98 }} onClick={() => onTabChange?.("identity")}>
+            <GlassCard className="p-4" gold>
+              <div className="flex items-center gap-4">
+                <ProgressRing progress={completion} size={52} strokeWidth={2.5} />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-velora-text font-[family-name:var(--font-display)]">
+                    {t("profile_completion")} {completion}%
+                  </div>
+                  <div className="text-xs text-velora-text-muted mt-0.5">
+                    {completion < 100 ? "Complétez votre profil pour plus de visibilité" : "Profil complet ✓"}
+                  </div>
                 </div>
-                <div className="text-xs text-velora-text-muted mt-0.5">
-                  {completion < 100 ? "Complétez votre profil pour plus de visibilité" : "Profil complet ✓"}
-                </div>
+                <ChevronRight size={16} className="text-velora-gold/40" />
               </div>
-              <ChevronRight size={16} className="text-velora-gold/40" />
-            </div>
-          </GlassCard>
+            </GlassCard>
+          </motion.div>
         </FadeUp>
       </div>
 
@@ -314,9 +293,12 @@ export function HomeScreen() {
         >
           {quickActions.map((action, i) => {
             const Icon = action.icon;
+            const handlers = [handleQuickWhatsApp, handleQuickNFC, handleQuickQR, handleQuickLink];
+            const labels = [action.label, action.label, action.label, linkCopied ? "Copié ✓" : action.label];
             return (
               <StaggerItem key={i}>
                 <motion.button
+                  onClick={handlers[i]}
                   whileTap={{ scale: 0.93 }}
                   className={`w-full flex flex-col items-center gap-2 p-3 rounded-[var(--radius-card)] ${
                     action.highlight
@@ -336,7 +318,7 @@ export function HomeScreen() {
                         : "text-velora-text-secondary"
                     }`}
                   >
-                    {action.label}
+                    {labels[i]}
                   </span>
                 </motion.button>
               </StaggerItem>
@@ -363,7 +345,7 @@ export function HomeScreen() {
               return (
                 <motion.button
                   key={mode.id}
-                  onClick={() => setSelectedMode(mode.id)}
+                  onClick={() => handleModeChange(mode.id)}
                   whileTap={{ scale: 0.95 }}
                   className={`
                     flex-shrink-0 flex items-center gap-2 px-4 py-2.5
