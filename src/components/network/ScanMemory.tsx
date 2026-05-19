@@ -79,7 +79,7 @@ export function ConnectionCard({
   connection: VeloraConnection;
 }) {
   const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { t } = useTranslation(profile?.locale || "fr");
   const method = METHOD_CONFIG[connection.method] || METHOD_CONFIG.nfc;
   const MethodIcon = method.icon;
   const initials = connection.profile.fullName

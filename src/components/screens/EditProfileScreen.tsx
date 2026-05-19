@@ -30,25 +30,27 @@ interface EditProfileScreenProps {
 }
 
 export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
-  const { profile, updateProfile, uploadAvatar } = useProfile();
+  const { profile, updateProfile, uploadAvatar, isProfileReady } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local form state
   const [form, setForm] = useState({
-    fullName: profile.fullName || "",
-    title: profile.title || "",
-    company: profile.company || "",
-    location: profile.location || "",
-    bio: profile.bio || "",
-    phone: profile.phone || "",
-    email: profile.email || "",
-    website: profile.website || "",
+    fullName: profile?.fullName || "",
+    title: profile?.title || "",
+    company: profile?.company || "",
+    location: profile?.location || "",
+    bio: profile?.bio || "",
+    phone: profile?.whatsapp || profile?.phone || "",
+    email: profile?.email || "",
+    website: profile?.website || "",
   });
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(profile.avatarUrl || "");
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || "");
+
+  if (!isProfileReady || !profile) return null;
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

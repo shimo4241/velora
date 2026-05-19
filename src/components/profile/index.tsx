@@ -50,8 +50,10 @@ export function ProfileHero({
   isPremium = true,
   mode = "Entrepreneur",
 }: ProfileHeroProps) {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="relative">
@@ -120,7 +122,7 @@ export function ProfileHero({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-velora-gold font-[family-name:var(--font-display)]">
-                    {name.split(" ").map((n) => n[0]).join("")}
+                    {name?.split(" ")?.map((n) => n[0])?.join("") || "V"}
                   </div>
                 )}
               </div>
@@ -236,9 +238,11 @@ const PORTFOLIO_GRADIENTS: Record<string, string> = {
 };
 
 export function PortfolioGallery() {
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { portfolio } = usePortfolio();
-  const { t } = useTranslation(profile.locale);
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="px-5 py-5">
@@ -249,7 +253,7 @@ export function PortfolioGallery() {
       </FadeUp>
 
       <StaggerChildren staggerDelay={0.08} delay={0.85} className="grid grid-cols-2 gap-3">
-        {portfolio.map((project) => {
+        {portfolio?.map((project) => {
           const Icon = PORTFOLIO_ICONS[project.category] || Award;
           const gradient = PORTFOLIO_GRADIENTS[project.category] || "from-amber-900/30 to-yellow-900/15";
 
@@ -288,9 +292,11 @@ export function PortfolioGallery() {
 
 /* ── CV Timeline ── */
 export function CVTimeline() {
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { experience } = useExperience();
-  const { t } = useTranslation(profile.locale);
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="px-5 py-5">
@@ -305,7 +311,7 @@ export function CVTimeline() {
         <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-velora-gold/30 via-velora-gold/15 to-transparent" />
 
         <div className="space-y-4">
-          {experience.map((item, i) => (
+          {experience?.map((item, i) => (
             <SlideIn key={item.id} delay={1.05 + i * 0.1}>
               <div className="flex gap-3.5 group">
                 {/* Dot */}
@@ -354,8 +360,10 @@ export function CVTimeline() {
 
 /* ── Social Links ── */
 export function SocialLinks() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="px-5 py-4">
@@ -367,7 +375,7 @@ export function SocialLinks() {
 
       <FadeUp delay={1.35}>
         <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
-          {(profile.socialLinks || []).map((link, i) => (
+          {(profile?.socialLinks || []).map((link, i) => (
             <motion.button
               key={i}
               whileTap={{ scale: 0.92 }}
@@ -393,8 +401,10 @@ export function SocialLinks() {
 
 /* ── Contact Actions — WhatsApp Primary ── */
 export function ContactActions() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   const actions = [
     {

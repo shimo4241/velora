@@ -86,10 +86,12 @@ const quickActions = [
 
 /* ── Networking Pulse Card ── */
 function NetworkingPulse() {
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { connections } = useConnections();
-  const { t } = useTranslation(profile.locale);
-  const recentConnection = connections[0];
+  const { t } = useTranslation(profile?.locale || "fr");
+  const recentConnection = connections?.[0];
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <FadeUp delay={0.5}>
@@ -107,7 +109,7 @@ function NetworkingPulse() {
           <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-velora-emerald/10">
             <ArrowUpRight size={10} className="text-velora-emerald" />
             <span className="text-[10px] text-velora-emerald font-mono font-medium">
-              +{connections.length > 0 ? "18" : "0"}%
+              +{connections?.length > 0 ? "18" : "0"}%
             </span>
           </div>
         </div>
@@ -115,9 +117,9 @@ function NetworkingPulse() {
         {/* Weekly stats row */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
-            { value: String(connections.length), label: "This week", sub: "connections" },
+            { value: String(connections?.length || 0), label: "This week", sub: "connections" },
             { value: "0", label: "This month", sub: "interactions" },
-            { value: String(connections.filter((c) => !c.followUpSent).length), label: "Pending", sub: "follow-ups" },
+            { value: String(connections?.filter((c) => !c.followUpSent)?.length || 0), label: "Pending", sub: "follow-ups" },
           ].map((stat, i) => (
             <div
               key={i}
@@ -138,15 +140,15 @@ function NetworkingPulse() {
           <div className="flex items-center gap-3 p-2.5 rounded-[var(--radius-sm)] bg-velora-surface/30 border border-velora-border/50">
             <div className="w-9 h-9 rounded-full bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-semibold text-velora-gold">
-                {recentConnection.profile.fullName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+                {recentConnection.profile?.fullName
+                  ?.split(" ")
+                  ?.map((n) => n[0])
+                  ?.join("") || "U"}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium text-velora-text truncate">
-                {recentConnection.profile.fullName}
+                {recentConnection.profile?.fullName || "Unknown User"}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <MapPin size={9} className="text-velora-text-muted flex-shrink-0" />
@@ -224,17 +226,19 @@ function UpcomingEvents() {
 
 /* ── Main Home Screen ── */
 export function HomeScreen() {
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { stats } = useStats();
   const { activity } = useActivity();
-  const [selectedMode, setSelectedMode] = useState(profile.professionalMode);
-  const { t } = useTranslation(profile.locale);
+  const [selectedMode, setSelectedMode] = useState(profile?.professionalMode || "entrepreneur");
+  const { t } = useTranslation(profile?.locale || "fr");
   const greetingKey = getGreetingKey();
 
-  const firstName = profile.fullName?.split(" ")[0] || "VELORA";
+  if (!isProfileReady || !profile) return null;
+
+  const firstName = profile?.fullName?.split(" ")[0] || "VELORA";
 
   // Calculate profile completion
-  const fields = [profile.fullName, profile.title, profile.company, profile.bio, profile.avatarUrl, profile.phone, profile.website];
+  const fields = [profile?.fullName, profile?.title, profile?.company, profile?.bio, profile?.avatarUrl, profile?.whatsapp, profile?.instagram];
   const filled = fields.filter(Boolean).length;
   const completion = Math.round((filled / fields.length) * 100);
 
@@ -432,7 +436,7 @@ export function HomeScreen() {
         </FadeUp>
 
         <StaggerChildren staggerDelay={0.06} delay={0.75} className="space-y-2">
-          {activity.length > 0 ? (
+          {activity?.length > 0 ? (
             activity.map((activityItem) => {
               const Icon = ACTIVITY_ICONS[activityItem.icon] || Eye;
               return (

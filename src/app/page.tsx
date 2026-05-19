@@ -12,7 +12,7 @@ import { AnalyticsScreen } from "@/components/screens/AnalyticsScreen";
 import { WelcomeScreen } from "@/components/screens/WelcomeScreen";
 import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
 import { AuthProvider, useAuth } from "@/components/providers/AuthProvider";
-import { useProfileNullable } from "@/hooks/useProfile";
+import { useProfileNullable, useProfile } from "@/hooks/useProfile";
 import { LoadingScreen } from "@/components/ui/States";
 import type { AppTab } from "@/types";
 
@@ -31,7 +31,7 @@ const screens: Record<AppTab, () => React.JSX.Element> = {
 
 function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfileNullable();
+  const { profile, loading: profileLoading, isProfileReady } = useProfile();
   
   const [phase, setPhase] = useState<"splash" | "welcome" | "setup" | "onboarding" | "app">("splash");
   const [splashFinished, setSplashFinished] = useState(false);
@@ -80,8 +80,8 @@ function VeloraAppInner() {
     return <LoadingScreen />;
   }
 
-  // Ensure we don't render app components if profile is strictly null (e.g., during transition to setup)
-  const renderApp = phase === "app" && profile !== null;
+  // Ensure we don't render app components if profile is strictly null or loading
+  const renderApp = phase === "app" && isProfileReady;
 
   return (
     <div className="app-container">

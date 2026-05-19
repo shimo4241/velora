@@ -34,8 +34,10 @@ export function QRGenerator({
   url?: string;
   name?: string;
 }) {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <FadeUp delay={0.2}>
@@ -94,8 +96,10 @@ export function QRGenerator({
 
 /* ── NFC Tap Prompt — Calm, not aggressive ── */
 export function NFCPrompt() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <FadeUp delay={0.4}>
@@ -150,16 +154,18 @@ export function NFCPrompt() {
 /* ── WhatsApp Hero + Share Actions ── */
 export function ShareActions() {
   const [copied, setCopied] = useState(false);
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { shareViaWhatsApp, copyProfileLink } = useSharing();
-  const { t } = useTranslation(profile.locale);
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   const handleWhatsApp = () => {
     shareViaWhatsApp(profile);
   };
 
   const handleCopy = () => {
-    copyProfileLink(profile.username);
+    copyProfileLink(profile?.username || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -235,9 +241,11 @@ export function ShareActions() {
 
 /* ── Share Link Preview ── */
 export function ShareLinkPreview() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
-  const shortUrl = getProfileShortUrl(profile.username);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+  const shortUrl = getProfileShortUrl(profile?.username || "");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <FadeUp delay={0.8}>

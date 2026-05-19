@@ -20,9 +20,11 @@ type DiscoverTab = "nearby" | "memory";
 
 export function NetworkScreen() {
   const [tab, setTab] = useState<DiscoverTab>("nearby");
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
   const { connections, count } = useConnections();
-  const { t } = useTranslation(profile.locale);
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
@@ -102,7 +104,7 @@ export function NetworkScreen() {
           </div>
 
           <div className="px-5 py-2">
-            {connections.length > 0 ? (
+            {connections?.length > 0 ? (
               <StaggerChildren staggerDelay={0.1} delay={0.3} className="space-y-3">
                 {connections.map((connection) => (
                   <StaggerItem key={connection.id}>

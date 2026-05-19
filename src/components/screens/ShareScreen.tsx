@@ -19,9 +19,11 @@ import { Crown, Wallet } from "lucide-react";
    ═══════════════════════════════════════════════════ */
 
 export function ShareScreen() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
-  const profileUrl = getProfileUrl(profile.username);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+  const profileUrl = getProfileUrl(profile?.username || "");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
@@ -43,7 +45,7 @@ export function ShareScreen() {
       <div className="section">
         <QRGenerator
           url={profileUrl}
-          name={profile.fullName || "VELORA User"}
+          name={profile?.fullName || "VELORA User"}
         />
       </div>
 

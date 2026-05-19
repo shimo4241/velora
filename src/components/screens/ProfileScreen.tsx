@@ -24,20 +24,22 @@ import { signOut } from "firebase/auth";
    ═══════════════════════════════════════════════════ */
 
 export function ProfileScreen() {
-  const { profile } = useProfile();
+  const { profile, isProfileReady } = useProfile();
+  
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">
       <ProfileHero
-        name={profile.fullName || "VELORA User"}
-        title={profile.title}
-        company={profile.company}
-        location={profile.location}
-        bio={profile.bio}
-        avatarUrl={profile.avatarUrl}
-        isVerified={profile.isVerified}
-        isPremium={profile.isPremium}
-        mode={profile.professionalMode === "entrepreneur" ? "Entrepreneur" : profile.professionalMode}
+        name={profile?.fullName || "VELORA User"}
+        title={profile?.title || ""}
+        company={profile?.company || ""}
+        location={profile?.location || ""}
+        bio={profile?.bio || ""}
+        avatarUrl={profile?.avatarUrl || ""}
+        isVerified={Boolean(profile?.isVerified)}
+        isPremium={Boolean(profile?.isPremium)}
+        mode={profile?.professionalMode === "entrepreneur" ? "Entrepreneur" : profile?.professionalMode || ""}
       />
 
       <Divider className="mx-5" />

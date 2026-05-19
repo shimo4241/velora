@@ -17,8 +17,10 @@ import { Crown } from "lucide-react";
    ═══════════════════════════════════════════════════ */
 
 export function AnalyticsScreen() {
-  const { profile } = useProfile();
-  const { t } = useTranslation(profile.locale);
+  const { profile, isProfileReady } = useProfile();
+  const { t } = useTranslation(profile?.locale || "fr");
+
+  if (!isProfileReady || !profile) return null;
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">

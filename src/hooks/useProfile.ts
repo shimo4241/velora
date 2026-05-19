@@ -55,12 +55,35 @@ export function useProfileNullable() {
   return { profile, loading, updateProfile, uploadAvatar, uploadPortfolioImage };
 }
 
+const defaultProfile: VeloraProfile = {
+  id: "",
+  fullName: "",
+  title: "",
+  bio: "",
+  location: "",
+  avatarUrl: "",
+  username: "",
+  whatsapp: "",
+  instagram: "",
+  socialLinks: [],
+  professionalMode: "entrepreneur",
+  isVerified: false,
+  isPremium: false,
+  isNoir: false,
+  locale: "fr"
+};
+
 /**
  * Hook to be used inside the main app phase where profile is guaranteed to exist.
  */
 export function useProfile() {
   const context = useProfileNullable();
-  return { ...context, profile: context.profile as VeloraProfile };
+  const isProfileReady = !context.loading && context.profile !== null;
+  return { 
+    ...context, 
+    profile: context.profile || defaultProfile,
+    isProfileReady
+  };
 }
 
 export function usePortfolio() {
