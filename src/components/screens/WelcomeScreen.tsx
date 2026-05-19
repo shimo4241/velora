@@ -1,33 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Loader2, ArrowRight, Sparkles } from "lucide-react";
-import { signInAnonymously } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { Loader2, ArrowRight, LogIn } from "lucide-react";
 import { FadeUp, ScaleIn } from "@/components/motion/animations";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface WelcomeScreenProps {
   onSuccess: () => void;
 }
 
 export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { signInWithGoogle, isSigningIn, error: authError, clearError } = useAuth();
 
   const handleCreateIdentity = async () => {
-    setLoading(true);
-    setError("");
+    clearError();
 
     try {
-      await signInAnonymously(auth);
+      await signInWithGoogle();
       onSuccess();
     } catch (err: unknown) {
       console.error("Auth error:", err);
-      setError("Impossible d'initialiser l'identite. Veuillez reessayer.");
-      setLoading(false);
     }
   };
+
+  const error = authError;
 
   return (
     <motion.div
@@ -84,16 +80,16 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
 
             <button
               onClick={handleCreateIdentity}
-              disabled={loading}
+              disabled={isSigningIn}
               className="relative w-full h-12 flex items-center justify-center gap-2 bg-velora-gold text-velora-black rounded-xl font-medium tracking-wide shadow-[0_0_20px_rgba(196,162,101,0.3)] hover:shadow-[0_0_30px_rgba(196,162,101,0.5)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
             >
               <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              {loading ? (
+              {isSigningIn ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (
                 <>
-                  <Sparkles size={16} className="text-velora-black" />
-                  <span>Creer mon identite</span>
+                  <LogIn size={16} className="text-velora-black" />
+                  <span>Continuer avec Google</span>
                   <ArrowRight size={16} className="text-velora-black/80" />
                 </>
               )}

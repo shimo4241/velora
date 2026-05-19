@@ -75,6 +75,18 @@ function normalizeProfessionalMode(value: unknown): VeloraProfile["professionalM
     : DEFAULT_MODE;
 }
 
+function normalizeOnboarding(value: unknown): VeloraProfile["onboarding"] {
+  if (typeof value !== "object" || value === null) return undefined;
+  const onboarding = value as Record<string, unknown>;
+
+  return {
+    profileSetupComplete: Boolean(onboarding.profileSetupComplete),
+    productTourComplete: Boolean(onboarding.productTourComplete),
+    initializedAt: onboarding.initializedAt ? dateValueToIso(onboarding.initializedAt) : undefined,
+    updatedAt: onboarding.updatedAt ? dateValueToIso(onboarding.updatedAt) : undefined,
+  };
+}
+
 function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile>): VeloraProfile {
   return {
     id,
@@ -100,6 +112,7 @@ function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile
     isPremium: asBoolean(data.isPremium),
     isNoir: asBoolean(data.isNoir),
     locale: normalizeLocale(data.locale),
+    onboarding: normalizeOnboarding(data.onboarding),
   };
 }
 
@@ -278,6 +291,98 @@ export async function createProfile(uid: string, data: CreateProfileData): Promi
     console.error(`[Firestore Error] Failed to create profile for UID: ${uid}`, error);
     throw error;
   }
+}
+
+export interface GoogleProfileUser {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+}
+
+function getGoogleProfileName(user: GoogleProfileUser): string {
+  const displayName = user.displayName?.trim();
+  if (displayName) return displayName;
+
+  const emailName = user.email?.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+  if (emailName) return emailName;
+
+  return "VELORA Member";
+}
+
+function getGoogleUsernameBase(user: GoogleProfileUser): string {
+  const rawBase = user.displayName || user.email?.split("@")[0] || user.uid;
+  let base = createUsernameSeed(rawBase, "member");
+
+  if (base.length < USERNAME_MIN_LENGTH) {
+    base = `${base}user`.slice(0, USERNAME_MIN_LENGTH);
+  }
+
+  if (isReservedUsername(base)) {
+    base = `${base.slice(0, USERNAME_MAX_LENGTH - 4)}user`;
+  }
+
+  return validateUsername(base).ok ? base : "member";
+}
+
+function isUsernameCollision(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return /username already taken|already exists|ALREADY_EXISTS/i.test(error.message);
+}
+
+export async function ensureGoogleUserProfile(user: GoogleProfileUser): Promise<VeloraProfile> {
+  const existingProfile = await getProfile(user.uid);
+  if (existingProfile) return existingProfile;
+
+  const base = getGoogleUsernameBase(user);
+  const uidSuffix = createUsernameSeed(user.uid, "id").slice(0, 6);
+  const collisionBase = `${base}${uidSuffix}`.slice(0, USERNAME_MAX_LENGTH);
+  const fullName = getGoogleProfileName(user);
+  const now = new Date().toISOString();
+
+  for (let attempt = 0; attempt < 25; attempt++) {
+    const username = attempt === 0 ? base : usernameWithCounter(collisionBase, attempt);
+
+    try {
+      await createProfile(user.uid, {
+        username,
+        fullName,
+        title: "",
+        bio: "",
+        location: "",
+        email: user.email || "",
+        avatarUrl: user.photoURL || "",
+        professionalMode: DEFAULT_MODE,
+        role: "free",
+        isVerified: false,
+        isPremium: false,
+        isNoir: false,
+        locale: DEFAULT_LOCALE,
+        socialLinks: [],
+        onboarding: {
+          profileSetupComplete: false,
+          productTourComplete: false,
+          initializedAt: now,
+          updatedAt: now,
+        },
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const createdProfile = await getProfile(user.uid);
+      if (createdProfile) return createdProfile;
+      throw new Error("Profile creation did not return a profile.");
+    } catch (error) {
+      const concurrentProfile = await getProfile(user.uid);
+      if (concurrentProfile) return concurrentProfile;
+
+      if (!isUsernameCollision(error) || attempt === 24) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("Unable to create a unique username.");
 }
 
 /** Real-time profile listener */

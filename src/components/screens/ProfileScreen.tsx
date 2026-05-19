@@ -15,8 +15,7 @@ import {
 import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
 import { useConnections } from "@/hooks/useConnections";
 import { Sparkles, LogOut } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Screen (Identity)
@@ -25,6 +24,7 @@ import { signOut } from "firebase/auth";
 
 export function ProfileScreen() {
   const { profile, isProfileReady } = useProfile();
+  const { signOut } = useAuth();
   const { portfolio } = usePortfolio();
   const { experience } = useExperience();
   const { count: connectionsCount } = useConnections();
@@ -86,7 +86,7 @@ export function ProfileScreen() {
       <div className="px-5 py-8 pb-32">
         <FadeUp delay={1.8}>
           <button
-            onClick={() => signOut(auth)}
+            onClick={() => void signOut()}
             className="flex items-center gap-2 text-sm text-velora-rose/80 hover:text-velora-rose transition-colors mx-auto"
           >
             <LogOut size={14} />

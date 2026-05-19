@@ -14,6 +14,14 @@ export type ProfessionalMode =
 /* ── User Roles ── */
 export type VeloraRole = "free" | "premium" | "verified" | "business";
 
+/* -- Onboarding State -- */
+export interface VeloraOnboardingState {
+  profileSetupComplete: boolean;
+  productTourComplete: boolean;
+  initializedAt?: string;
+  updatedAt?: string;
+}
+
 /* ── Connection Methods ── */
 export type ConnectionMethod = "nfc" | "qr" | "whatsapp" | "link" | "nearby";
 
@@ -42,6 +50,7 @@ export interface VeloraProfile {
   isPremium: boolean;
   isNoir: boolean;
   locale: "fr" | "en" | "ar";
+  onboarding?: VeloraOnboardingState;
 }
 
 /* ── Social Link ── */

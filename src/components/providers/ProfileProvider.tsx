@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
+  ensureGoogleUserProfile,
   getProfile,
   onProfileChange,
   updateProfile as firestoreUpdateProfile,
@@ -44,6 +45,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     error: Error | null;
   }>({ uid: null, profile: null, isLoading: false, error: null });
   const activeUidRef = useRef<string | null>(null);
+  const bootstrapUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -55,7 +57,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    if (!uid) {
+    if (!uid || !user) {
       activeUidRef.current = null;
       return () => {
         active = false;
@@ -64,9 +66,32 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     activeUidRef.current = uid;
 
-    const unsubscribe = onProfileChange(uid, (p) => {
+    const unsubscribe = onProfileChange(uid, async (p) => {
       if (!active) return;
-      setProfileState({ uid, profile: p, isLoading: false, error: null });
+
+      if (p) {
+        setProfileState({ uid, profile: p, isLoading: false, error: null });
+        return;
+      }
+
+      setProfileState({ uid, profile: null, isLoading: true, error: null });
+
+      if (bootstrapUidRef.current === uid) return;
+      bootstrapUidRef.current = uid;
+
+      try {
+        const bootstrappedProfile = await ensureGoogleUserProfile(user);
+        if (!active) return;
+        setProfileState({ uid, profile: bootstrappedProfile, isLoading: false, error: null });
+      } catch (bootstrapError) {
+        bootstrapUidRef.current = null;
+        if (!active) return;
+        const normalizedError =
+          bootstrapError instanceof Error
+            ? bootstrapError
+            : new Error("Failed to initialize profile");
+        setProfileState({ uid, profile: null, isLoading: false, error: normalizedError });
+      }
     }, (listenerError) => {
       if (!active) return;
       setProfileState({ uid, profile: null, isLoading: false, error: listenerError });
@@ -76,7 +101,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe?.();
     };
-  }, [authLoading, uid]);
+  }, [authLoading, uid, user]);
 
   const refreshProfile = useCallback(async () => {
     if (!uid) {
@@ -93,10 +118,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     try {
       const latestProfile = await getProfile(uid);
+      const resolvedProfile = latestProfile || (user ? await ensureGoogleUserProfile(user) : null);
       if (activeUidRef.current === uid) {
-        setProfileState({ uid, profile: latestProfile, isLoading: false, error: null });
+        setProfileState({ uid, profile: resolvedProfile, isLoading: false, error: null });
       }
-      return latestProfile;
+      return resolvedProfile;
     } catch (refreshError) {
       const normalizedError =
         refreshError instanceof Error
@@ -107,7 +133,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       }
       throw normalizedError;
     }
-  }, [uid]);
+  }, [uid, user]);
 
   const updateProfile = useCallback(async (data: Partial<Omit<VeloraProfile, "id" | "username">>) => {
     if (!uid) throw new Error("Unauthenticated");
@@ -128,7 +154,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const profile = !authLoading && uid && isCurrentProfile ? profileState.profile : null;
   const error = !authLoading && uid && isCurrentProfile ? profileState.error : null;
   const isLoading = authLoading || Boolean(uid && (!isCurrentProfile || profileState.isLoading));
-  const isProfileReady = Boolean(!isLoading && profile?.id && profile?.username && profile?.fullName);
+  const hasCompletedProfileSetup = Boolean(
+    profile?.onboarding?.profileSetupComplete ||
+    (profile?.title && (profile?.whatsapp || profile?.phone))
+  );
+  const isProfileReady = Boolean(
+    !isLoading &&
+    profile?.id &&
+    profile?.username &&
+    profile?.fullName &&
+    hasCompletedProfileSetup
+  );
 
   const value = useMemo(
     () => ({

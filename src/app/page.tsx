@@ -33,7 +33,14 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
 
 function VeloraAppInner() {
   const { user, loading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading, isProfileReady } = useProfileNullable();
+  const {
+    profile,
+    isLoading: profileLoading,
+    isProfileReady,
+    error: profileError,
+    refreshProfile,
+    updateProfile,
+  } = useProfileNullable();
   
   const [splashFinished, setSplashFinished] = useState(false);
   const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
@@ -41,12 +48,18 @@ function VeloraAppInner() {
   const screens = useMemo(() => getScreens(setActiveTab), []);
   const hasStoredOnboarding =
     typeof window !== "undefined" && localStorage.getItem("velora_onboarded") === "true";
-  const hasCompletedOnboarding = onboardingAcknowledged || hasStoredOnboarding;
+  const hasCompletedOnboarding = Boolean(
+    profile?.onboarding?.productTourComplete ||
+    onboardingAcknowledged ||
+    hasStoredOnboarding
+  );
 
-  let phase: "splash" | "loading" | "welcome" | "setup" | "onboarding" | "app" = "splash";
+  let phase: "splash" | "loading" | "welcome" | "setup" | "onboarding" | "app" | "error" = "splash";
   if (splashFinished) {
     if (authLoading || (user && profileLoading)) {
       phase = "loading";
+    } else if (user && profileError) {
+      phase = "error";
     } else if (!user) {
       phase = "welcome";
     } else if (!isProfileReady || !profile) {
@@ -67,6 +80,20 @@ function VeloraAppInner() {
       localStorage.setItem("velora_onboarded", "true");
     }
     setOnboardingAcknowledged(true);
+
+    if (profile) {
+      const now = new Date().toISOString();
+      void updateProfile({
+        onboarding: {
+          profileSetupComplete: true,
+          productTourComplete: true,
+          initializedAt: profile.onboarding?.initializedAt || now,
+          updatedAt: now,
+        },
+      }).catch((error) => {
+        console.error("[Onboarding Error] Failed to persist onboarding state:", error);
+      });
+    }
   };
 
   if (phase === "loading") {
@@ -85,10 +112,32 @@ function VeloraAppInner() {
         )}
       </AnimatePresence>
 
-      {/* Welcome (Anonymous Auth) */}
+      {/* Welcome */}
       <AnimatePresence>
         {phase === "welcome" && (
           <WelcomeScreen onSuccess={() => undefined} />
+        )}
+      </AnimatePresence>
+
+      {/* Profile bootstrap error */}
+      <AnimatePresence>
+        {phase === "error" && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-velora-black px-6">
+            <div className="w-full max-w-sm rounded-2xl border border-velora-rose/20 bg-velora-rose/10 p-5 text-center">
+              <p className="text-sm font-medium text-velora-text mb-2">
+                Initialisation du profil impossible
+              </p>
+              <p className="text-xs text-velora-text-muted mb-4">
+                {profileError?.message || "Veuillez reessayer."}
+              </p>
+              <button
+                onClick={() => void refreshProfile()}
+                className="h-10 px-4 rounded-xl bg-velora-gold text-velora-black text-sm font-medium"
+              >
+                Reessayer
+              </button>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 

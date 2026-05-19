@@ -5,8 +5,7 @@ import { motion } from "framer-motion";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { uploadAvatarImage, generateUniqueUsername, checkUsernameExists, createProfile } from "@/lib/firestore";
-import { normalizeUsernameInput, validateUsername } from "@/lib/usernames";
+import { uploadAvatarImage, generateUniqueUsername, createProfile } from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import type { VeloraProfile, VeloraRole } from "@/types";
@@ -19,37 +18,27 @@ import "react-phone-number-input/style.css";
 
 export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
-  const { refreshProfile } = useProfile();
+  const { profile, refreshProfile, updateProfile } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    username: "",
-    fullName: "",
-    title: "",
-    bio: "",
-    location: "Casablanca, Morocco",
-    whatsapp: "",
-    instagram: "",
-    professionalMode: "entrepreneur" as VeloraProfile["professionalMode"],
+    fullName: profile?.fullName || user?.displayName || "",
+    title: profile?.title || "",
+    bio: profile?.bio || "",
+    location: profile?.location || "Casablanca, Morocco",
+    whatsapp: profile?.whatsapp || "",
+    instagram: profile?.instagram || "",
+    professionalMode: profile?.professionalMode || ("entrepreneur" as VeloraProfile["professionalMode"]),
   });
 
-  const [usernameError, setUsernameError] = useState("");
-
+  const [setupError, setSetupError] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || user?.photoURL || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleChange = (field: string, value: string) => {
-    if (field === "username") {
-      value = normalizeUsernameInput(value);
-      if (value) {
-        const validation = validateUsername(value);
-        setUsernameError(validation.ok ? "" : validation.error);
-      } else {
-        setUsernameError("");
-      }
-    }
+    setSetupError("");
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -75,11 +64,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         title: !!form.title,
         whatsapp: !!form.whatsapp
       });
+      setSetupError("Veuillez completer les champs requis.");
       return;
     }
 
 
     setSaving(true);
+    setSetupError("");
     try {
       let finalAvatarUrl = "";
       if (avatarFile) {
@@ -88,46 +79,40 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         setUploading(false);
       }
 
-
-
-      let finalUsername = form.username;
-      
-      if (!finalUsername) {
-        finalUsername = await generateUniqueUsername(form.fullName || "user");
-      } else {
-        const validation = validateUsername(finalUsername);
-        if (!validation.ok) {
-          setUsernameError(validation.error);
-          setSaving(false);
-          return;
-        }
-
-        const exists = await checkUsernameExists(finalUsername);
-        if (exists) {
-          setUsernameError("Username already taken.");
-          setSaving(false);
-          return;
-        }
-      }
-
-      await createProfile(user.uid, {
+      const now = new Date().toISOString();
+      const completedProfileData = {
         fullName: form.fullName,
-        username: finalUsername,
         title: form.title,
         bio: form.bio,
         location: form.location,
-        avatarUrl: finalAvatarUrl,
+        avatarUrl: finalAvatarUrl || profile?.avatarUrl || user.photoURL || "",
         professionalMode: form.professionalMode,
-        role: "free" as VeloraRole,
-        isVerified: false,
-        isPremium: false,
-        isNoir: false,
-        locale: "fr",
+        role: (profile?.role || "free") as VeloraRole,
+        isVerified: Boolean(profile?.isVerified),
+        isPremium: Boolean(profile?.isPremium),
+        isNoir: Boolean(profile?.isNoir),
+        locale: profile?.locale || "fr",
         whatsapp: form.whatsapp,
         instagram: form.instagram,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+        onboarding: {
+          profileSetupComplete: true,
+          productTourComplete: Boolean(profile?.onboarding?.productTourComplete),
+          initializedAt: profile?.onboarding?.initializedAt || now,
+          updatedAt: now,
+        },
+        updatedAt: now,
+      };
+
+      if (profile?.id) {
+        await updateProfile(completedProfileData);
+      } else {
+        const finalUsername = await generateUniqueUsername(form.fullName || user.displayName || "member");
+        await createProfile(user.uid, {
+          ...completedProfileData,
+          username: finalUsername,
+          createdAt: now,
+        });
+      }
 
       await refreshProfile();
 
@@ -135,7 +120,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
       if (err instanceof Error) {
-        setUsernameError(err.message);
+        setSetupError(err.message);
       }
       setSaving(false);
       setUploading(false);
@@ -203,6 +188,14 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
         {/* Form Fields */}
         <StaggerChildren delay={0.2} staggerDelay={0.05} className="space-y-4 mb-8">
+          {setupError && (
+            <StaggerItem>
+              <div className="p-3 rounded-lg bg-velora-rose/10 border border-velora-rose/20 text-velora-rose text-[11px] text-center">
+                {setupError}
+              </div>
+            </StaggerItem>
+          )}
+
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
@@ -233,24 +226,20 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
             </GlassCard>
           </StaggerItem>
 
-          <StaggerItem>
-            <GlassCard className="p-4 border-velora-gold/20" hover={false}>
-              <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
-                <span>Username (Optionnel)</span>
-                {usernameError && <span className="text-red-400 normal-case">{usernameError}</span>}
-              </label>
-              <div className="flex items-center">
-                <span className="text-velora-text-muted mr-1">@</span>
-                <input
-                  type="text"
-                  value={form.username}
-                  onChange={(e) => handleChange("username", e.target.value)}
-                  placeholder="youssef"
-                  className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
-                />
-              </div>
-            </GlassCard>
-          </StaggerItem>
+          {profile?.username && (
+            <StaggerItem>
+              <GlassCard className="p-4 border-velora-gold/20" hover={false}>
+                <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
+                  Username
+                </label>
+                <div className="flex items-center text-sm text-velora-text">
+                  <span className="text-velora-text-muted mr-1">@</span>
+                  <span>{profile.username}</span>
+                </div>
+              </GlassCard>
+            </StaggerItem>
+          )}
+
 
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
