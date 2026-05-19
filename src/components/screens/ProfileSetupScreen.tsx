@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { updateProfile, uploadAvatar } from "@/lib/firestore";
+import { updateProfile, uploadAvatar, generateUniqueUsername, checkUsernameExists } from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
-import type { VeloraProfile } from "@/types";
+import type { VeloraProfile, VeloraRole } from "@/types";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
@@ -20,6 +20,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
+    username: "",
     fullName: "",
     title: "",
     bio: "",
@@ -29,12 +30,18 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     professionalMode: "entrepreneur" as VeloraProfile["professionalMode"],
   });
 
+  const [usernameError, setUsernameError] = useState("");
+
   const [uploading, setUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleChange = (field: string, value: string) => {
+    if (field === "username") {
+      value = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      setUsernameError("");
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -49,7 +56,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleSubmit = async () => {
-    console.log("[ProfileSetup] Initiating profile setup submission...");
+
     if (!user) {
       console.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
       return;
@@ -63,28 +70,48 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       return;
     }
 
-    console.log(`[ProfileSetup] User authenticated (UID: ${user.uid}). Proceeding with upload/save...`);
+
     setSaving(true);
     try {
       let finalAvatarUrl = "";
       if (avatarFile) {
-        console.log("[ProfileSetup] Avatar file detected. Uploading to Storage...");
+
         setUploading(true);
         finalAvatarUrl = await uploadAvatar(user.uid, avatarFile);
-        console.log("[ProfileSetup] Avatar uploaded successfully.", finalAvatarUrl);
+
         setUploading(false);
       }
 
-      console.log("[ProfileSetup] Saving profile data to Firestore...", form);
+
+
+      let finalUsername = form.username;
+      
+      if (!finalUsername) {
+        finalUsername = await generateUniqueUsername(form.fullName || "user");
+      } else {
+        const reserved = ["admin", "support", "velora", "api", "settings", "discover", "app", "login", "register", "profile", "network", "premium", "business"];
+        if (reserved.includes(finalUsername)) {
+          setUsernameError("This username is reserved.");
+          setSaving(false);
+          return;
+        }
+        const exists = await checkUsernameExists(finalUsername);
+        if (exists) {
+          setUsernameError("Username already taken.");
+          setSaving(false);
+          return;
+        }
+      }
 
       await updateProfile(user.uid, {
         fullName: form.fullName,
-        username: form.fullName.toLowerCase().replace(/\s+/g, ""), // naive generation
+        username: finalUsername,
         title: form.title,
         bio: form.bio,
         location: form.location,
         avatarUrl: finalAvatarUrl,
         professionalMode: form.professionalMode,
+        role: "free" as VeloraRole,
         isVerified: false,
         isPremium: false,
         isNoir: false,
@@ -95,7 +122,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         updatedAt: new Date().toISOString(),
       });
 
-      console.log("[ProfileSetup] Profile creation/update completed successfully.");
+
       onComplete();
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
@@ -191,6 +218,25 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
                 placeholder="Ex: Youssef El Amrani"
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
               />
+            </GlassCard>
+          </StaggerItem>
+
+          <StaggerItem>
+            <GlassCard className="p-4 border-velora-gold/20" hover={false}>
+              <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Username (Optionnel)</span>
+                {usernameError && <span className="text-red-400 normal-case">{usernameError}</span>}
+              </label>
+              <div className="flex items-center">
+                <span className="text-velora-text-muted mr-1">@</span>
+                <input
+                  type="text"
+                  value={form.username}
+                  onChange={(e) => handleChange("username", e.target.value)}
+                  placeholder="youssef"
+                  className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
+                />
+              </div>
             </GlassCard>
           </StaggerItem>
 

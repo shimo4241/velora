@@ -12,6 +12,9 @@ export type ProfessionalMode =
   | "nightlife"
   | "luxury";
 
+/* ── User Roles ── */
+export type VeloraRole = "free" | "premium" | "verified" | "business";
+
 /* ── Connection Methods ── */
 export type ConnectionMethod = "nfc" | "qr" | "whatsapp" | "link" | "nearby";
 
@@ -35,6 +38,7 @@ export interface VeloraProfile {
   updatedAt?: string;
   socialLinks: SocialLink[];
   professionalMode: ProfessionalMode;
+  role?: VeloraRole;
   isVerified: boolean;
   isPremium: boolean;
   isNoir: boolean;

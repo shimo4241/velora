@@ -21,6 +21,7 @@ import {
   type DocumentData,
   type Unsubscribe,
   Timestamp,
+  startAfter,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "./firebase";
@@ -54,6 +55,31 @@ export async function getProfileByUsername(username: string): Promise<VeloraProf
   return { id: docSnap.id, ...docSnap.data() } as VeloraProfile;
 }
 
+/** Check if a username is already taken */
+export async function checkUsernameExists(username: string): Promise<boolean> {
+  const q = query(collection(db, "users"), where("username", "==", username), limit(1));
+  const snap = await getDocs(q);
+  return !snap.empty;
+}
+
+/** Generate a unique slug based on fullname */
+export async function generateUniqueUsername(fullName: string): Promise<string> {
+  const base = fullName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let slug = base;
+  let counter = 1;
+  
+  const reserved = ["admin", "support", "velora", "api", "settings", "discover", "app", "login", "register", "profile", "network", "premium", "business"];
+  if (reserved.includes(slug)) {
+    slug = `${slug}app`;
+  }
+
+  while (await checkUsernameExists(slug)) {
+    slug = `${base}${counter}`;
+    counter++;
+  }
+  return slug;
+}
+
 /** Real-time profile listener */
 export function onProfileChange(
   uid: string,
@@ -71,7 +97,7 @@ export async function updateProfile(
   data: Partial<Omit<VeloraProfile, "id">>
 ): Promise<void> {
   try {
-    console.log(`[Firestore] Attempting to update/create profile for UID: ${uid}`);
+
     await setDoc(
       doc(db, "users", uid),
       {
@@ -80,26 +106,64 @@ export async function updateProfile(
       },
       { merge: true }
     );
-    console.log(`[Firestore] Successfully updated/created profile for UID: ${uid}`);
+
   } catch (error) {
     console.error(`[Firestore Error] Failed to update/create profile for UID: ${uid}`, error);
     throw error;
   }
 }
 
+/** Compress image using canvas */
+async function compressImage(file: File, maxWidth = 800): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Blob creation failed"));
+        },
+        "image/jpeg",
+        0.85
+      );
+    };
+    img.onerror = () => reject(new Error("Image load error"));
+  });
+}
+
 /** Upload avatar to Storage and update profile */
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
-  const storageRef = ref(storage, `avatars/${uid}/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
-  await updateProfile(uid, { avatarUrl: url });
-  return url;
+  try {
+    const compressedBlob = await compressImage(file, 600);
+    const storageRef = ref(storage, `avatars/${uid}/${Date.now()}.jpg`);
+    await uploadBytes(storageRef, compressedBlob);
+    const url = await getDownloadURL(storageRef);
+    await updateProfile(uid, { avatarUrl: url });
+    return url;
+  } catch (error) {
+    console.error("Avatar upload failed:", error);
+    throw error;
+  }
 }
 
 /** Upload portfolio image */
 export async function uploadPortfolioImage(uid: string, file: File): Promise<string> {
-  const storageRef = ref(storage, `portfolio/${uid}/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file);
+  const compressedBlob = await compressImage(file, 1200);
+  const storageRef = ref(storage, `portfolio/${uid}/${Date.now()}.jpg`);
+  await uploadBytes(storageRef, compressedBlob);
   return getDownloadURL(storageRef);
 }
 
@@ -295,4 +359,42 @@ export async function getRecentActivity(uid: string, count = 10): Promise<Activi
       type: mapped.type,
     };
   });
+}
+
+/**
+ * Get users for the Discover screen
+ */
+export async function getDiscoverUsers(
+  currentUserId: string,
+  pageSize = 10,
+  lastDocSnap?: any
+): Promise<{ users: VeloraProfile[]; lastDoc: any }> {
+  let q = query(
+    collection(db, "users"),
+    orderBy("fullName"),
+    limit(pageSize)
+  );
+
+  if (lastDocSnap) {
+    q = query(
+      collection(db, "users"),
+      orderBy("fullName"),
+      startAfter(lastDocSnap),
+      limit(pageSize)
+    );
+  }
+
+  const snap = await getDocs(q);
+  const users: VeloraProfile[] = [];
+  
+  snap.forEach((doc) => {
+    if (doc.id !== currentUserId) {
+      users.push({ id: doc.id, ...doc.data() } as VeloraProfile);
+    }
+  });
+
+  return {
+    users,
+    lastDoc: snap.docs[snap.docs.length - 1],
+  };
 }

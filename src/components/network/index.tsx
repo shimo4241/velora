@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { GlassCard, GoldBadge } from "../ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "../motion/animations";
+import { useState, useEffect } from "react";
+import { useProfile } from "@/hooks/useProfile";
+import { getDiscoverUsers } from "@/lib/firestore";
+import type { VeloraProfile } from "@/types";
 
 /* ── Radar Discovery Animation ── */
 export function RadarDiscovery() {
@@ -231,65 +235,52 @@ export function ProfessionalCard({
 
 /* ── Nearby Professionals List ── */
 export function NearbyList() {
-  const professionals = [
-    {
-      name: "Amina Benali",
-      title: "Creative Director",
-      company: "Studio Atlas",
-      distance: "12m",
-      mutualConnections: 8,
-      isVerified: true,
-      isPremium: true,
-      avatarGradient: "from-rose-900/40 to-pink-800/20",
-    },
-    {
-      name: "Karim Ziani",
-      title: "Architect",
-      company: "ZA Design Lab",
-      distance: "25m",
-      mutualConnections: 3,
-      isVerified: true,
-      isPremium: false,
-      avatarGradient: "from-blue-900/40 to-cyan-800/20",
-    },
-    {
-      name: "Fatima Alaoui",
-      title: "Marketing Lead",
-      company: "Luxe Agency",
-      distance: "38m",
-      mutualConnections: 12,
-      isVerified: true,
-      isPremium: true,
-      avatarGradient: "from-emerald-900/40 to-teal-800/20",
-    },
-    {
-      name: "Omar Tazi",
-      title: "Event Producer",
-      company: "Night Vision",
-      distance: "45m",
-      mutualConnections: 5,
-      isVerified: false,
-      isPremium: false,
-      avatarGradient: "from-violet-900/40 to-purple-800/20",
-    },
-    {
-      name: "Sara Idrissi",
-      title: "Brand Strategist",
-      company: "Prism Studio",
-      distance: "50m",
-      mutualConnections: 7,
-      isVerified: true,
-      isPremium: true,
-      avatarGradient: "from-amber-900/40 to-yellow-800/20",
-    },
-  ];
+  const { profile, isProfileReady } = useProfile();
+  const [professionals, setProfessionals] = useState<VeloraProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isProfileReady || !profile?.id) return;
+    
+    getDiscoverUsers(profile.id, 10).then(({ users }) => {
+      setProfessionals(users);
+      setLoading(false);
+    }).catch(err => {
+      console.error("Error fetching discover users:", err);
+      setLoading(false);
+    });
+  }, [profile?.id, isProfileReady]);
+
+  if (loading) {
+    return (
+      <div className="px-5 py-8 text-center text-velora-text-muted text-sm">
+        Recherche en cours...
+      </div>
+    );
+  }
+
+  if (professionals.length === 0) {
+    return (
+      <div className="px-5 py-8 text-center text-velora-text-muted text-sm">
+        Aucun professionnel à proximité pour le moment.
+      </div>
+    );
+  }
 
   return (
     <div className="px-5 py-4">
       <StaggerChildren staggerDelay={0.1} delay={0.8} className="space-y-3">
         {professionals.map((pro, i) => (
-          <StaggerItem key={i}>
-            <ProfessionalCard {...pro} />
+          <StaggerItem key={pro.id || i}>
+            <ProfessionalCard 
+              name={pro.fullName}
+              title={pro.title}
+              company={pro.company || ""}
+              distance="-- m"
+              mutualConnections={0}
+              isVerified={pro.isVerified}
+              isPremium={pro.isPremium}
+            />
           </StaggerItem>
         ))}
       </StaggerChildren>

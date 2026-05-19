@@ -98,14 +98,39 @@ export function QRGenerator({
 export function NFCPrompt() {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
+  const [nfcStatus, setNfcStatus] = useState<"idle" | "writing" | "success" | "error">("idle");
+  const [nfcError, setNfcError] = useState("");
 
   if (!isProfileReady || !profile) return null;
+
+  const handleNFCTap = async () => {
+    try {
+      if ("NDEFReader" in window) {
+        setNfcStatus("writing");
+        // @ts-ignore
+        const ndef = new window.NDEFReader();
+        await ndef.write({
+          records: [{ recordType: "url", data: getProfileUrl(profile.username) }]
+        });
+        setNfcStatus("success");
+        setTimeout(() => setNfcStatus("idle"), 3000);
+      } else {
+        setNfcStatus("error");
+        setNfcError("NFC sharing is unsupported on this device or browser.");
+        setTimeout(() => setNfcStatus("idle"), 3000);
+      }
+    } catch (error: any) {
+      setNfcStatus("error");
+      setNfcError(error.message || "Failed to write to NFC tag.");
+      setTimeout(() => setNfcStatus("idle"), 3000);
+    }
+  };
 
   return (
     <FadeUp delay={0.4}>
       <GlassCard className="p-5 flex flex-col items-center text-center" hover={false}>
         {/* NFC animation — subtle ripples */}
-        <div className="relative w-20 h-20 flex items-center justify-center mb-3.5">
+        <div className="relative w-20 h-20 flex items-center justify-center mb-3.5" onClick={handleNFCTap} style={{ cursor: 'pointer' }}>
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
@@ -126,7 +151,7 @@ export function NFCPrompt() {
           {/* Center icon */}
           <motion.div
             className="relative z-10 w-14 h-14 rounded-xl glass-gold flex items-center justify-center"
-            animate={{ scale: [1, 1.03, 1] }}
+            animate={{ scale: [1, nfcStatus === "writing" ? 1.1 : 1.03, 1] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           >
             <Nfc size={24} className="text-velora-gold" />
@@ -139,11 +164,18 @@ export function NFCPrompt() {
         <p className="text-[11px] text-velora-text-muted mt-1 max-w-[200px] leading-relaxed">
           {t("nfc_description")}
         </p>
+        
+        {nfcStatus === "error" && (
+          <p className="text-[10px] text-red-400 mt-2">{nfcError}</p>
+        )}
+        {nfcStatus === "success" && (
+          <p className="text-[10px] text-velora-emerald mt-2">Écriture NFC réussie !</p>
+        )}
 
         <div className="flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-velora-gold/5 border border-velora-gold/10">
           <Wifi size={10} className="text-velora-gold" />
           <span className="text-[9px] text-velora-gold font-medium tracking-wider uppercase">
-            NFC {t("ready")}
+            {nfcStatus === "writing" ? "Writing..." : `NFC ${t("ready")}`}
           </span>
         </div>
       </GlassCard>

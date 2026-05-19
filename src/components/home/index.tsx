@@ -238,7 +238,7 @@ export function HomeScreen() {
   const firstName = profile?.fullName?.split(" ")[0] || "VELORA";
 
   // Calculate profile completion
-  const fields = [profile?.fullName, profile?.title, profile?.company, profile?.bio, profile?.avatarUrl, profile?.whatsapp, profile?.instagram];
+  const fields = [profile?.fullName, profile?.title, profile?.company, profile?.bio, profile?.avatarUrl, profile?.whatsapp, profile?.instagram, profile?.location];
   const filled = fields.filter(Boolean).length;
   const completion = Math.round((filled / fields.length) * 100);
 
