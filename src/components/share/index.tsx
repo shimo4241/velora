@@ -37,7 +37,7 @@ type WebNFCWindow = Window &
 
 /* ── QR Code Generator with Premium Gold Frame ── */
 export function QRGenerator({
-  url = "https://velora.app",
+  url,
   name = "VELORA User",
 }: {
   url?: string;
@@ -47,6 +47,8 @@ export function QRGenerator({
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
+
+  const profileUrl = url || getProfileUrl(profile.username);
 
   return (
     <FadeUp delay={0.2}>
@@ -63,7 +65,7 @@ export function QRGenerator({
           <ScaleIn delay={0.35}>
             <div className="bg-white rounded-2xl p-4" id="velora-qr-container">
               <QRCodeSVG
-                value={url}
+                value={profileUrl}
                 size={180}
                 bgColor="#FFFFFF"
                 fgColor="#0A0A0A"
@@ -84,7 +86,7 @@ export function QRGenerator({
             {name}
           </div>
           <div className="text-[11px] text-velora-text-muted mt-1 font-mono">
-            {url.replace("https://", "")}
+            {profileUrl.replace("https://", "")}
           </div>
         </motion.div>
 

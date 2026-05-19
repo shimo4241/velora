@@ -21,9 +21,10 @@ import { Crown, Wallet } from "lucide-react";
 export function ShareScreen() {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
-  const profileUrl = getProfileUrl(profile?.username || "");
 
   if (!isProfileReady || !profile) return null;
+
+  const profileUrl = getProfileUrl(profile.username);
 
   return (
     <div className="min-h-screen bg-velora-black safe-bottom">

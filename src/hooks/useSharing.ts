@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { logShare, trackAnalyticsEvent } from "@/lib/firestore";
+import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
 import type { VeloraProfile, ConnectionMethod } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -10,15 +11,7 @@ import type { VeloraProfile, ConnectionMethod } from "@/types";
    WhatsApp, QR, NFC, Link sharing
    ═══════════════════════════════════════════════════ */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://velora.app";
-
-export function getProfileUrl(username: string): string {
-  return `${SITE_URL}/u/${username}`;
-}
-
-export function getProfileShortUrl(username: string): string {
-  return `velora.app/u/${username}`;
-}
+export { getProfileShortUrl, getProfileUrl };
 
 export function useSharing() {
   const { user } = useAuth();

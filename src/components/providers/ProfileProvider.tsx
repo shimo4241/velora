@@ -27,7 +27,7 @@ export interface ProfileContextValue {
   loading: boolean;
   error: Error | null;
   refreshProfile: () => Promise<VeloraProfile | null>;
-  updateProfile: (data: Partial<Omit<VeloraProfile, "id">>) => Promise<void>;
+  updateProfile: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   uploadPortfolioImage: (file: File) => Promise<string>;
 }
@@ -109,7 +109,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     }
   }, [uid]);
 
-  const updateProfile = useCallback(async (data: Partial<Omit<VeloraProfile, "id">>) => {
+  const updateProfile = useCallback(async (data: Partial<Omit<VeloraProfile, "id" | "username">>) => {
     if (!uid) throw new Error("Unauthenticated");
     await firestoreUpdateProfile(uid, data);
   }, [uid]);

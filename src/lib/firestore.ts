@@ -12,6 +12,7 @@ import {
   updateDoc,
   addDoc,
   deleteDoc,
+  runTransaction,
   query,
   where,
   orderBy,
@@ -26,6 +27,15 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "./firebase";
+import {
+  USERNAME_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  createUsernameSeed,
+  isReservedUsername,
+  normalizeUsernameInput,
+  usernameWithCounter,
+  validateUsername,
+} from "./usernames";
 import type {
   VeloraProfile,
   PortfolioItem,
@@ -81,8 +91,8 @@ function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile
     website: asString(data.website),
     avatarUrl: asString(data.avatarUrl),
     coverUrl: asString(data.coverUrl),
-    createdAt: asString(data.createdAt),
-    updatedAt: asString(data.updatedAt),
+    createdAt: data.createdAt ? dateValueToIso(data.createdAt) : "",
+    updatedAt: data.updatedAt ? dateValueToIso(data.updatedAt) : "",
     socialLinks: asArray(data.socialLinks),
     professionalMode: normalizeProfessionalMode(data.professionalMode),
     role: data.role as VeloraProfile["role"],
@@ -166,7 +176,19 @@ export async function getProfile(uid: string): Promise<VeloraProfile | null> {
 
 /** Get user profile by username */
 export async function getProfileByUsername(username: string): Promise<VeloraProfile | null> {
-  const q = query(collection(db, "users"), where("username", "==", username), limit(1));
+  const normalizedUsername = normalizeUsernameInput(username);
+  if (!validateUsername(normalizedUsername).ok) return null;
+
+  const reservationSnap = await getDoc(doc(db, "usernames", normalizedUsername));
+  if (reservationSnap.exists()) {
+    const uid = asString(reservationSnap.data().uid);
+    if (!uid) return null;
+
+    const profile = await getProfile(uid);
+    return profile?.username === normalizedUsername ? profile : null;
+  }
+
+  const q = query(collection(db, "users"), where("username", "==", normalizedUsername), limit(1));
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
@@ -175,27 +197,87 @@ export async function getProfileByUsername(username: string): Promise<VeloraProf
 
 /** Check if a username is already taken */
 export async function checkUsernameExists(username: string): Promise<boolean> {
-  const q = query(collection(db, "users"), where("username", "==", username), limit(1));
+  const normalizedUsername = normalizeUsernameInput(username);
+  if (!validateUsername(normalizedUsername).ok) return false;
+
+  const reservationSnap = await getDoc(doc(db, "usernames", normalizedUsername));
+  if (reservationSnap.exists()) return true;
+
+  const q = query(collection(db, "users"), where("username", "==", normalizedUsername), limit(1));
   const snap = await getDocs(q);
   return !snap.empty;
 }
 
 /** Generate a unique slug based on fullname */
 export async function generateUniqueUsername(fullName: string): Promise<string> {
-  const base = fullName.toLowerCase().replace(/[^a-z0-9]/g, "");
-  let slug = base;
-  let counter = 1;
-  
-  const reserved = ["admin", "support", "velora", "api", "settings", "discover", "app", "login", "register", "profile", "network", "premium", "business"];
-  if (reserved.includes(slug)) {
-    slug = `${slug}app`;
+  let base = createUsernameSeed(fullName);
+  if (base.length < USERNAME_MIN_LENGTH) {
+    base = `${base}user`.slice(0, USERNAME_MIN_LENGTH);
+  }
+  if (isReservedUsername(base)) {
+    base = `${base.slice(0, USERNAME_MAX_LENGTH - 3)}app`;
   }
 
+  let slug = base;
+  let counter = 1;
+
   while (await checkUsernameExists(slug)) {
-    slug = `${base}${counter}`;
+    slug = usernameWithCounter(base, counter);
     counter++;
   }
   return slug;
+}
+
+export type CreateProfileData = Partial<Omit<VeloraProfile, "id">> &
+  Pick<VeloraProfile, "username" | "fullName" | "title">;
+
+/** Create a profile and atomically reserve its immutable public username */
+export async function createProfile(uid: string, data: CreateProfileData): Promise<void> {
+  const username = normalizeUsernameInput(data.username);
+  const validation = validateUsername(username);
+  if (!validation.ok) {
+    throw new Error(validation.error);
+  }
+
+  const usernameRef = doc(db, "usernames", username);
+  const userRef = doc(db, "users", uid);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const reservationSnap = await transaction.get(usernameRef);
+      const userSnap = await transaction.get(userRef);
+
+      if (reservationSnap.exists()) {
+        throw new Error("Username already taken.");
+      }
+
+      const existingUsername = userSnap.exists()
+        ? asString(userSnap.data().username)
+        : "";
+      if (existingUsername && existingUsername !== username) {
+        throw new Error("Username is immutable after profile creation.");
+      }
+
+      transaction.set(usernameRef, {
+        uid,
+        username,
+        createdAt: serverTimestamp(),
+      });
+      transaction.set(
+        userRef,
+        {
+          ...data,
+          username,
+          updatedAt: serverTimestamp(),
+          createdAt: data.createdAt || serverTimestamp(),
+        },
+        { merge: true }
+      );
+    });
+  } catch (error) {
+    console.error(`[Firestore Error] Failed to create profile for UID: ${uid}`, error);
+    throw error;
+  }
 }
 
 /** Real-time profile listener */
@@ -216,10 +298,9 @@ export function onProfileChange(
 /** Update profile fields (creates if it doesn't exist) */
 export async function updateProfile(
   uid: string,
-  data: Partial<Omit<VeloraProfile, "id">>
+  data: Partial<Omit<VeloraProfile, "id" | "username">>
 ): Promise<void> {
   try {
-
     await setDoc(
       doc(db, "users", uid),
       {

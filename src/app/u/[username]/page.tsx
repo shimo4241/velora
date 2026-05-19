@@ -1,10 +1,12 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   getProfileByUsername,
   getPortfolio,
   getExperience,
 } from "@/lib/firestore";
+import { getProfileUrl } from "@/lib/profileUrls";
+import { normalizeUsernameInput, validateUsername } from "@/lib/usernames";
 import PublicProfileClient from "./PublicProfileClient";
 
 // Revalidate every 60 seconds (ISR)
@@ -16,7 +18,10 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const profile = await getProfileByUsername(username);
+  const canonicalUsername = normalizeUsernameInput(username);
+  const profile = validateUsername(canonicalUsername).ok
+    ? await getProfileByUsername(canonicalUsername)
+    : null;
   
   if (!profile) {
     return {
@@ -36,7 +41,7 @@ export async function generateMetadata({
       title,
       description,
       images: profile.avatarUrl ? [profile.avatarUrl] : [],
-      url: `https://velora.app/u/${profile.username}`,
+      url: getProfileUrl(profile.username),
       siteName: "VELORA",
     },
     twitter: {
@@ -54,7 +59,17 @@ export default async function PublicProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const profile = await getProfileByUsername(username);
+  const canonicalUsername = normalizeUsernameInput(username);
+
+  if (username !== canonicalUsername) {
+    redirect(`/u/${canonicalUsername}`);
+  }
+
+  if (!validateUsername(canonicalUsername).ok) {
+    notFound();
+  }
+
+  const profile = await getProfileByUsername(canonicalUsername);
   
   if (!profile) {
     notFound();

@@ -28,6 +28,6 @@ export const PROFESSIONAL_MODES = [
 export const APP_CONFIG = {
   name: "VELORA",
   tagline: "Your identity, elevated",
-  baseUrl: "https://velora.app",
+  baseUrl: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://velora-navy.vercel.app",
   splashDuration: 2800,
 } as const;

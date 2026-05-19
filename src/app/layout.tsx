@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { getAppUrl } from "@/lib/profileUrls";
 import "./globals.css";
 
 /* ═══════════════════════════════════════════════════
@@ -7,7 +8,7 @@ import "./globals.css";
    Production metadata, SEO, Open Graph, PWA
    ═══════════════════════════════════════════════════ */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://velora.app";
+const APP_URL = getAppUrl();
 
 export const metadata: Metadata = {
   /* ── Core ── */
@@ -30,7 +31,8 @@ export const metadata: Metadata = {
     "QR code profile",
     "WhatsApp networking",
   ],
-  authors: [{ name: "VELORA", url: SITE_URL }],
+  metadataBase: new URL(APP_URL),
+  authors: [{ name: "VELORA", url: APP_URL }],
   creator: "VELORA",
 
   /* ── Icons ── */
@@ -57,14 +59,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "fr_MA",
-    url: SITE_URL,
+    url: APP_URL,
     siteName: "VELORA",
     title: "VELORA — Your Identity, Elevated",
     description:
       "The luxury professional identity ecosystem. Share your identity via NFC, QR, and WhatsApp.",
     images: [
       {
-        url: `${SITE_URL}/og-image.png`,
+        url: `${APP_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: "VELORA — Premium Professional Identity",
@@ -78,7 +80,7 @@ export const metadata: Metadata = {
     title: "VELORA — Your Identity, Elevated",
     description:
       "Premium professional identity ecosystem for Morocco, GCC, and Africa.",
-    images: [`${SITE_URL}/og-image.png`],
+    images: [`${APP_URL}/og-image.png`],
     creator: "@veloraapp",
   },
 

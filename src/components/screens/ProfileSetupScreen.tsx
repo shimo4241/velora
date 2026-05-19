@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { uploadAvatarImage, generateUniqueUsername, checkUsernameExists } from "@/lib/firestore";
+import { uploadAvatarImage, generateUniqueUsername, checkUsernameExists, createProfile } from "@/lib/firestore";
+import { normalizeUsernameInput, validateUsername } from "@/lib/usernames";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import type { VeloraProfile, VeloraRole } from "@/types";
@@ -18,7 +19,7 @@ import "react-phone-number-input/style.css";
 
 export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
-  const { updateProfile, refreshProfile } = useProfile();
+  const { refreshProfile } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -41,8 +42,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
   const handleChange = (field: string, value: string) => {
     if (field === "username") {
-      value = value.toLowerCase().replace(/[^a-z0-9]/g, "");
-      setUsernameError("");
+      value = normalizeUsernameInput(value);
+      if (value) {
+        const validation = validateUsername(value);
+        setUsernameError(validation.ok ? "" : validation.error);
+      } else {
+        setUsernameError("");
+      }
     }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -89,12 +95,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       if (!finalUsername) {
         finalUsername = await generateUniqueUsername(form.fullName || "user");
       } else {
-        const reserved = ["admin", "support", "velora", "api", "settings", "discover", "app", "login", "register", "profile", "network", "premium", "business"];
-        if (reserved.includes(finalUsername)) {
-          setUsernameError("This username is reserved.");
+        const validation = validateUsername(finalUsername);
+        if (!validation.ok) {
+          setUsernameError(validation.error);
           setSaving(false);
           return;
         }
+
         const exists = await checkUsernameExists(finalUsername);
         if (exists) {
           setUsernameError("Username already taken.");
@@ -103,7 +110,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         }
       }
 
-      await updateProfile({
+      await createProfile(user.uid, {
         fullName: form.fullName,
         username: finalUsername,
         title: form.title,
@@ -127,6 +134,9 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       onComplete();
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
+      if (err instanceof Error) {
+        setUsernameError(err.message);
+      }
       setSaving(false);
       setUploading(false);
     }
