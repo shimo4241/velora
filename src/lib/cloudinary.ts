@@ -530,6 +530,13 @@ function performCloudinaryUpload(
       formData.append("folder", folder);
     }
 
+    const keys: string[] = [];
+    formData.forEach((_, key) => {
+      keys.push(key);
+    });
+    console.log(`[Cloudinary Direct Upload] URL: ${url}`);
+    console.log(`[Cloudinary Direct Upload] FormData keys: ${keys.join(", ")}`);
+
     xhr.send(formData);
   });
 }
