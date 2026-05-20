@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SplashScreen, OnboardingScreen } from "@/components/onboarding";
@@ -31,6 +31,23 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
   };
 }
 
+function subscribeToOnboardingStorage(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener("velora:onboarding-storage", onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener("velora:onboarding-storage", onStoreChange);
+  };
+}
+
+function getStoredOnboardingSnapshot() {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("velora_onboarded") === "true";
+}
+
 function VeloraAppInner() {
   const { user, loading: authLoading, isAuthReady } = useAuth();
   const {
@@ -46,8 +63,11 @@ function VeloraAppInner() {
   const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
   const screens = useMemo(() => getScreens(setActiveTab), []);
-  const hasStoredOnboarding =
-    typeof window !== "undefined" && localStorage.getItem("velora_onboarded") === "true";
+  const hasStoredOnboarding = useSyncExternalStore(
+    subscribeToOnboardingStorage,
+    getStoredOnboardingSnapshot,
+    () => false
+  );
   const hasCompletedOnboarding = Boolean(
     profile?.onboarding?.productTourComplete ||
     onboardingAcknowledged ||
@@ -80,6 +100,7 @@ function VeloraAppInner() {
   const handleOnboardingComplete = () => {
     if (typeof window !== "undefined") {
       localStorage.setItem("velora_onboarded", "true");
+      window.dispatchEvent(new Event("velora:onboarding-storage"));
     }
     setOnboardingAcknowledged(true);
 

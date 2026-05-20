@@ -11,8 +11,8 @@ import {
 } from "react";
 import { type User } from "firebase/auth";
 import {
-  completeGoogleRedirectSignIn,
   ensureLocalAuthPersistence,
+  getAuthErrorCode,
   getAuthErrorMessage,
   onAuthChange,
   signInWithGoogle as firebaseSignInWithGoogle,
@@ -30,6 +30,7 @@ interface AuthContextValue {
   isAuthReady: boolean;
   isSigningIn: boolean;
   error: string | null;
+  errorCode: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextValue>({
   isAuthReady: false,
   isSigningIn: false,
   error: null,
+  errorCode: null,
   signInWithGoogle: async () => undefined,
   signOut: async () => undefined,
   clearError: () => undefined,
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -61,26 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await ensureLocalAuthPersistence();
       } catch (authError) {
         if (!active) return;
+        setErrorCode(getAuthErrorCode(authError));
         setError(getAuthErrorMessage(authError));
         setLoading(false);
         return;
-      }
-
-      if (!active) return;
-
-      try {
-        const redirectResult = await completeGoogleRedirectSignIn();
-        if (!active) return;
-
-        if (redirectResult?.user) {
-          console.debug("[Auth] redirect user restored", {
-            uid: redirectResult.user.uid,
-          });
-          setUser(redirectResult.user);
-        }
-      } catch (redirectError) {
-        if (!active) return;
-        setError(getAuthErrorMessage(redirectError));
       }
 
       if (!active) return;
@@ -98,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (firebaseUser?.isAnonymous) {
           setError("Les sessions anonymes ne sont plus prises en charge.");
+          setErrorCode(null);
           try {
             await signOutUser();
           } finally {
@@ -109,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(firebaseUser);
+        setErrorCode(null);
         setLoading(false);
       });
     }
@@ -123,14 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearError = useCallback(() => {
     setError(null);
+    setErrorCode(null);
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
+    setErrorCode(null);
     setIsSigningIn(true);
     try {
       await firebaseSignInWithGoogle();
     } catch (authError) {
+      setErrorCode(getAuthErrorCode(authError));
       setError(getAuthErrorMessage(authError));
       throw authError;
     } finally {
@@ -140,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     setError(null);
+    setErrorCode(null);
     await signOutUser();
   }, []);
 
@@ -150,11 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthReady: !loading,
       isSigningIn,
       error,
+      errorCode,
       signInWithGoogle,
       signOut,
       clearError,
     }),
-    [user, loading, isSigningIn, error, signInWithGoogle, signOut, clearError]
+    [user, loading, isSigningIn, error, errorCode, signInWithGoogle, signOut, clearError]
   );
 
   return (

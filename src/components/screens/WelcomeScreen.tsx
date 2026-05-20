@@ -1,16 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Loader2, ArrowRight, LogIn } from "lucide-react";
+import { AlertTriangle, Loader2, ArrowRight, LogIn } from "lucide-react";
 import { FadeUp, ScaleIn } from "@/components/motion/animations";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { isPopupBlockedErrorCode } from "@/lib/auth";
 
 interface WelcomeScreenProps {
   onSuccess: () => void;
 }
 
 export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
-  const { signInWithGoogle, isSigningIn, error: authError, clearError } = useAuth();
+  const {
+    signInWithGoogle,
+    isSigningIn,
+    error: authError,
+    errorCode,
+    clearError,
+  } = useAuth();
 
   const handleCreateIdentity = async () => {
     clearError();
@@ -24,6 +31,7 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
   };
 
   const error = authError;
+  const isPopupBlocked = isPopupBlockedErrorCode(errorCode);
 
   return (
     <motion.div
@@ -73,8 +81,33 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
         <FadeUp delay={0.6}>
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl">
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-velora-rose/10 border border-velora-rose/20 text-velora-rose text-[11px] text-center">
-                {error}
+              <div
+                role="alert"
+                className="mb-4 rounded-xl border border-velora-rose/25 bg-velora-rose/10 p-3 text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-velora-rose/15">
+                    <AlertTriangle size={14} className="text-velora-rose" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-velora-text">
+                      {isPopupBlocked ? "Connexion Google bloquee" : "Connexion impossible"}
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-velora-text-muted">
+                      {error}
+                    </p>
+                    {isPopupBlocked && (
+                      <button
+                        type="button"
+                        onClick={handleCreateIdentity}
+                        disabled={isSigningIn}
+                        className="mt-3 h-8 rounded-lg border border-velora-gold/30 px-3 text-[11px] font-medium text-velora-gold disabled:opacity-60"
+                      >
+                        Reessayer
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
