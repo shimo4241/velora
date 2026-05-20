@@ -121,7 +121,13 @@ export default function RootLayout({
   return (
     <html lang="fr" dir="ltr" suppressHydrationWarning>
       <head>
-        {/* Preconnect for Google Fonts */}
+        {/* Preconnect for hosted font styles */}
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link
+          rel="preconnect"
+          href="https://cdn.fontshare.com"
+          crossOrigin="anonymous"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

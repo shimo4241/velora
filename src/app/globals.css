@@ -4,7 +4,8 @@
    Philosophy: Quiet. Expensive. Intentional.
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&f[]=general-sans@300,400,500,600,700&f[]=clash-display@500,600,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────────
@@ -55,12 +56,12 @@
   --color-velora-glass-strong-border: #FFFFFF14;
 
   /* ── Typography ──
-     Latin: Outfit (display) + Inter (body) + JetBrains Mono (data)
+     Latin: Clash Display + Satoshi + General Sans + JetBrains Mono (data)
      Arabic: Noto Sans Arabic */
-  --font-display: "Outfit", "Noto Sans Arabic", system-ui, sans-serif;
-  --font-body: "Inter", "Noto Sans Arabic", system-ui, sans-serif;
+  --font-display: "Clash Display", "Satoshi", "Noto Sans Arabic", system-ui, sans-serif;
+  --font-body: "Satoshi", "General Sans", "Noto Sans Arabic", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --font-arabic: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
+  --font-arabic: "Noto Sans Arabic", "Satoshi", system-ui, sans-serif;
 
   /* ── Spacing ──
      Page gutters and safe areas. */
@@ -531,6 +532,143 @@ body {
 }
 
 /* Section spacing — consistent vertical rhythm */
+/* Public profile luxury identity surfaces */
+.luxury-profile {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.12), transparent 34%),
+    var(--color-velora-black);
+}
+
+.identity-aurora {
+  background:
+    linear-gradient(120deg, transparent 8%, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.22), transparent 46%),
+    linear-gradient(240deg, transparent 20%, rgba(var(--identity-secondary-rgb, 255, 241, 194), 0.12), transparent 58%);
+  filter: blur(38px);
+  transform: translate3d(0, 0, 0);
+  animation: identity-drift 11s var(--ease-in-out) infinite;
+}
+
+.identity-hero-panel,
+.identity-glass-card,
+.identity-qr-frame {
+  position: relative;
+  isolation: isolate;
+}
+
+.identity-glass-card {
+  overflow: hidden;
+  border: 1px solid rgba(var(--identity-accent-rgb, 216, 181, 109), 0.16);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.026)),
+    rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(26px) saturate(1.35);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.identity-glass-card::before,
+.identity-hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 48%);
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+.identity-reflective {
+  position: relative;
+  overflow: hidden;
+}
+
+.identity-reflective::after {
+  content: "";
+  position: absolute;
+  inset: -140% -60%;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.14) 49%,
+    transparent 56%
+  );
+  opacity: 0;
+  transform: translate3d(-28%, 0, 0) rotate(8deg);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform 900ms var(--ease-out);
+}
+
+.identity-reflective:hover::after,
+.identity-reflective:focus-visible::after {
+  opacity: 1;
+  transform: translate3d(28%, 0, 0) rotate(8deg);
+}
+
+.identity-qr-frame {
+  border: 1px solid rgba(var(--identity-accent-rgb, 216, 181, 109), 0.25);
+  background:
+    linear-gradient(135deg, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.2), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.045);
+  box-shadow:
+    0 26px 90px rgba(0, 0, 0, 0.42),
+    0 0 60px rgba(var(--identity-accent-rgb, 216, 181, 109), 0.14);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+}
+
+.identity-qr-frame::before,
+.identity-qr-frame::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(var(--identity-accent-rgb, 216, 181, 109), 0.22);
+  border-radius: 26px;
+  pointer-events: none;
+}
+
+.identity-qr-frame::after {
+  inset: -1px;
+  border-color: transparent;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--identity-accent-rgb, 216, 181, 109), 0.42),
+    transparent
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 1px;
+  animation: identity-frame-scan 4.8s var(--ease-in-out) infinite;
+}
+
+@keyframes identity-drift {
+  0%, 100% {
+    transform: translate3d(-3%, 0, 0) scale(1);
+    opacity: 0.62;
+  }
+  50% {
+    transform: translate3d(3%, 4%, 0) scale(1.04);
+    opacity: 0.92;
+  }
+}
+
+@keyframes identity-frame-scan {
+  0%, 100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+
 .section {
   padding: 0 var(--spacing-page);
   margin-bottom: 24px;
