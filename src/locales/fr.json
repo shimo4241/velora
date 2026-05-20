@@ -84,5 +84,15 @@
   "mode_creator": "Créateur",
   "mode_artist": "Artiste",
   "mode_business": "Entreprise",
-  "mode_vip": "VIP Member"
+  "mode_vip": "VIP Member",
+  "field_google_reviews": "Lien Avis Google",
+  "field_emergency_contact": "Contact d'Urgence",
+  "btn_google_reviews": "Avis Google",
+  "btn_emergency_call": "Urgence 24/7",
+  "btn_website": "Site Web",
+  "section_gallery": "Galerie du Cabinet",
+  "section_before_after": "Cas Cliniques (Avant / Après)",
+  "emergency_badge": "Garde d'Urgence",
+  "before": "Avant",
+  "after": "Après"
 }

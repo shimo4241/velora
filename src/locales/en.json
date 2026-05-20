@@ -84,5 +84,15 @@
   "mode_creator": "Creator",
   "mode_artist": "Artist",
   "mode_business": "Business",
-  "mode_vip": "VIP Member"
+  "mode_vip": "VIP Member",
+  "field_google_reviews": "Google Reviews Link",
+  "field_emergency_contact": "Emergency Contact",
+  "btn_google_reviews": "Google Reviews",
+  "btn_emergency_call": "Emergency 24/7",
+  "btn_website": "Website",
+  "section_gallery": "Clinic Gallery",
+  "section_before_after": "Clinical Cases (Before / After)",
+  "emergency_badge": "Emergency Duty",
+  "before": "Before",
+  "after": "After"
 }

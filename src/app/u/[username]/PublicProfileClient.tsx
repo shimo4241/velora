@@ -284,56 +284,201 @@ export default function PublicProfileClient({
       <div className="relative z-10 mx-auto w-full max-w-[980px] px-5 pb-24">
         <ContactSection profile={profile} theme={theme} t={t} />
 
-        {profile.professionalMode === "dentist" && (
-          <Reveal>
-            <div className="identity-glass-card identity-reflective mt-2 mb-8 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md">
-              <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(var(--identity-accent-rgb),0.12)] text-[var(--identity-accent)]">
-                  <Stethoscope size={20} />
-                </div>
-                <div>
-                  <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
-                    {profile.clinicName || t("field_clinic_name")}
-                  </h3>
-                  <p className="text-xs text-velora-text-muted mt-0.5">
-                    {profile.specialty || "Chirurgien-Dentiste"}
-                    {profile.orderNumber && ` • Numéro d'ordre: ${profile.orderNumber}`}
-                  </p>
-                </div>
-              </div>
+        {profile.professionalMode === "dentist" && (() => {
+          const dentistActions = [
+            {
+              key: "call",
+              label: t("btn_call_clinic"),
+              href: profile.fixedPhone ? `tel:${profile.fixedPhone.replace(/\s+/g, "")}` : (profile.phone ? `tel:${profile.phone.replace(/\s+/g, "")}` : ""),
+              icon: Phone,
+              color: "from-blue-600/20 to-cyan-500/20 border-blue-500/30 text-blue-400 hover:border-blue-400",
+            },
+            {
+              key: "whatsapp",
+              label: t("btn_whatsapp"),
+              href: profile.whatsapp ? `https://wa.me/${profile.whatsapp.replace(/\D/g, "")}` : "",
+              icon: MessageCircle,
+              color: "from-emerald-600/20 to-teal-500/20 border-emerald-500/30 text-emerald-400 hover:border-emerald-400",
+            },
+            {
+              key: "maps",
+              label: t("btn_open_maps"),
+              href: profile.googleMapsLink ? normalizeExternalHref(profile.googleMapsLink) : "",
+              icon: MapPin,
+              color: "from-amber-600/20 to-yellow-500/20 border-amber-500/30 text-amber-400 hover:border-amber-400",
+            },
+            {
+              key: "reviews",
+              label: t("btn_google_reviews"),
+              href: profile.googleReviewsLink ? normalizeExternalHref(profile.googleReviewsLink) : "",
+              icon: Star,
+              color: "from-purple-600/20 to-pink-500/20 border-purple-500/30 text-purple-400 hover:border-purple-400",
+            },
+            {
+              key: "website",
+              label: t("btn_website"),
+              href: profile.website ? normalizeExternalHref(profile.website) : "",
+              icon: Globe,
+              color: "from-indigo-600/20 to-blue-500/20 border-indigo-500/30 text-indigo-400 hover:border-indigo-400",
+            },
+            {
+              key: "booking",
+              label: t("btn_book_appointment"),
+              href: profile.appointmentLink ? normalizeExternalHref(profile.appointmentLink) : "",
+              icon: CalendarDays,
+              color: "from-yellow-600/20 to-amber-500/20 border-yellow-500/30 text-yellow-400 hover:border-yellow-400",
+            },
+          ].filter(a => a.href);
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {profile.clinicAddress && (
-                  <div className="flex items-start gap-3">
-                    <MapPin size={16} className="mt-0.5 text-[var(--identity-accent)] shrink-0" />
+          return (
+            <Reveal>
+              <div className="identity-glass-card identity-reflective mt-2 mb-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.02] shadow-[0_24px_50px_rgba(0,0,0,0.3)] backdrop-blur-md">
+                
+                {/* Header: Verified Seal & Info */}
+                <div className="relative p-6 pb-4 bg-gradient-to-b from-white/[0.04] to-transparent">
+                  
+                  {/* Dentist Verified Badge */}
+                  <div className="absolute top-6 right-6 flex items-center gap-1.5 rounded-full border border-velora-gold/30 bg-velora-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-velora-gold">
+                    <Shield size={12} fill="currentColor" />
+                    {t("dentist_verified")}
+                  </div>
+
+                  <div className="flex items-center gap-3.5 mb-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(var(--identity-accent-rgb),0.12)] text-[var(--identity-accent)] border border-[rgba(var(--identity-accent-rgb),0.2)]">
+                      <Stethoscope size={24} />
+                    </div>
                     <div>
-                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-velora-text-muted">
-                        {t("field_address")}
-                      </span>
-                      <p className="mt-1 text-sm text-velora-text-secondary leading-relaxed">
-                        {profile.clinicAddress}
+                      <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-velora-text leading-tight">
+                        {profile.clinicName || t("field_clinic_name")}
+                      </h3>
+                      <p className="text-xs text-[var(--identity-secondary)] font-medium mt-1">
+                        {profile.specialty || "Chirurgien-Dentiste"}
                       </p>
+                    </div>
+                  </div>
+
+                  {profile.orderNumber && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-white/[0.04] px-2.5 py-1 text-[11px] font-mono text-velora-text-muted border border-white/5">
+                      <span className="text-[var(--identity-accent)] font-semibold">ONMD N°:</span>
+                      <span>{profile.orderNumber}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Body: Location, Hours */}
+                <div className="p-6 pt-2 grid gap-6 sm:grid-cols-2 border-t border-white/5">
+                  {profile.clinicAddress && (
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.03] text-[var(--identity-accent)] border border-white/5">
+                        <MapPin size={16} />
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-velora-text-muted">
+                          {t("field_address")}
+                        </span>
+                        <p className="mt-1.5 text-sm text-velora-text-secondary leading-relaxed">
+                          {profile.clinicAddress}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {profile.workHours && (
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.03] text-[var(--identity-accent)] border border-white/5">
+                        <Clock size={16} />
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-velora-text-muted">
+                          {t("field_work_hours")}
+                        </span>
+                        <p className="mt-1.5 text-sm text-velora-text-secondary leading-relaxed font-mono">
+                          {profile.workHours}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Emergency availability pulse banner */}
+                {profile.emergencyContact && (
+                  <div className="mx-6 mb-6 p-4 rounded-2xl border border-red-500/20 bg-red-950/10 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="relative flex h-3.5 w-3.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
+                      </span>
+                      <div>
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-red-400">
+                          {t("emergency_badge")}
+                        </span>
+                        <p className="text-xs text-velora-text-muted mt-0.5">
+                          {t("field_emergency_contact")}
+                        </p>
+                      </div>
+                    </div>
+                    <motion.a
+                      href={`tel:${profile.emergencyContact.replace(/\s+/g, "")}`}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex items-center gap-2 rounded-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 px-4 py-2 text-xs font-bold text-red-200"
+                    >
+                      <Phone size={14} />
+                      {profile.emergencyContact}
+                    </motion.a>
+                  </div>
+                )}
+
+                {/* Dentist Action Buttons Grid */}
+                {dentistActions.length > 0 && (
+                  <div className="p-6 pt-0 border-t border-white/5">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-velora-text-muted mb-3.5 mt-4">
+                      {t("connect")}
+                    </span>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {dentistActions.map((act) => {
+                        const Icon = act.icon;
+                        return (
+                          <motion.a
+                            key={act.key}
+                            href={act.href}
+                            target={act.href.startsWith("http") ? "_blank" : undefined}
+                            rel={act.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                            className={`flex items-center gap-3 rounded-2xl border bg-gradient-to-b p-3.5 text-xs font-semibold shadow-sm transition-all duration-300 ${act.color}`}
+                            whileHover={{ y: -3, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-black/20">
+                              <Icon size={16} />
+                            </span>
+                            <span className="truncate leading-tight">{act.label}</span>
+                          </motion.a>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {profile.workHours && (
-                  <div className="flex items-start gap-3">
-                    <Clock size={16} className="mt-0.5 text-[var(--identity-accent)] shrink-0" />
-                    <div>
-                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-velora-text-muted">
-                        {t("field_work_hours")}
-                      </span>
-                      <p className="mt-1 text-sm text-velora-text-secondary leading-relaxed font-mono">
-                        {profile.workHours}
-                      </p>
-                    </div>
+                {/* Optional clinic gallery & Before/After showcase */}
+                <div className="p-6 pt-6 border-t border-white/5 grid gap-6 md:grid-cols-2">
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-velora-text-muted mb-3.5">
+                      {t("section_before_after")}
+                    </span>
+                    <BeforeAfterSlider t={t} />
                   </div>
-                )}
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-velora-text-muted mb-3.5">
+                      {t("section_gallery")}
+                    </span>
+                    <ClinicGallery t={t} />
+                  </div>
+                </div>
+
               </div>
-            </div>
-          </Reveal>
-        )}
+            </Reveal>
+          );
+        })()}
 
         {(profile.skills || []).length > 0 && (
           <IdentitySection eyebrow="Expertise" title="Signal Stack">
@@ -1430,4 +1575,127 @@ function getInitials(name?: string) {
     .slice(0, 2);
 
   return initials || "V";
+}
+
+function BeforeAfterSlider({ t }: { t: (key: string) => string }) {
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [containerWidth, setContainerWidth] = useState(300);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    setContainerWidth(containerRef.current.offsetWidth);
+    
+    const handleResize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleMove = (clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const position = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPosition(position);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches[0]) {
+      handleMove(e.touches[0].clientX);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (e.buttons === 1) {
+      handleMove(e.clientX);
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border border-white/10 select-none cursor-ew-resize shadow-inner bg-black/40"
+      onTouchMove={handleTouchMove}
+      onMouseMove={handleMouseMove}
+    >
+      {/* After image */}
+      <img
+        src="https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=600&q=80"
+        alt="After"
+        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+        draggable={false}
+      />
+      <div className="absolute right-4 bottom-4 z-10 rounded-full bg-black/65 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-velora-gold backdrop-blur-sm">
+        {t("after")}
+      </div>
+
+      {/* Before image clipped container */}
+      <div
+        className="absolute inset-y-0 left-0 overflow-hidden pointer-events-none"
+        style={{ width: `${sliderPosition}%` }}
+      >
+        <img
+          src="https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&w=600&q=80"
+          alt="Before"
+          className="absolute inset-y-0 left-0 h-full object-cover max-w-none pointer-events-none"
+          style={{ width: containerWidth }}
+          draggable={false}
+        />
+        <div className="absolute left-4 bottom-4 z-10 rounded-full bg-black/65 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm">
+          {t("before")}
+        </div>
+      </div>
+
+      {/* Handle */}
+      <div
+        className="absolute inset-y-0 w-0.5 bg-velora-gold/80 flex items-center justify-center pointer-events-none"
+        style={{ left: `${sliderPosition}%` }}
+      >
+        <div className="h-8 w-8 rounded-full border-2 border-velora-gold bg-black/90 flex items-center justify-center shadow-lg text-velora-gold text-sm font-bold pointer-events-auto">
+          ↔
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClinicGallery({ t }: { t: (key: string) => string }) {
+  const images = [
+    "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=600&q=80",
+    "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?auto=format&fit=crop&w=600&q=80",
+    "https://images.unsplash.com/photo-1579684389782-64d84b5e905d?auto=format&fit=crop&w=600&q=80"
+  ];
+  
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border border-white/10 group select-none shadow-md bg-black/40">
+      <img 
+        src={images[activeIndex]} 
+        alt="Clinic Interior" 
+        className="h-full w-full object-cover transition-all duration-500" 
+      />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex items-center justify-between">
+        <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wider">
+          {t("section_gallery")}
+        </span>
+        <div className="flex gap-1.5">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              className={`h-2 w-2 rounded-full transition-all ${
+                i === activeIndex ? "bg-velora-gold w-4" : "bg-white/40"
+              }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }

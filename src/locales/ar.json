@@ -84,5 +84,15 @@
   "mode_creator": "صانع محتوى",
   "mode_artist": "فنان",
   "mode_business": "أعمال",
-  "mode_vip": "عضو VIP"
+  "mode_vip": "عضو VIP",
+  "field_google_reviews": "رابط تقييمات جوجل",
+  "field_emergency_contact": "رقم الطوارئ",
+  "btn_google_reviews": "تقييمات جوجل",
+  "btn_emergency_call": "طوارئ 24/7",
+  "btn_website": "الموقع الإلكتروني",
+  "section_gallery": "معرض العيادة",
+  "section_before_after": "الحالات السريرية (قبل / بعد)",
+  "emergency_badge": "مناوبة الطوارئ",
+  "before": "قبل",
+  "after": "بعد"
 }

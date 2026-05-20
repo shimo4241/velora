@@ -88,14 +88,16 @@ export interface VeloraProfile {
   onboarding?: VeloraOnboardingState;
 
   // Professional / Dentist Specific Fields
-    specialty?: string;
+  specialty?: string;
   clinicName?: string;
   orderNumber?: string;
   fixedPhone?: string;
   googleMapsLink?: string;
+  googleReviewsLink?: string;
   appointmentLink?: string;
   clinicAddress?: string;
   workHours?: string;
+  emergencyContact?: string;
 
   // App Settings
   settings?: {

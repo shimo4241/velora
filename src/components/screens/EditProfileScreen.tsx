@@ -15,6 +15,8 @@ import {
   Mail,
   Globe,
   FileText,
+  Star,
+  AlertTriangle,
 } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
@@ -57,9 +59,11 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     orderNumber: profile?.orderNumber || "",
     fixedPhone: profile?.fixedPhone || "",
     googleMapsLink: profile?.googleMapsLink || "",
+    googleReviewsLink: profile?.googleReviewsLink || "",
     appointmentLink: profile?.appointmentLink || "",
     clinicAddress: profile?.clinicAddress || "",
     workHours: profile?.workHours || "",
+    emergencyContact: profile?.emergencyContact || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -152,6 +156,76 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   };
 
   const handleSave = async () => {
+    // 1. URL Validations
+    const urlFields = [
+      { key: "website", label: "Site web" },
+      { key: "googleMapsLink", label: "Google Maps" },
+      { key: "appointmentLink", label: "Lien de Réservation" },
+      { key: "googleReviewsLink", label: "Lien Avis Google" }
+    ];
+    for (const f of urlFields) {
+      const val = form[f.key as keyof typeof form];
+      if (val) {
+        let isValid = false;
+        try {
+          const testUrl = val.startsWith("http://") || val.startsWith("https://") ? val : "https://" + val;
+          new URL(testUrl);
+          isValid = true;
+        } catch {
+          isValid = false;
+        }
+        if (!isValid) {
+          showToast({
+            tone: "error",
+            title: "Lien invalide",
+            message: `Le format du lien pour "${f.label}" n'est pas correct.`
+          });
+          return;
+        }
+      }
+    }
+
+    // 2. Phone Validations
+    const phoneFields = [
+      { key: "phone", label: "Téléphone" },
+      { key: "fixedPhone", label: "Téléphone fixe" },
+      { key: "whatsapp", label: "WhatsApp" },
+      { key: "emergencyContact", label: "Contact d'Urgence" }
+    ];
+    const phonePattern = /^\+?[0-9\s\-()]{8,20}$/;
+    for (const f of phoneFields) {
+      const val = form[f.key as keyof typeof form];
+      if (val && !phonePattern.test(val)) {
+        showToast({
+          tone: "error",
+          title: "Téléphone invalide",
+          message: `Le numéro pour "${f.label}" doit contenir entre 8 et 20 chiffres.`
+        });
+        return;
+      }
+    }
+
+    // 3. Order Number Validation for Dentist
+    if (form.professionalMode === "dentist") {
+      if (!form.orderNumber.trim()) {
+        showToast({
+          tone: "error",
+          title: "Numéro d'Ordre requis",
+          message: "Le numéro d'ordre national est obligatoire pour le profil Dentiste."
+        });
+        return;
+      }
+      const orderPattern = /^[a-zA-Z0-9\/\-\s]{3,20}$/;
+      if (!orderPattern.test(form.orderNumber)) {
+        showToast({
+          tone: "error",
+          title: "Numéro d'Ordre invalide",
+          message: "Le numéro d'ordre doit contenir entre 3 et 20 caractères (lettres, chiffres, tirets, espaces ou slashs)."
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -183,18 +257,21 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
 
   const dentistFields = [
     { key: "specialty", label: "Spécialité dentaire", icon: Briefcase, placeholder: "Chirurgien-Dentiste, Orthodontiste..." },
-    { key: "clinicName", label: "Nom de la clinique", icon: Briefcase, placeholder: "Cabinet Dentaire Dr. El Amrani" },
+    { key: "clinicName", label: "Nom du cabinet", icon: Briefcase, placeholder: "Cabinet Dentaire Dr. El Amrani" },
     { key: "orderNumber", label: "Numéro d'Ordre", icon: FileText, placeholder: "123456" },
-    { key: "fixedPhone", label: "Téléphone fixe de la clinique", icon: Phone, placeholder: "+212 5XX XXX XXX", type: "tel" },
-    { key: "whatsapp", label: "Numéro WhatsApp", icon: Phone, placeholder: "+212 6XX XXX XXX", type: "tel" },
-    { key: "googleMapsLink", label: "Lien Google Maps", icon: MapPin, placeholder: "https://maps.app.goo.gl/..." },
+    { key: "fixedPhone", label: "Téléphone fixe", icon: Phone, placeholder: "+212 5XX XXX XXX", type: "tel" },
+    { key: "whatsapp", label: "WhatsApp professionnel", icon: Phone, placeholder: "+212 6XX XXX XXX", type: "tel" },
+    { key: "clinicAddress", label: "Adresse du cabinet", icon: MapPin, placeholder: "123 Bd Anfa, Casablanca" },
+    { key: "googleMapsLink", label: "Lien Google Maps / GMB", icon: MapPin, placeholder: "https://maps.google.com/?q=..." },
+    { key: "googleReviewsLink", label: "Lien Avis Google", icon: Star, placeholder: "https://g.page/r/..." },
+    { key: "website", label: "Site Web de la clinique", icon: Globe, placeholder: "https://www.cabinetdentaire.com" },
     { key: "appointmentLink", label: "Lien de Réservation", icon: Globe, placeholder: "https://doctolib.fr/..." },
-    { key: "clinicAddress", label: "Adresse de la clinique", icon: MapPin, placeholder: "123 Bd Anfa, Casablanca" },
+    { key: "emergencyContact", label: "Contact d'Urgence", icon: AlertTriangle, placeholder: "+212 6XX XXX XXX", type: "tel" },
     { key: "workHours", label: "Horaires de travail", icon: FileText, placeholder: "Lun - Ven: 09h00 - 18h00 / Sam: 09h00 - 13h00" },
   ];
 
   const fields = form.professionalMode === "dentist"
-    ? [...baseFields.filter(f => f.key !== "phone" && f.key !== "company"), ...dentistFields]
+    ? [...baseFields.filter(f => f.key !== "phone" && f.key !== "company" && f.key !== "website"), ...dentistFields]
     : baseFields;
 
   const initials = form.fullName
