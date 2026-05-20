@@ -26,6 +26,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock,
   ExternalLink,
   Eye,
   Globe,
@@ -39,6 +40,7 @@ import {
   Shield,
   Sparkles,
   Star,
+  Stethoscope,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -156,6 +158,76 @@ const MODE_THEMES: Record<ProfessionalMode, IdentityTheme> = {
     badge: "Gold Luxury",
     qrForeground: "#12100b",
   },
+  dentist: {
+    label: "Dentist",
+    accent: "#b89f5d",
+    accentRgb: "184,159,93",
+    secondary: "#9ab8c7",
+    secondaryRgb: "154,184,199",
+    muted: "#7ba0b2",
+    heroGradient:
+      "radial-gradient(circle at 50% 22%, rgba(154,184,199,0.22), transparent 35%), linear-gradient(142deg, #0b0f12 0%, #151e24 40%, #080b0d 100%)",
+    atmosphere:
+      "radial-gradient(circle, rgba(154,184,199,0.3) 0%, rgba(184,159,93,0.12) 38%, transparent 70%)",
+    badge: "Dentiste Vérifié",
+    qrForeground: "#0a0f12",
+  },
+  creator: {
+    label: "Creator",
+    accent: "#ff6b6b",
+    accentRgb: "255,107,107",
+    secondary: "#a78bfa",
+    secondaryRgb: "167,139,250",
+    muted: "#cbd5e1",
+    heroGradient:
+      "radial-gradient(circle at 58% 18%, rgba(255,107,107,0.18), transparent 31%), radial-gradient(circle at 24% 34%, rgba(167,139,250,0.13), transparent 28%), linear-gradient(145deg, #030108 0%, #0f0b1a 45%, #050407 100%)",
+    atmosphere:
+      "radial-gradient(circle, rgba(255,107,107,0.25) 0%, rgba(167,139,250,0.15) 42%, transparent 72%)",
+    badge: "Verified Creator",
+    qrForeground: "#0a0714",
+  },
+  artist: {
+    label: "Artist",
+    accent: "#f472b6",
+    accentRgb: "244,114,182",
+    secondary: "#fbbf24",
+    secondaryRgb: "251,191,36",
+    muted: "#f43f5e",
+    heroGradient:
+      "radial-gradient(circle at 50% 20%, rgba(244,114,182,0.2), transparent 35%), linear-gradient(142deg, #0a0104 0%, #1c0612 40%, #050102 100%)",
+    atmosphere:
+      "radial-gradient(circle, rgba(244,114,182,0.25) 0%, rgba(251,191,36,0.12) 40%, transparent 70%)",
+    badge: "Verified Artist",
+    qrForeground: "#12030a",
+  },
+  business: {
+    label: "Business",
+    accent: "#38bdf8",
+    accentRgb: "56,189,248",
+    secondary: "#0284c7",
+    secondaryRgb: "2,132,199",
+    muted: "#64748b",
+    heroGradient:
+      "radial-gradient(circle at 50% 22%, rgba(56,189,248,0.18), transparent 35%), linear-gradient(142deg, #02060c 0%, #08172c 40%, #010204 100%)",
+    atmosphere:
+      "radial-gradient(circle, rgba(56,189,248,0.22) 0%, rgba(2,132,199,0.12) 38%, transparent 70%)",
+    badge: "Verified Business",
+    qrForeground: "#020a12",
+  },
+  vip: {
+    label: "VIP",
+    accent: "#fbbf24",
+    accentRgb: "251,191,36",
+    secondary: "#f8fafc",
+    secondaryRgb: "248,250,252",
+    muted: "#94a3b8",
+    heroGradient:
+      "radial-gradient(circle at 50% 22%, rgba(251,191,36,0.28), transparent 32%), linear-gradient(142deg, #050505 0%, #151515 40%, #000000 100%)",
+    atmosphere:
+      "radial-gradient(circle, rgba(251,191,36,0.3) 0%, rgba(248,250,252,0.12) 38%, transparent 70%)",
+    badge: "VIP Member",
+    qrForeground: "#0e0d0a",
+  },
 };
 
 const PARTICLES = [
@@ -175,7 +247,7 @@ export default function PublicProfileClient({
   portfolio,
   experience,
 }: PublicProfileClientProps) {
-  const { t } = useTranslation(profile.locale || "fr");
+  const { t, dir, isRtl } = useTranslation(profile.locale || "fr");
   const theme = getIdentityTheme(profile.professionalMode);
   const profileUrl = getProfileUrl(profile.username);
   const shortUrl = getProfileShortUrl(profile.username);
@@ -193,7 +265,10 @@ export default function PublicProfileClient({
 
   return (
     <main
-      className="luxury-profile min-h-screen overflow-hidden bg-velora-black text-velora-text"
+      className={`luxury-profile min-h-screen overflow-hidden bg-velora-black text-velora-text ${
+        isRtl ? "rtl" : "ltr"
+      }`}
+      dir={dir}
       style={themeVars}
     >
       <IdentityHero
@@ -207,7 +282,58 @@ export default function PublicProfileClient({
       />
 
       <div className="relative z-10 mx-auto w-full max-w-[980px] px-5 pb-24">
-        <ContactSection profile={profile} theme={theme} />
+        <ContactSection profile={profile} theme={theme} t={t} />
+
+        {profile.professionalMode === "dentist" && (
+          <Reveal>
+            <div className="identity-glass-card identity-reflective mt-2 mb-8 overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md">
+              <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(var(--identity-accent-rgb),0.12)] text-[var(--identity-accent)]">
+                  <Stethoscope size={20} />
+                </div>
+                <div>
+                  <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
+                    {profile.clinicName || t("field_clinic_name")}
+                  </h3>
+                  <p className="text-xs text-velora-text-muted mt-0.5">
+                    {profile.specialty || "Chirurgien-Dentiste"}
+                    {profile.orderNumber && ` • Numéro d'ordre: ${profile.orderNumber}`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {profile.clinicAddress && (
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="mt-0.5 text-[var(--identity-accent)] shrink-0" />
+                    <div>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-velora-text-muted">
+                        {t("field_address")}
+                      </span>
+                      <p className="mt-1 text-sm text-velora-text-secondary leading-relaxed">
+                        {profile.clinicAddress}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {profile.workHours && (
+                  <div className="flex items-start gap-3">
+                    <Clock size={16} className="mt-0.5 text-[var(--identity-accent)] shrink-0" />
+                    <div>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-velora-text-muted">
+                        {t("field_work_hours")}
+                      </span>
+                      <p className="mt-1 text-sm text-velora-text-secondary leading-relaxed font-mono">
+                        {profile.workHours}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Reveal>
+        )}
 
         {(profile.skills || []).length > 0 && (
           <IdentitySection eyebrow="Expertise" title="Signal Stack">
@@ -471,7 +597,7 @@ export function IdentityHero({
           )}
 
           <Reveal delay={0.3}>
-            <LuxuryActionButtons actions={contactActions} />
+            <LuxuryActionButtons actions={contactActions} t={t} />
           </Reveal>
 
           <Reveal delay={0.36}>
@@ -500,12 +626,22 @@ export function IdentityHero({
 export function ContactSection({
   profile,
   theme,
+  t,
 }: {
   profile: VeloraProfile;
   theme: IdentityTheme;
+  t: (key: string) => string;
 }) {
   const contactActions = useMemo(() => getContactActions(profile), [profile]);
   if (!contactActions.length) return null;
+
+  const getTranslationKey = (key: string) => {
+    if (key === "call_clinic") return "btn_call_clinic";
+    if (key === "whatsapp") return "btn_whatsapp";
+    if (key === "maps") return "btn_open_maps";
+    if (key === "booking") return "btn_book_appointment";
+    return key;
+  };
 
   return (
     <section className="-mt-6 pb-8">
@@ -526,10 +662,10 @@ export function ContactSection({
               >
                 <span>
                   <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
-                    {index === 0 ? "Primary" : "Access"}
+                    {index === 0 ? t("Primary") || "Primary" : t("Access") || "Access"}
                   </span>
                   <span className="mt-2 block font-[family-name:var(--font-display)] text-base font-semibold text-velora-text">
-                    {action.label}
+                    {t(getTranslationKey(action.key)) || action.label}
                   </span>
                 </span>
                 <span
@@ -1048,12 +1184,22 @@ export function SocialChannelRail({ links }: { links: SocialLink[] }) {
   );
 }
 
-function LuxuryActionButtons({ actions }: { actions: ContactAction[] }) {
-  const visible = actions.slice(0, 3);
+function LuxuryActionButtons({ actions, t }: { actions: ContactAction[]; t: (key: string) => string }) {
+  const visible = actions.slice(0, 4);
   if (!visible.length) return null;
 
+  const getTranslationKey = (key: string) => {
+    if (key === "call_clinic") return "btn_call_clinic";
+    if (key === "whatsapp") return "btn_whatsapp";
+    if (key === "maps") return "btn_open_maps";
+    if (key === "booking") return "btn_book_appointment";
+    return key;
+  };
+
   return (
-    <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
+    <div className={`mt-6 grid gap-2.5 ${
+      visible.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"
+    }`}>
       {visible.map((action, index) => {
         const Icon = action.icon;
         const primary = index === 0;
@@ -1063,7 +1209,7 @@ function LuxuryActionButtons({ actions }: { actions: ContactAction[] }) {
             href={action.href}
             target={action.href.startsWith("http") ? "_blank" : undefined}
             rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
-            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold backdrop-blur-md ${
+            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-xs sm:text-sm font-semibold backdrop-blur-md ${
               primary
                 ? "border-[rgba(var(--identity-accent-rgb),0.42)] bg-[rgba(var(--identity-accent-rgb),0.16)] text-[var(--identity-accent)]"
                 : "border-white/10 bg-white/[0.045] text-velora-text-secondary"
@@ -1073,7 +1219,7 @@ function LuxuryActionButtons({ actions }: { actions: ContactAction[] }) {
             transition={{ duration: 0.25, ease: LUXURY_EASE }}
           >
             <Icon size={15} />
-            {action.label}
+            <span className="truncate">{t(getTranslationKey(action.key)) || action.label}</span>
           </motion.a>
         );
       })}
@@ -1171,6 +1317,50 @@ export function getIdentityTheme(mode?: ProfessionalMode): IdentityTheme {
 function getContactActions(profile: VeloraProfile): ContactAction[] {
   const settings = profile.contactActions;
   const actions: ContactAction[] = [];
+
+  // Special Dentist Mode Action Buttons
+  if (profile.professionalMode === "dentist") {
+    if (profile.fixedPhone) {
+      actions.push({
+        key: "call_clinic",
+        label: "Call Clinic",
+        href: `tel:${profile.fixedPhone.replace(/\s+/g, "")}`,
+        icon: Phone,
+        priority: 1,
+      });
+    }
+    if (profile.whatsapp) {
+      actions.push({
+        key: "whatsapp",
+        label: "WhatsApp",
+        href: `https://wa.me/${profile.whatsapp.replace(/\D/g, "")}`,
+        icon: MessageCircle,
+        priority: 2,
+      });
+    }
+    if (profile.googleMapsLink) {
+      actions.push({
+        key: "maps",
+        label: "Open Maps",
+        href: normalizeExternalHref(profile.googleMapsLink),
+        icon: MapPin,
+        priority: 3,
+      });
+    }
+    if (profile.appointmentLink) {
+      actions.push({
+        key: "booking",
+        label: "Book Appointment",
+        href: normalizeExternalHref(profile.appointmentLink),
+        icon: CalendarDays,
+        priority: 4,
+      });
+    }
+
+    if (actions.length > 0) {
+      return actions.sort((a, b) => a.priority - b.priority);
+    }
+  }
 
   if (settings?.whatsapp !== false && profile.whatsapp) {
     actions.push({

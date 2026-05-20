@@ -32,9 +32,10 @@ interface EditProfileScreenProps {
 }
 
 export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
-  const { profile, updateProfile, uploadAvatar, isProfileReady } = useProfile();
+  const { profile, updateProfile, uploadAvatar, uploadCover, isProfileReady } = useProfile();
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<string[]>([]);
 
   // Local form state
@@ -44,9 +45,21 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     company: profile?.company || "",
     location: profile?.location || "",
     bio: profile?.bio || "",
-    phone: profile?.whatsapp || profile?.phone || "",
+    phone: profile?.phone || profile?.whatsapp || "",
+    whatsapp: profile?.whatsapp || "",
     email: profile?.email || "",
     website: profile?.website || "",
+    professionalMode: profile?.professionalMode || "entrepreneur",
+    
+    // Dentist fields
+    specialty: profile?.specialty || "",
+    clinicName: profile?.clinicName || "",
+    orderNumber: profile?.orderNumber || "",
+    fixedPhone: profile?.fixedPhone || "",
+    googleMapsLink: profile?.googleMapsLink || "",
+    appointmentLink: profile?.appointmentLink || "",
+    clinicAddress: profile?.clinicAddress || "",
+    workHours: profile?.workHours || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -54,6 +67,10 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || "");
+
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadCoverProgress, setUploadCoverProgress] = useState(0);
+  const [coverPreview, setCoverPreview] = useState(profile?.coverUrl || "");
 
   useEffect(() => {
     return () => {
@@ -76,7 +93,6 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       return;
     }
 
-    // Upload to Firebase Storage
     const previousPreview = avatarPreview;
     setUploading(true);
     setUploadProgress(0);
@@ -102,10 +118,48 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     }
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) {
+      console.warn("[Upload:cover] image-picker:no file selected");
+      return;
+    }
+
+    const previousPreview = coverPreview;
+    setUploadingCover(true);
+    setUploadCoverProgress(0);
+    try {
+      validateUploadImageFile(file, "cover");
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(previewUrl);
+      setCoverPreview(previewUrl);
+      const url = await uploadCover(file, {
+        onProgress: ({ percent }) => setUploadCoverProgress(percent),
+      });
+      previewUrlsRef.current.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
+      previewUrlsRef.current = [];
+      setCoverPreview(url);
+      showToast({ tone: "success", title: "Cover updated", message: "Your cover image has been uploaded." });
+    } catch (err) {
+      console.error("[Upload:cover] edit screen failed:", err);
+      setCoverPreview(previousPreview);
+      showToast({ tone: "error", title: "Cover upload failed", message: getUploadErrorMessage(err, "cover") });
+    } finally {
+      setUploadingCover(false);
+      setUploadCoverProgress(0);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateProfile(form);
+      const payload = {
+        ...form,
+        avatarUrl: avatarPreview,
+        coverUrl: coverPreview,
+      };
+      await updateProfile(payload);
       setSaved(true);
       setTimeout(() => { setSaved(false); onClose(); }, 1200);
     } catch (err) {
@@ -116,7 +170,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     }
   };
 
-  const fields = [
+  const baseFields = [
     { key: "fullName", label: "Nom complet", icon: User, placeholder: "Youssef El Amrani" },
     { key: "title", label: "Titre professionnel", icon: Briefcase, placeholder: "Founder & Creative Director" },
     { key: "company", label: "Entreprise", icon: Briefcase, placeholder: "VELORA Studios" },
@@ -127,10 +181,39 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     { key: "website", label: "Site web", icon: Globe, placeholder: "velora.app", type: "url" },
   ];
 
+  const dentistFields = [
+    { key: "specialty", label: "Spécialité dentaire", icon: Briefcase, placeholder: "Chirurgien-Dentiste, Orthodontiste..." },
+    { key: "clinicName", label: "Nom de la clinique", icon: Briefcase, placeholder: "Cabinet Dentaire Dr. El Amrani" },
+    { key: "orderNumber", label: "Numéro d'Ordre", icon: FileText, placeholder: "123456" },
+    { key: "fixedPhone", label: "Téléphone fixe de la clinique", icon: Phone, placeholder: "+212 5XX XXX XXX", type: "tel" },
+    { key: "whatsapp", label: "Numéro WhatsApp", icon: Phone, placeholder: "+212 6XX XXX XXX", type: "tel" },
+    { key: "googleMapsLink", label: "Lien Google Maps", icon: MapPin, placeholder: "https://maps.app.goo.gl/..." },
+    { key: "appointmentLink", label: "Lien de Réservation", icon: Globe, placeholder: "https://doctolib.fr/..." },
+    { key: "clinicAddress", label: "Adresse de la clinique", icon: MapPin, placeholder: "123 Bd Anfa, Casablanca" },
+    { key: "workHours", label: "Horaires de travail", icon: FileText, placeholder: "Lun - Ven: 09h00 - 18h00 / Sam: 09h00 - 13h00" },
+  ];
+
+  const fields = form.professionalMode === "dentist"
+    ? [...baseFields.filter(f => f.key !== "phone" && f.key !== "company"), ...dentistFields]
+    : baseFields;
+
   const initials = form.fullName
     ?.split(" ")
     .map((n) => n[0])
     .join("") || "V";
+
+  const modeOptions = [
+    { value: "entrepreneur", label: "Entrepreneur" },
+    { value: "corporate", label: "Corporate" },
+    { value: "creative", label: "Creative" },
+    { value: "nightlife", label: "Nightlife" },
+    { value: "luxury", label: "Luxury" },
+    { value: "dentist", label: "Dentiste (Cabinet Médical)" },
+    { value: "creator", label: "Creator" },
+    { value: "artist", label: "Artiste" },
+    { value: "business", label: "Business" },
+    { value: "vip", label: "VIP Member" },
+  ];
 
   return (
     <motion.div
@@ -162,8 +245,52 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
         </div>
       </div>
 
-      {/* Avatar section */}
-      <div className="px-5 pt-6 pb-4">
+      {/* Media sections */}
+      <div className="px-5 pt-6 pb-4 space-y-6">
+        {/* Cover upload */}
+        <FadeUp>
+          <div className="flex flex-col items-center">
+            <div className="relative w-full max-w-[420px] aspect-[2.4/1] rounded-xl overflow-hidden border border-velora-border/40 bg-velora-surface">
+              {coverPreview ? (
+                <div
+                  className="w-full h-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${coverPreview})` }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-velora-text-muted font-semibold">
+                  Aucune image de couverture
+                </div>
+              )}
+              {/* Upload button overlay */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => coverInputRef.current?.click()}
+                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-velora-gold flex items-center justify-center shadow-lg"
+              >
+                {uploadingCover ? (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-velora-black px-1">
+                    <Loader2 size={10} className="animate-spin" />
+                    {uploadCoverProgress}%
+                  </span>
+                ) : (
+                  <Camera size={14} className="text-velora-black" />
+                )}
+              </motion.button>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleCoverUpload}
+                className="hidden"
+              />
+            </div>
+            <div className="text-[11px] text-velora-text-muted mt-2">
+              Bannière de couverture
+            </div>
+          </div>
+        </FadeUp>
+
+        {/* Avatar upload */}
         <FadeUp>
           <div className="flex flex-col items-center">
             <div className="relative">
@@ -205,8 +332,8 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
               />
             </div>
 
-            <div className="text-xs text-velora-text-muted mt-3">
-              Appuyez pour changer la photo
+            <div className="text-[11px] text-velora-text-muted mt-3">
+              Photo de profil
             </div>
           </div>
         </FadeUp>
@@ -215,6 +342,29 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       {/* Form fields */}
       <div className="px-5 pb-32">
         <StaggerChildren staggerDelay={0.04} delay={0.15} className="space-y-3">
+          {/* Professional Mode Selector */}
+          <StaggerItem>
+            <GlassCard className="p-3" hover={false}>
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase size={12} className="text-velora-gold/60" />
+                <label className="text-[10px] text-velora-text-muted uppercase tracking-wider">
+                  Mode professionnel
+                </label>
+              </div>
+              <select
+                value={form.professionalMode}
+                onChange={(e) => handleChange("professionalMode", e.target.value)}
+                className="w-full bg-transparent text-sm text-velora-text outline-none border-none cursor-pointer focus:ring-0 focus:outline-none"
+              >
+                {modeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-velora-surface text-velora-text">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </GlassCard>
+          </StaggerItem>
+
           {fields.map((field) => {
             const Icon = field.icon;
             const value = form[field.key as keyof typeof form] || "";
@@ -255,3 +405,4 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     </motion.div>
   );
 }
+

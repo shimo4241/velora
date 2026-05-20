@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
   BarChart3,
@@ -15,6 +15,7 @@ import {
   Pencil,
   QrCode,
   Shield,
+  Settings as SettingsIcon,
   Sparkles,
   Users,
   Wifi,
@@ -42,6 +43,8 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTranslation } from "@/lib/i18n";
 import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
+import { EditProfileScreen } from "./EditProfileScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { useConnections } from "@/hooks/useConnections";
 import { usePortfolio, useExperience, useProfile } from "@/hooks/useProfile";
 import { useActivity, useStats } from "@/hooks/useStats";
@@ -80,6 +83,8 @@ export function ProfileScreen() {
   const { activity } = useActivity();
   const { t } = useTranslation(profile?.locale || "fr");
   const [editingSection, setEditingSection] = useState<ProfileEditorSection | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFullEdit, setShowFullEdit] = useState(false);
   const [profileOverride, setProfileOverride] =
     useState<Partial<Omit<VeloraProfile, "id" | "username">>>({});
   const [portfolioOverride, setPortfolioOverride] = useState<PortfolioItem[] | null>(null);
@@ -228,11 +233,31 @@ export function ProfileScreen() {
           theme={theme}
           t={t}
         />
-        <FloatingEditButton
-          label="Edit portrait, banner and headline"
-          onClick={() => setEditingSection("header")}
-          className="right-4 top-[max(1rem,env(safe-area-inset-top))] h-11 w-11"
-        />
+        <div className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-20 flex items-center gap-2">
+          <motion.button
+            type="button"
+            aria-label="Edit Profile"
+            title="Edit Profile"
+            onClick={() => setShowFullEdit(true)}
+            whileHover={{ y: -2, scale: 1.04 }}
+            whileTap={{ scale: 0.92 }}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-velora-gold/30 bg-black/45 text-velora-gold shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-velora-gold/60"
+          >
+            <Pencil size={15} />
+          </motion.button>
+
+          <motion.button
+            type="button"
+            aria-label="Settings"
+            title="Settings"
+            onClick={() => setShowSettings(true)}
+            whileHover={{ y: -2, scale: 1.04 }}
+            whileTap={{ scale: 0.92 }}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/45 text-velora-text-secondary shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-white/20 hover:text-white"
+          >
+            <SettingsIcon size={16} />
+          </motion.button>
+        </div>
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[980px] px-5 pb-28">
@@ -242,7 +267,7 @@ export function ProfileScreen() {
           buttonClassName="right-1 top-1"
         >
           {hasContactCards(effectiveProfile) ? (
-            <ContactSection profile={effectiveProfile} theme={theme} />
+            <ContactSection profile={effectiveProfile} theme={theme} t={t} />
           ) : (
             <section className="-mt-6 pb-8">
               <LuxuryEmptyState
@@ -426,6 +451,15 @@ export function ProfileScreen() {
         onUploadCover={uploadCover}
         onUploadPortfolioImage={uploadPortfolioImage}
       />
+
+      <AnimatePresence>
+        {showFullEdit && (
+          <EditProfileScreen onClose={() => setShowFullEdit(false)} />
+        )}
+        {showSettings && (
+          <SettingsScreen onClose={() => setShowSettings(false)} />
+        )}
+      </AnimatePresence>
     </main>
   );
 }

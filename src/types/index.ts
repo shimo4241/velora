@@ -9,7 +9,12 @@ export type ProfessionalMode =
   | "corporate"
   | "creative"
   | "nightlife"
-  | "luxury";
+  | "luxury"
+  | "dentist"
+  | "creator"
+  | "artist"
+  | "business"
+  | "vip";
 
 /* ── User Roles ── */
 export type VeloraRole = "free" | "premium" | "verified" | "business";
@@ -79,8 +84,32 @@ export interface VeloraProfile {
   isVerified: boolean;
   isPremium: boolean;
   isNoir: boolean;
-  locale: "fr" | "en" | "ar";
+  locale: "fr" | "en" | "ar" | "es";
   onboarding?: VeloraOnboardingState;
+
+  // Professional / Dentist Specific Fields
+    specialty?: string;
+  clinicName?: string;
+  orderNumber?: string;
+  fixedPhone?: string;
+  googleMapsLink?: string;
+  appointmentLink?: string;
+  clinicAddress?: string;
+  workHours?: string;
+
+  // App Settings
+  settings?: {
+    notifications?: {
+      push?: boolean;
+      email?: boolean;
+      connectionAlerts?: boolean;
+    };
+    privacy?: {
+      isPrivate?: boolean;
+      allowIndexing?: boolean;
+      showEmail?: boolean;
+    };
+  };
 }
 
 /* ── Social Link ── */

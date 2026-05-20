@@ -911,3 +911,32 @@ body {
   outline: none;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   SAHARA PEARL — Luxury Light Theme
+   Override tokens dynamically based on data-theme attribute
+   ─────────────────────────────────────────────────────────────── */
+
+:root[data-theme="light"],
+html.light {
+  --color-velora-black: #F4F1EA;
+  --color-velora-dark: #EAE6DC;
+  --color-velora-surface: #E0DACF;
+  --color-velora-card: #FFFFFF;
+  --color-velora-card-hover: #FAF9F6;
+  --color-velora-elevated: #FFFFFF;
+  --color-velora-border: #DCD6C5;
+
+  --color-velora-text: #1C1A14;
+  --color-velora-text-secondary: #686358;
+  --color-velora-text-muted: #A39E92;
+
+  --color-velora-glass: rgba(255, 255, 255, 0.65);
+  --color-velora-glass-border: rgba(28, 26, 20, 0.08);
+  --color-velora-glass-strong: rgba(255, 255, 255, 0.85);
+  --color-velora-glass-strong-border: rgba(28, 26, 20, 0.12);
+
+  --color-velora-gold: #AF8E50;
+  --color-velora-gold-muted: rgba(175, 142, 80, 0.25);
+  --color-velora-gold-dim: rgba(175, 142, 80, 0.08);
+  --color-velora-gold-glow: rgba(175, 142, 80, 0.15);
+}
