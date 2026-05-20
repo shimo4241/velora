@@ -93,8 +93,10 @@ export function FloatingEditButton({
       aria-label={label}
       title={label}
       onClick={onClick}
+      whileHover={{ y: -2, scale: 1.04 }}
       whileTap={{ scale: 0.92 }}
-      className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/8 text-velora-gold shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-colors duration-300 hover:border-velora-gold/45 hover:bg-velora-gold/12 focus:border-velora-gold/60 ${className}`}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+      className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-velora-gold/35 bg-[linear-gradient(135deg,rgba(216,181,109,0.22),rgba(255,255,255,0.06))] text-velora-gold shadow-[0_12px_34px_rgba(0,0,0,0.34),0_0_34px_rgba(196,162,101,0.14)] backdrop-blur-2xl transition-colors duration-300 hover:border-velora-gold/60 hover:bg-velora-gold/16 focus:border-velora-gold/70 ${className}`}
     >
       <Pencil size={14} />
     </motion.button>
@@ -211,17 +213,18 @@ function EditorChrome({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[220] flex items-end justify-center bg-black/55 px-0 backdrop-blur-sm sm:items-center sm:px-5"
+      initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      animate={{ opacity: 1, backdropFilter: "blur(18px)" }}
+      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed inset-0 z-[220] flex items-end justify-center bg-black/62 px-0 sm:items-center sm:px-5"
     >
       <motion.div
-        initial={{ y: 28, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 28, opacity: 0 }}
-        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-strong max-h-[88dvh] w-full max-w-[430px] overflow-hidden rounded-t-[var(--radius-lg)] border border-white/12 bg-velora-black/96 shadow-[0_-20px_80px_rgba(0,0,0,0.55)] sm:rounded-[var(--radius-lg)]"
+        initial={{ y: 34, opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+        animate={{ y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
+        exit={{ y: 24, opacity: 0, scale: 0.985, filter: "blur(8px)" }}
+        transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+        className="glass-strong max-h-[88dvh] w-full max-w-[430px] overflow-hidden rounded-t-[var(--radius-lg)] border border-velora-gold/20 bg-velora-black/96 shadow-[0_-24px_90px_rgba(0,0,0,0.64),0_0_70px_rgba(196,162,101,0.08)] sm:rounded-[var(--radius-lg)]"
       >
         <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -279,6 +282,7 @@ export function ProfileEditorSheet({
   onSavePortfolio,
   onSaveExperience,
   onUploadAvatar,
+  onUploadCover,
   onUploadPortfolioImage,
 }: {
   section: ProfileEditorSection | null;
@@ -290,6 +294,7 @@ export function ProfileEditorSheet({
   onSavePortfolio: (items: PortfolioItem[]) => Promise<void>;
   onSaveExperience: (items: ExperienceEntry[]) => Promise<void>;
   onUploadAvatar: (file: File) => Promise<string>;
+  onUploadCover: (file: File) => Promise<string>;
   onUploadPortfolioImage: (file: File) => Promise<string>;
 }) {
   return (
@@ -301,6 +306,7 @@ export function ProfileEditorSheet({
           onCancel={onClose}
           onSave={onSaveProfile}
           onUploadAvatar={onUploadAvatar}
+          onUploadCover={onUploadCover}
         />
       )}
       {section === "bio" && (
@@ -350,15 +356,19 @@ function HeaderEditor({
   onCancel,
   onSave,
   onUploadAvatar,
+  onUploadCover,
 }: {
   profile: VeloraProfile;
   onCancel: () => void;
   onSave: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
   onUploadAvatar: (file: File) => Promise<string>;
+  onUploadCover: (file: File) => Promise<string>;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [form, setForm] = useState({
     fullName: profile.fullName || "",
     title: profile.title || "",
@@ -386,6 +396,23 @@ function HeaderEditor({
     }
   };
 
+  const handleCover = async (file?: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setForm((current) => ({ ...current, coverUrl: String(event.target?.result || "") }));
+    };
+    reader.readAsDataURL(file);
+
+    setCoverUploading(true);
+    try {
+      const coverUrl = await onUploadCover(file);
+      setForm((current) => ({ ...current, coverUrl }));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     try {
@@ -397,8 +424,39 @@ function HeaderEditor({
   };
 
   return (
-    <EditorChrome title="Edit profile header" icon={Briefcase} saving={saving || uploading} onCancel={onCancel} onSave={save}>
+    <EditorChrome title="Edit profile header" icon={Briefcase} saving={saving || uploading || coverUploading} onCancel={onCancel} onSave={save}>
       <div className="space-y-3">
+        <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-velora-gold/20 bg-velora-surface">
+          <div className="relative aspect-[16/7] min-h-[128px]">
+            {form.coverUrl ? (
+              <div className="h-full w-full bg-cover bg-center opacity-80" style={{ backgroundImage: `url(${form.coverUrl})` }} />
+            ) : (
+              <div className="h-full w-full bg-[radial-gradient(circle_at_50%_12%,rgba(196,162,101,0.22),transparent_34%),linear-gradient(145deg,#171008,#070705)]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/10 to-transparent" />
+            {coverUploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                <Loader2 size={20} className="animate-spin text-velora-gold" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-2 rounded-full border border-velora-gold/30 bg-black/35 px-3 text-xs font-semibold text-velora-gold backdrop-blur-xl"
+            >
+              <Camera size={14} />
+              Upload banner
+            </button>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(event) => void handleCover(event.target.files?.[0])}
+              className="hidden"
+            />
+          </div>
+        </div>
+
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-velora-gold/30 bg-velora-surface">
             {form.avatarUrl ? (

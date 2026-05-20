@@ -568,6 +568,26 @@ export async function uploadAvatar(uid: string, file: File): Promise<string> {
   }
 }
 
+/** Upload cover/banner image without mutating the profile document */
+export async function uploadCoverImage(uid: string, file: File): Promise<string> {
+  const compressedBlob = await compressImage(file, 1600);
+  const storageRef = ref(storage, `covers/${uid}/${Date.now()}.jpg`);
+  await uploadBytes(storageRef, compressedBlob);
+  return getDownloadURL(storageRef);
+}
+
+/** Upload cover/banner image to Storage and update profile */
+export async function uploadCover(uid: string, file: File): Promise<string> {
+  try {
+    const url = await uploadCoverImage(uid, file);
+    await updateProfile(uid, { coverUrl: url });
+    return url;
+  } catch (error) {
+    console.error("Cover upload failed:", error);
+    throw error;
+  }
+}
+
 /** Upload portfolio image */
 export async function uploadPortfolioImage(uid: string, file: File): Promise<string> {
   const compressedBlob = await compressImage(file, 1200);

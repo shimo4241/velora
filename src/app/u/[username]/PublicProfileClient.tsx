@@ -60,7 +60,7 @@ interface PublicProfileClientProps {
 
 type CssVarStyle = CSSProperties & Record<`--${string}`, string>;
 
-type IdentityTheme = {
+export type IdentityTheme = {
   label: string;
   accent: string;
   accentRgb: string;
@@ -81,7 +81,7 @@ type ContactAction = {
   priority: number;
 };
 
-const LUXURY_EASE: Easing = [0.16, 1, 0.3, 1];
+export const LUXURY_EASE: Easing = [0.16, 1, 0.3, 1];
 
 const MODE_THEMES: Record<ProfessionalMode, IdentityTheme> = {
   entrepreneur: {
@@ -248,7 +248,7 @@ export default function PublicProfileClient({
   );
 }
 
-function IdentityHero({
+export function IdentityHero({
   profile,
   portfolioCount,
   experienceCount,
@@ -495,7 +495,7 @@ function IdentityHero({
   );
 }
 
-function ContactSection({
+export function ContactSection({
   profile,
   theme,
 }: {
@@ -545,7 +545,7 @@ function ContactSection({
   );
 }
 
-function IdentitySection({
+export function IdentitySection({
   eyebrow,
   title,
   children,
@@ -574,7 +574,7 @@ function IdentitySection({
   );
 }
 
-function SkillMatrix({ skills }: { skills: string[] }) {
+export function SkillMatrix({ skills }: { skills: string[] }) {
   return (
     <Reveal delay={0.06}>
       <div className="flex flex-wrap gap-2.5">
@@ -595,7 +595,7 @@ function SkillMatrix({ skills }: { skills: string[] }) {
   );
 }
 
-function ServiceDeck({ services }: { services: VeloraProfile["services"] }) {
+export function ServiceDeck({ services }: { services: VeloraProfile["services"] }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {services.map((service, index) => (
@@ -626,7 +626,7 @@ function ServiceDeck({ services }: { services: VeloraProfile["services"] }) {
   );
 }
 
-function PortfolioShowcase({
+export function PortfolioShowcase({
   portfolio,
   theme,
 }: {
@@ -856,7 +856,7 @@ function ProjectMedia({
   );
 }
 
-function ExperienceTimeline({
+export function ExperienceTimeline({
   experience,
   presentLabel,
 }: {
@@ -897,7 +897,7 @@ function ExperienceTimeline({
   );
 }
 
-function LuxuryQrSection({
+export function LuxuryQrSection({
   profile,
   profileUrl,
   shortUrl,
@@ -958,7 +958,7 @@ function LuxuryQrSection({
   );
 }
 
-function SocialChannelRail({ links }: { links: SocialLink[] }) {
+export function SocialChannelRail({ links }: { links: SocialLink[] }) {
   return (
     <Reveal delay={0.05}>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -1086,7 +1086,7 @@ function StatCounter({
   );
 }
 
-function Reveal({
+export function Reveal({
   children,
   className = "",
   delay = 0,
@@ -1108,7 +1108,7 @@ function Reveal({
   );
 }
 
-function getIdentityTheme(mode?: ProfessionalMode): IdentityTheme {
+export function getIdentityTheme(mode?: ProfessionalMode): IdentityTheme {
   if (mode && MODE_THEMES[mode]) return MODE_THEMES[mode];
   return MODE_THEMES.entrepreneur;
 }

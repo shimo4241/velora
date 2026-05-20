@@ -17,6 +17,7 @@ import {
   onProfileChange,
   updateProfile as firestoreUpdateProfile,
   uploadAvatar as firestoreUploadAvatar,
+  uploadCover as firestoreUploadCover,
   uploadPortfolioImage as firestoreUploadPortfolioImage,
 } from "@/lib/firestore";
 import type { VeloraProfile } from "@/types";
@@ -30,6 +31,7 @@ export interface ProfileContextValue {
   refreshProfile: () => Promise<VeloraProfile | null>;
   updateProfile: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
+  uploadCover: (file: File) => Promise<string>;
   uploadPortfolioImage: (file: File) => Promise<string>;
 }
 
@@ -169,6 +171,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return firestoreUploadAvatar(uid, file);
   }, [uid]);
 
+  const uploadCover = useCallback(async (file: File): Promise<string> => {
+    if (!uid) throw new Error("Unauthenticated");
+    return firestoreUploadCover(uid, file);
+  }, [uid]);
+
   const uploadPortfolioImage = useCallback(async (file: File): Promise<string> => {
     if (!uid) throw new Error("Unauthenticated");
     return firestoreUploadPortfolioImage(uid, file);
@@ -200,6 +207,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       updateProfile,
       uploadAvatar,
+      uploadCover,
       uploadPortfolioImage,
     }),
     [
@@ -210,6 +218,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       updateProfile,
       uploadAvatar,
+      uploadCover,
       uploadPortfolioImage,
     ]
   );
