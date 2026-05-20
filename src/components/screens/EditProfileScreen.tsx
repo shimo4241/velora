@@ -23,6 +23,7 @@ import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animat
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/components/providers/ToastProvider";
 import { getUploadErrorMessage, validateUploadImageFile } from "@/lib/firestore";
+import { DentistFields } from "@/components/profile/DentistFields";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Edit Profile Screen
@@ -255,24 +256,8 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     { key: "website", label: "Site web", icon: Globe, placeholder: "velora.app", type: "url" },
   ];
 
-  const dentistFields = [
-    { key: "specialty", label: "Spécialité dentaire", icon: Briefcase, placeholder: "Chirurgien-Dentiste, Orthodontiste..." },
-    { key: "clinicName", label: "Nom du cabinet", icon: Briefcase, placeholder: "Cabinet Dentaire Dr. El Amrani" },
-    { key: "orderNumber", label: "Numéro d'Ordre", icon: FileText, placeholder: "123456" },
-    { key: "fixedPhone", label: "Téléphone fixe", icon: Phone, placeholder: "+212 5XX XXX XXX", type: "tel" },
-    { key: "whatsapp", label: "WhatsApp professionnel", icon: Phone, placeholder: "+212 6XX XXX XXX", type: "tel" },
-    { key: "clinicAddress", label: "Adresse du cabinet", icon: MapPin, placeholder: "123 Bd Anfa, Casablanca" },
-    { key: "googleMapsLink", label: "Lien Google Maps / GMB", icon: MapPin, placeholder: "https://maps.google.com/?q=..." },
-    { key: "googleReviewsLink", label: "Lien Avis Google", icon: Star, placeholder: "https://g.page/r/..." },
-    { key: "website", label: "Site Web de la clinique", icon: Globe, placeholder: "https://www.cabinetdentaire.com" },
-    { key: "appointmentLink", label: "Lien de Réservation", icon: Globe, placeholder: "https://doctolib.fr/..." },
-    { key: "emergencyContact", label: "Contact d'Urgence", icon: AlertTriangle, placeholder: "+212 6XX XXX XXX", type: "tel" },
-    { key: "workHours", label: "Horaires de travail", icon: FileText, placeholder: "Lun - Ven: 09h00 - 18h00 / Sam: 09h00 - 13h00" },
-  ];
-
-  const fields = form.professionalMode === "dentist"
-    ? [...baseFields.filter(f => f.key !== "phone" && f.key !== "company" && f.key !== "website"), ...dentistFields]
-    : baseFields;
+  const fields = baseFields;
+  const profileMode = form.professionalMode;
 
   const initials = form.fullName
     ?.split(" ")
@@ -477,6 +462,10 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
               </StaggerItem>
             );
           })}
+
+          {profileMode === "dentist" && (
+            <DentistFields form={form} onChange={handleChange} />
+          )}
         </StaggerChildren>
       </div>
     </motion.div>

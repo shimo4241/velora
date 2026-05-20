@@ -49,6 +49,8 @@ import type {
   ConnectionMethod,
   DailyStats,
   ActivityItem,
+  ContactRequest,
+  BlockedUser,
 } from "@/types";
 
 const DEFAULT_LOCALE: VeloraProfile["locale"] = "fr";
@@ -483,10 +485,39 @@ function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
     method: (data.method || "link") as ConnectionMethod,
     contextLabel: asString(data.contextLabel, asString(data.locationName)),
     introducedBy: asString(data.introducedBy),
-    personalNote: asString(data.personalNote),
+    personalNote: asString(data.personalNote || data.notes),
     metAt: dateValueToIso(data.metAt || data.createdAt),
     locationName: asString(data.locationName),
     followUpSent: asBoolean(data.followUpSent),
+    tags: Array.isArray(data.tags) ? data.tags.map(t => String(t)) : [],
+    event: asString(data.event),
+  };
+}
+
+function normalizeContactRequest(id: string, data: DocumentData): ContactRequest {
+  const rawSender =
+    typeof data.senderProfile === "object" && data.senderProfile !== null
+      ? data.senderProfile
+      : {};
+  const rawReceiver =
+    typeof data.receiverProfile === "object" && data.receiverProfile !== null
+      ? data.receiverProfile
+      : {};
+
+  return {
+    id,
+    senderId: asString(data.senderId),
+    receiverId: asString(data.receiverId),
+    senderProfile: normalizeProfile(asString(data.senderId), rawSender as DocumentData),
+    receiverProfile: normalizeProfile(asString(data.receiverId), rawReceiver as DocumentData),
+    status: (data.status || "pending") as "pending" | "accepted" | "declined",
+    createdAt: dateValueToIso(data.createdAt),
+    updatedAt: dateValueToIso(data.updatedAt),
+    method: (data.method || "link") as ConnectionMethod,
+    event: asString(data.event),
+    locationName: asString(data.locationName),
+    personalNote: asString(data.personalNote || data.notes),
+    tags: Array.isArray(data.tags) ? data.tags.map(t => String(t)) : [],
   };
 }
 
@@ -1187,4 +1218,355 @@ export function onDiscoverUsersChange(
     console.error(`[Firestore Error] Discover listener failed for UID: ${currentUserId}`, error);
     onError?.(error);
   });
+}
+
+/* ═══════════════════════════════════════════
+   NETWORKING & CONTACT SYSTEM
+   ═══════════════════════════════════════════ */
+
+export async function getRelationshipStatus(
+  currentUserId: string,
+  targetUserId: string
+): Promise<{
+  status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
+  connectionId?: string;
+  requestId?: string;
+}> {
+  if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+    return { status: "none" };
+  }
+
+  try {
+    // 1. Check if blocked
+    const blockRef = doc(db, "blocked_users", `${currentUserId}_${targetUserId}`);
+    const blockSnap = await getDoc(blockRef);
+    if (blockSnap.exists()) {
+      return { status: "blocked" };
+    }
+
+    const blockedByRef = doc(db, "blocked_users", `${targetUserId}_${currentUserId}`);
+    const blockedBySnap = await getDoc(blockedByRef);
+    if (blockedBySnap.exists()) {
+      return { status: "blocked_by" };
+    }
+
+    // 2. Check if connected (bidirectional connection checking)
+    const connQuery = query(
+      collection(db, "connections"),
+      where("userId", "==", currentUserId),
+      where("connectedUserId", "==", targetUserId),
+      limit(1)
+    );
+    const connSnap = await getDocs(connQuery);
+    if (!connSnap.empty) {
+      return {
+        status: "connected",
+        connectionId: connSnap.docs[0].id,
+      };
+    }
+
+    // 3. Check for pending requests
+    const reqSentRef = doc(db, "contact_requests", `${currentUserId}_${targetUserId}`);
+    const reqSentSnap = await getDoc(reqSentRef);
+    if (reqSentSnap.exists() && reqSentSnap.data().status === "pending") {
+      return {
+        status: "pending_sent",
+        requestId: reqSentSnap.id,
+      };
+    }
+
+    const reqRecvRef = doc(db, "contact_requests", `${targetUserId}_${currentUserId}`);
+    const reqRecvSnap = await getDoc(reqRecvRef);
+    if (reqRecvSnap.exists() && reqRecvSnap.data().status === "pending") {
+      return {
+        status: "pending_received",
+        requestId: reqRecvSnap.id,
+      };
+    }
+
+    return { status: "none" };
+  } catch (error) {
+    console.error("Error in getRelationshipStatus:", error);
+    return { status: "none" };
+  }
+}
+
+export async function sendContactRequest(params: {
+  senderId: string;
+  receiverId: string;
+  senderProfile: VeloraProfile;
+  receiverProfile: VeloraProfile;
+  method?: ConnectionMethod;
+  event?: string;
+  locationName?: string;
+  personalNote?: string;
+  tags?: string[];
+}): Promise<void> {
+  const {
+    senderId,
+    receiverId,
+    senderProfile,
+    receiverProfile,
+    method = "link",
+    event = "",
+    locationName = "",
+    personalNote = "",
+    tags = [],
+  } = params;
+
+  if (senderId === receiverId) {
+    throw new Error("Cannot connect to yourself");
+  }
+
+  const statusCheck = await getRelationshipStatus(senderId, receiverId);
+  if (statusCheck.status === "blocked" || statusCheck.status === "blocked_by") {
+    throw new Error("Unable to connect due to block status");
+  }
+
+  const requestRef = doc(db, "contact_requests", `${senderId}_${receiverId}`);
+  await setDoc(requestRef, {
+    senderId,
+    receiverId,
+    senderProfile: {
+      id: senderProfile.id,
+      fullName: senderProfile.fullName,
+      avatarUrl: senderProfile.avatarUrl || null,
+      title: senderProfile.title || null,
+      company: senderProfile.company || null,
+      professionalMode: senderProfile.professionalMode || "entrepreneur",
+      username: senderProfile.username,
+    },
+    receiverProfile: {
+      id: receiverProfile.id,
+      fullName: receiverProfile.fullName,
+      avatarUrl: receiverProfile.avatarUrl || null,
+      title: receiverProfile.title || null,
+      company: receiverProfile.company || null,
+      professionalMode: receiverProfile.professionalMode || "entrepreneur",
+      username: receiverProfile.username,
+    },
+    status: "pending",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    method,
+    event,
+    locationName,
+    personalNote,
+    tags,
+  });
+
+  await addDoc(collection(db, "notifications"), {
+    userId: receiverId,
+    senderId,
+    senderName: senderProfile.fullName,
+    senderAvatar: senderProfile.avatarUrl || null,
+    type: "contact_request",
+    text: `${senderProfile.fullName} souhaite s'ajouter à votre réseau.`,
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function cancelContactRequest(senderId: string, receiverId: string): Promise<void> {
+  const requestRef = doc(db, "contact_requests", `${senderId}_${receiverId}`);
+  await deleteDoc(requestRef);
+}
+
+export async function acceptContactRequest(
+  senderId: string,
+  receiverId: string,
+  senderProfile: VeloraProfile,
+  receiverProfile: VeloraProfile
+): Promise<void> {
+  const requestRef = doc(db, "contact_requests", `${senderId}_${receiverId}`);
+  const requestSnap = await getDoc(requestRef);
+  const requestData = requestSnap.exists() ? requestSnap.data() : {};
+
+  await setDoc(requestRef, { status: "accepted", updatedAt: serverTimestamp() }, { merge: true });
+
+  await addDoc(collection(db, "connections"), {
+    userId: senderId,
+    connectedUserId: receiverId,
+    connectedProfile: {
+      id: receiverProfile.id,
+      fullName: receiverProfile.fullName,
+      avatarUrl: receiverProfile.avatarUrl || null,
+      title: receiverProfile.title || null,
+      company: receiverProfile.company || null,
+      professionalMode: receiverProfile.professionalMode || "entrepreneur",
+      username: receiverProfile.username,
+    },
+    method: requestData.method || "link",
+    personalNote: requestData.personalNote || "",
+    tags: requestData.tags || [],
+    event: requestData.event || "",
+    locationName: requestData.locationName || "",
+    followUpSent: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+  await addDoc(collection(db, "connections"), {
+    userId: receiverId,
+    connectedUserId: senderId,
+    connectedProfile: {
+      id: senderProfile.id,
+      fullName: senderProfile.fullName,
+      avatarUrl: senderProfile.avatarUrl || null,
+      title: senderProfile.title || null,
+      company: senderProfile.company || null,
+      professionalMode: senderProfile.professionalMode || "entrepreneur",
+      username: senderProfile.username,
+    },
+    method: requestData.method || "link",
+    personalNote: requestData.personalNote || "",
+    tags: requestData.tags || [],
+    event: requestData.event || "",
+    locationName: requestData.locationName || "",
+    followUpSent: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+  await addDoc(collection(db, "notifications"), {
+    userId: senderId,
+    senderId: receiverId,
+    senderName: receiverProfile.fullName,
+    senderAvatar: receiverProfile.avatarUrl || null,
+    type: "contact_accepted",
+    text: `${receiverProfile.fullName} a accepté votre demande de connexion.`,
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function declineContactRequest(senderId: string, receiverId: string): Promise<void> {
+  const requestRef = doc(db, "contact_requests", `${senderId}_${receiverId}`);
+  await deleteDoc(requestRef);
+}
+
+export async function removeConnection(currentUserId: string, targetUserId: string): Promise<void> {
+  const q1 = query(
+    collection(db, "connections"),
+    where("userId", "==", currentUserId),
+    where("connectedUserId", "==", targetUserId)
+  );
+  const q2 = query(
+    collection(db, "connections"),
+    where("userId", "==", targetUserId),
+    where("connectedUserId", "==", currentUserId)
+  );
+
+  const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+  const deletePromises: Promise<void>[] = [];
+
+  snap1.forEach((doc) => deletePromises.push(deleteDoc(doc.ref)));
+  snap2.forEach((doc) => deletePromises.push(deleteDoc(doc.ref)));
+
+  const req1Ref = doc(db, "contact_requests", `${currentUserId}_${targetUserId}`);
+  const req2Ref = doc(db, "contact_requests", `${targetUserId}_${currentUserId}`);
+  deletePromises.push(deleteDoc(req1Ref));
+  deletePromises.push(deleteDoc(req2Ref));
+
+  await Promise.all(deletePromises);
+}
+
+export async function updateConnectionNotesAndTags(
+  currentUserId: string,
+  targetUserId: string,
+  notes: string,
+  tags: string[]
+): Promise<void> {
+  const q = query(
+    collection(db, "connections"),
+    where("userId", "==", currentUserId),
+    where("connectedUserId", "==", targetUserId),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    await updateDoc(snap.docs[0].ref, {
+      personalNote: notes,
+      tags: tags,
+    });
+  }
+}
+
+export async function blockUser(userId: string, blockedUserId: string): Promise<void> {
+  const blockRef = doc(db, "blocked_users", `${userId}_${blockedUserId}`);
+  await setDoc(blockRef, {
+    userId,
+    blockedUserId,
+    createdAt: serverTimestamp(),
+  });
+
+  await removeConnection(userId, blockedUserId);
+}
+
+export async function unblockUser(userId: string, blockedUserId: string): Promise<void> {
+  const blockRef = doc(db, "blocked_users", `${userId}_${blockedUserId}`);
+  await deleteDoc(blockRef);
+}
+
+export function onNotificationsChange(
+  userId: string,
+  callback: (notifications: any[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, "notifications"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+    limit(50)
+  );
+
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(list);
+  }, (error) => {
+    console.error(`[Firestore Error] Notifications listener failed for: ${userId}`, error);
+    onError?.(error);
+  });
+}
+
+export function onPendingRequestsChange(
+  userId: string,
+  type: "incoming" | "outgoing",
+  callback: (requests: ContactRequest[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const fieldName = type === "incoming" ? "receiverId" : "senderId";
+  const q = query(
+    collection(db, "contact_requests"),
+    where(fieldName, "==", userId),
+    where("status", "==", "pending")
+  );
+
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((doc) => normalizeContactRequest(doc.id, doc.data()));
+    callback(list);
+  }, (error) => {
+    console.error(`[Firestore Error] Pending requests listener failed for: ${userId}`, error);
+    onError?.(error);
+  });
+}
+
+export async function getMutualConnections(userId1: string, userId2: string): Promise<string[]> {
+  if (!userId1 || !userId2) return [];
+  try {
+    const q1 = query(collection(db, "connections"), where("userId", "==", userId1));
+    const q2 = query(collection(db, "connections"), where("userId", "==", userId2));
+
+    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    const set1 = new Set(snap1.docs.map((d) => d.data().connectedUserId));
+    const set2 = new Set(snap2.docs.map((d) => d.data().connectedUserId));
+
+    return Array.from(set1).filter((uid) => set2.has(uid)) as string[];
+  } catch (err) {
+    console.error("Error in getMutualConnections:", err);
+    return [];
+  }
 }

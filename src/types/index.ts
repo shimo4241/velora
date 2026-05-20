@@ -145,7 +145,6 @@ export interface ExperienceEntry {
   order?: number;
 }
 
-/* ── Connection (Scan Memory) ── */
 export interface VeloraConnection {
   id: string;
   profile: VeloraProfile;
@@ -156,7 +155,35 @@ export interface VeloraConnection {
   metAt: string;
   locationName?: string;
   followUpSent: boolean;
+  tags?: string[];
+  event?: string;
 }
+
+/* ── Contact Request ── */
+export interface ContactRequest {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  senderProfile: Partial<VeloraProfile>;
+  receiverProfile: Partial<VeloraProfile>;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  updatedAt: string;
+  method?: ConnectionMethod;
+  event?: string;
+  locationName?: string;
+  personalNote?: string;
+  tags?: string[];
+}
+
+/* ── Blocked User ── */
+export interface BlockedUser {
+  id: string;
+  userId: string;
+  blockedUserId: string;
+  createdAt: string;
+}
+
 
 /* ── Scan Event ── */
 export interface ScanEvent {

@@ -148,6 +148,7 @@ interface ProfessionalCardProps {
   isVerified?: boolean;
   isPremium?: boolean;
   avatarGradient?: string;
+  username?: string;
 }
 
 export function ProfessionalCard({
@@ -159,9 +160,10 @@ export function ProfessionalCard({
   isVerified = false,
   isPremium = false,
   avatarGradient = "from-velora-gold/30 to-amber-700/20",
+  username,
 }: ProfessionalCardProps) {
-  return (
-    <GlassCard className="p-4">
+  const cardContent = (
+    <GlassCard className="p-4 transition-colors hover:border-white/10 hover:bg-white/[0.03]">
       <div className="flex items-start gap-3.5">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
@@ -221,8 +223,8 @@ export function ProfessionalCard({
         </div>
 
         {/* Connect action */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="haptic-press flex-shrink-0 rounded-xl border border-velora-gold/20 bg-velora-gold/10 px-3 py-2"
         >
@@ -230,10 +232,20 @@ export function ProfessionalCard({
             Connect
             <ArrowUpRight size={13} />
           </span>
-        </motion.button>
+        </motion.div>
       </div>
     </GlassCard>
   );
+
+  if (username) {
+    return (
+      <a href={`/u/${username}`} className="block">
+        {cardContent}
+      </a>
+    );
+  }
+
+  return cardContent;
 }
 
 /* ── Nearby Professionals List ── */
@@ -339,6 +351,7 @@ export function NearbyList({ onCountChange }: { onCountChange?: (count: number) 
               mutualConnections={getMutualCount(pro.id, i)}
               isVerified={pro.isVerified}
               isPremium={pro.isPremium}
+              username={pro.username}
             />
           </StaggerItem>
         ))}

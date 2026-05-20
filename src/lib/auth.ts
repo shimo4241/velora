@@ -1,5 +1,7 @@
 import {
   browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
   GoogleAuthProvider,
   onAuthStateChanged,
   setPersistence,
@@ -72,23 +74,47 @@ export async function ensureLocalAuthPersistence(): Promise<void> {
       mode: "browserLocalPersistence",
       currentUserUid: auth.currentUser?.uid ?? null,
     });
-    persistencePromise = setPersistence(auth, browserLocalPersistence)
-      .then(() => {
+    persistencePromise = (async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
         persistenceReady = true;
         logAuthDebug("persistence restoration:ready", {
           mode: "browserLocalPersistence",
           currentUserUid: auth.currentUser?.uid ?? null,
         });
-      })
-      .catch((error) => {
-        persistencePromise = null;
-        persistenceReady = false;
-        logAuthDebug("persistence restoration:error", {
+      } catch (error) {
+        logAuthDebug("persistence browserLocalPersistence failed, trying browserSessionPersistence", {
           code: getAuthErrorCode(error),
-          currentUserUid: auth.currentUser?.uid ?? null,
         });
-        throw error;
-      });
+        try {
+          await setPersistence(auth, browserSessionPersistence);
+          persistenceReady = true;
+          logAuthDebug("persistence restoration:ready", {
+            mode: "browserSessionPersistence",
+            currentUserUid: auth.currentUser?.uid ?? null,
+          });
+        } catch (sessError) {
+          logAuthDebug("persistence browserSessionPersistence failed, trying inMemoryPersistence", {
+            code: getAuthErrorCode(sessError),
+          });
+          try {
+            await setPersistence(auth, inMemoryPersistence);
+            persistenceReady = true;
+            logAuthDebug("persistence restoration:ready", {
+              mode: "inMemoryPersistence",
+              currentUserUid: auth.currentUser?.uid ?? null,
+            });
+          } catch (memError) {
+            persistencePromise = null;
+            persistenceReady = false;
+            logAuthDebug("all persistence modes failed", {
+              code: getAuthErrorCode(memError),
+            });
+            throw memError;
+          }
+        }
+      }
+    })();
   }
 
   await persistencePromise;

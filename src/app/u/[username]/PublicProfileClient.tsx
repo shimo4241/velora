@@ -42,12 +42,30 @@ import {
   Star,
   Stethoscope,
   X,
+  Bookmark,
+  UserCheck,
   type LucideIcon,
 } from "lucide-react";
 import { isVideoAsset } from "@/components/profile";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { useTranslation } from "@/lib/i18n";
 import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useProfile } from "@/hooks/useProfile";
+import { useSearchParams } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot, query, collection, where, limit } from "firebase/firestore";
+import {
+  getRelationshipStatus,
+  sendContactRequest,
+  cancelContactRequest,
+  acceptContactRequest,
+  declineContactRequest,
+  removeConnection,
+  updateConnectionNotesAndTags,
+  blockUser,
+  unblockUser,
+} from "@/lib/firestore";
 import type {
   ExperienceEntry,
   PortfolioItem,
@@ -248,6 +266,250 @@ export default function PublicProfileClient({
   experience,
 }: PublicProfileClientProps) {
   const { t, dir, isRtl } = useTranslation(profile.locale || "fr");
+  const { user, isAuthReady } = useAuth();
+  const { profile: currentUserProfile } = useProfile();
+  const searchParams = useSearchParams();
+  const source = searchParams?.get("src") || null;
+
+  const [relationship, setRelationship] = useState<{
+    status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
+    connectionId?: string;
+    requestId?: string;
+  }>({ status: "none" });
+
+  const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Form states for adding/editing a connection
+  const [notes, setNotes] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [locationName, setLocationName] = useState("");
+  const [eventName, setEventName] = useState("");
+
+  // Real-time listener for the relationship
+  useEffect(() => {
+    if (!isAuthReady || !user?.uid || !profile.id || user.uid === profile.id) {
+      setRelationship({ status: "none" });
+      return;
+    }
+
+    const reqSentRef = doc(db, "contact_requests", `${user.uid}_${profile.id}`);
+    const reqRecvRef = doc(db, "contact_requests", `${profile.id}_${user.uid}`);
+    const connQuery = query(
+      collection(db, "connections"),
+      where("userId", "==", user.uid),
+      where("connectedUserId", "==", profile.id),
+      limit(1)
+    );
+
+    let statusReqSent: any = null;
+    let statusReqRecv: any = null;
+    let statusConn: any = null;
+
+    function updateState() {
+      if (statusConn) {
+        setRelationship({ status: "connected", connectionId: statusConn.id });
+        setNotes(statusConn.personalNote || "");
+        setSelectedTags(statusConn.tags || []);
+        setLocationName(statusConn.locationName || "");
+        setEventName(statusConn.event || "");
+      } else if (statusReqSent && statusReqSent.status === "pending") {
+        setRelationship({ status: "pending_sent", requestId: statusReqSent.id });
+      } else if (statusReqRecv && statusReqRecv.status === "pending") {
+        setRelationship({ status: "pending_received", requestId: statusReqRecv.id });
+      } else {
+        setRelationship({ status: "none" });
+      }
+    }
+
+    const unsubReqSent = onSnapshot(reqSentRef, (snap) => {
+      statusReqSent = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      updateState();
+    });
+
+    const unsubReqRecv = onSnapshot(reqRecvRef, (snap) => {
+      statusReqRecv = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      updateState();
+    });
+
+    const unsubConn = onSnapshot(connQuery, (snap) => {
+      statusConn = !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } : null;
+      updateState();
+    });
+
+    return () => {
+      unsubReqSent();
+      unsubReqRecv();
+      unsubConn();
+    };
+  }, [user?.uid, profile.id, isAuthReady]);
+
+  // Suggest adding to network if opened via QR/NFC
+  useEffect(() => {
+    if (!user?.uid || !profile.id || user.uid === profile.id) return;
+    if (relationship.status === "none" && (source === "qr" || source === "nfc")) {
+      const timer = setTimeout(() => {
+        setLocationName(source === "qr" ? "QR Scan" : "NFC Tap");
+        setShowAddModal(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user?.uid, profile.id, relationship.status, source]);
+
+  const handleSendRequest = async () => {
+    if (!user?.uid || !currentUserProfile) return;
+    setLoading(true);
+    try {
+      await sendContactRequest({
+        senderId: user.uid,
+        receiverId: profile.id,
+        senderProfile: currentUserProfile,
+        receiverProfile: profile,
+        method: source === "qr" ? "qr" : source === "nfc" ? "nfc" : "link",
+        event: eventName,
+        locationName: locationName || (source === "qr" ? "QR Code" : source === "nfc" ? "NFC" : "Velora Link"),
+        personalNote: notes,
+        tags: selectedTags,
+      });
+      setShowAddModal(false);
+      if (typeof window !== "undefined" && (window as any).Capacitor) {
+        try {
+          await (window as any).Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      await cancelContactRequest(user.uid, profile.id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!user?.uid || !currentUserProfile) return;
+    setLoading(true);
+    try {
+      await acceptContactRequest(profile.id, user.uid, profile, currentUserProfile);
+      if (typeof window !== "undefined" && (window as any).Capacitor) {
+        try {
+          await (window as any).Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      await declineContactRequest(profile.id, user.uid);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateConnection = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      await updateConnectionNotesAndTags(user.uid, profile.id, notes, selectedTags);
+      setShowEditModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveConnection = async () => {
+    if (!user?.uid) return;
+    if (!confirm(t("remove_connection") + "?")) return;
+    setLoading(true);
+    try {
+      await removeConnection(user.uid, profile.id);
+      setShowEditModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (!user?.uid) return;
+    if (!confirm(t("block_user") + "?")) return;
+    setLoading(true);
+    try {
+      await blockUser(user.uid, profile.id);
+      setShowEditModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      await unblockUser(user.uid, profile.id);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadVCard = () => {
+    const escapeVCard = (val?: string) =>
+      (val || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/,/g, "\\,")
+        .replace(/;/g, "\\;");
+
+    const name = profile.fullName || "VELORA Contact";
+    const vcard = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${escapeVCard(name)}`,
+      `ORG:${escapeVCard(profile.company || "VELORA")}`,
+      `TITLE:${escapeVCard(profile.title)}`,
+      profile.email ? `EMAIL:${escapeVCard(profile.email)}` : "",
+      profile.phone || profile.whatsapp ? `TEL:${escapeVCard(profile.phone || profile.whatsapp)}` : "",
+      profile.website ? `URL:${escapeVCard(profile.website)}` : "",
+      `NOTE:${escapeVCard(`VELORA profile: ${profileUrl}`)}`,
+      "END:VCARD",
+    ].filter(Boolean).join("\n");
+
+    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = `${name.replace(/[^\w-]+/g, "-").toLowerCase()}.vcf`;
+    link.click();
+    URL.revokeObjectURL(href);
+  };
+
   const theme = getIdentityTheme(profile.professionalMode);
   const profileUrl = getProfileUrl(profile.username);
   const shortUrl = getProfileShortUrl(profile.username);
@@ -279,6 +541,16 @@ export default function PublicProfileClient({
         shortUrl={shortUrl}
         theme={theme}
         t={t}
+        currentUserId={user?.uid}
+        isAuthReady={isAuthReady}
+        relationship={relationship}
+        loading={loading}
+        onAdd={() => setShowAddModal(true)}
+        onEdit={() => setShowEditModal(true)}
+        onCancel={handleCancelRequest}
+        onAccept={handleAcceptRequest}
+        onDecline={handleDeclineRequest}
+        onDownloadVCard={handleDownloadVCard}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-[980px] px-5 pb-24">
@@ -517,6 +789,274 @@ export default function PublicProfileClient({
           </IdentitySection>
         )}
       </div>
+
+      {/* Add Connection Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
+            <motion.div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAddModal(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full rounded-t-[32px] border border-white/10 bg-[#0c0c0a] p-6 shadow-2xl md:max-w-md md:rounded-[32px] overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-300"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            >
+              <div className="glow-layer pointer-events-none absolute inset-x-8 -top-16 h-36 rounded-full bg-[rgba(var(--identity-accent-rgb),0.1)] blur-xl" />
+              
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
+                  {t("add_to_network")}
+                </h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-velora-text-muted hover:bg-white/10"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("notes")}
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={t("add_note_placeholder")}
+                    rows={3}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-velora-text placeholder-white/20 focus:border-[var(--identity-accent)] focus:outline-none"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("tags")}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {["Business", "Dentist", "Client", "VIP", "Friend", "Partner"].map((tag) => {
+                      const isSelected = selectedTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTags(prev => 
+                              prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                            );
+                          }}
+                          style={{
+                            borderColor: isSelected ? "var(--identity-accent)" : "rgba(255,255,255,0.1)",
+                            background: isSelected ? "rgba(var(--identity-accent-rgb), 0.12)" : "rgba(255,255,255,0.03)"
+                          }}
+                          className="rounded-full border px-3 py-1 text-xs font-medium text-velora-text hover:border-white/20 transition-all"
+                        >
+                          {t(`filter_${tag.toLowerCase()}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Location Met */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("met_at_location")}
+                  </label>
+                  <input
+                    type="text"
+                    value={locationName}
+                    onChange={(e) => setLocationName(e.target.value)}
+                    placeholder={t("where_met_placeholder")}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-velora-text placeholder-white/20 focus:border-[var(--identity-accent)] focus:outline-none"
+                  />
+                </div>
+
+                {/* Event Name */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("event_name")}
+                  </label>
+                  <input
+                    type="text"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder={t("event_name_placeholder")}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-velora-text placeholder-white/20 focus:border-[var(--identity-accent)] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 rounded-2xl bg-white/5 py-3.5 text-sm font-semibold text-velora-text hover:bg-white/10 transition-colors"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  onClick={handleSendRequest}
+                  disabled={loading}
+                  style={{
+                    background: `linear-gradient(135deg, var(--identity-accent), var(--identity-secondary))`
+                  }}
+                  className="flex-1 rounded-2xl py-3.5 text-sm font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.25)] hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                >
+                  {loading ? <span className="animate-spin text-velora-black">●</span> : t("save")}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Connection Modal */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
+            <motion.div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEditModal(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full rounded-t-[32px] border border-white/10 bg-[#0c0c0a] p-6 shadow-2xl md:max-w-md md:rounded-[32px] overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-300"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            >
+              <div className="glow-layer pointer-events-none absolute inset-x-8 -top-16 h-36 rounded-full bg-[rgba(var(--identity-accent-rgb),0.1)] blur-xl" />
+              
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
+                  {t("status_connected")}
+                </h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-velora-text-muted hover:bg-white/10"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("notes")}
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={t("add_note_placeholder")}
+                    rows={3}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-velora-text placeholder-white/20 focus:border-[var(--identity-accent)] focus:outline-none"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("tags")}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {["Business", "Dentist", "Client", "VIP", "Friend", "Partner"].map((tag) => {
+                      const isSelected = selectedTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTags(prev => 
+                              prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                            );
+                          }}
+                          style={{
+                            borderColor: isSelected ? "var(--identity-accent)" : "rgba(255,255,255,0.1)",
+                            background: isSelected ? "rgba(var(--identity-accent-rgb), 0.12)" : "rgba(255,255,255,0.03)"
+                          }}
+                          className="rounded-full border px-3 py-1 text-xs font-medium text-velora-text hover:border-white/20 transition-all"
+                        >
+                          {t(`filter_${tag.toLowerCase()}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Location Met */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("met_at_location")}
+                  </label>
+                  <input
+                    type="text"
+                    value={locationName}
+                    disabled
+                    className="w-full rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-velora-text-muted focus:outline-none"
+                  />
+                </div>
+
+                {/* Event Name */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-[0.1em] text-velora-text-muted mb-1.5">
+                    {t("event_name")}
+                  </label>
+                  <input
+                    type="text"
+                    value={eventName}
+                    disabled
+                    className="w-full rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm text-velora-text-muted focus:outline-none"
+                  />
+                </div>
+
+                {/* Block Option */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleBlockUser}
+                    className="text-xs text-red-500 hover:text-red-400 font-medium transition-colors"
+                  >
+                    {t("block_user")}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-2">
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleRemoveConnection}
+                    className="flex-1 rounded-2xl border border-red-500/20 bg-red-500/5 py-3.5 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    {t("remove_connection")}
+                  </button>
+                  <button
+                    onClick={handleUpdateConnection}
+                    disabled={loading}
+                    style={{
+                      background: `linear-gradient(135deg, var(--identity-accent), var(--identity-secondary))`
+                    }}
+                    className="flex-1 rounded-2xl py-3.5 text-sm font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.25)] hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {loading ? <span className="animate-spin text-velora-black">●</span> : t("save")}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -529,6 +1069,16 @@ export function IdentityHero({
   shortUrl,
   theme,
   t,
+  currentUserId,
+  isAuthReady,
+  relationship,
+  loading,
+  onAdd,
+  onEdit,
+  onCancel,
+  onAccept,
+  onDecline,
+  onDownloadVCard,
 }: {
   profile: VeloraProfile;
   portfolioCount: number;
@@ -537,6 +1087,20 @@ export function IdentityHero({
   shortUrl: string;
   theme: IdentityTheme;
   t: (key: string) => string;
+  currentUserId?: string | null;
+  isAuthReady?: boolean;
+  relationship?: {
+    status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
+    connectionId?: string;
+    requestId?: string;
+  };
+  loading?: boolean;
+  onAdd?: () => void;
+  onEdit?: () => void;
+  onCancel?: () => void;
+  onAccept?: () => void;
+  onDecline?: () => void;
+  onDownloadVCard?: () => void;
 }) {
   const heroRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -744,6 +1308,112 @@ export function IdentityHero({
           <Reveal delay={0.3}>
             <LuxuryActionButtons actions={contactActions} t={t} />
           </Reveal>
+
+          {/* Network Relationship Button */}
+          {currentUserId !== profile.id && (
+            <Reveal delay={0.33}>
+              <div className="mt-5 mb-2 flex justify-center">
+                {!isAuthReady ? (
+                  <div className="w-full max-w-[280px] h-[46px] rounded-full bg-white/5 animate-pulse border border-white/5" />
+                ) : !currentUserId ? (
+                  <button
+                    onClick={() => {
+                      alert(t("login_required_network"));
+                      window.location.href = "/login";
+                    }}
+                    style={{
+                      background: `linear-gradient(135deg, var(--identity-accent), var(--identity-secondary))`
+                    }}
+                    className="w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.2)] hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles size={14} />
+                    {t("add_to_network")}
+                  </button>
+                ) : relationship?.status === "none" ? (
+                  <button
+                    onClick={onAdd}
+                    disabled={loading}
+                    style={{
+                      background: `linear-gradient(135deg, var(--identity-accent), var(--identity-secondary))`
+                    }}
+                    className="w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.2)] hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {loading ? <span className="animate-spin text-velora-black">●</span> : <Sparkles size={14} />}
+                    {t("add_to_network")}
+                  </button>
+                ) : relationship?.status === "pending_sent" ? (
+                  <button
+                    onClick={onCancel}
+                    disabled={loading}
+                    className="w-full max-w-[280px] rounded-full border border-white/10 bg-white/[0.05] py-3 text-xs font-semibold text-velora-text-muted hover:bg-white/[0.08] hover:text-velora-text transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {loading ? <span className="animate-spin text-velora-text-muted">●</span> : <Clock size={14} />}
+                    {t("relationship_status_pending_sent")} ({t("cancel")})
+                  </button>
+                ) : relationship?.status === "pending_received" ? (
+                  <div className="flex flex-col gap-2 w-full max-w-[280px]">
+                    <span className="block text-[10px] uppercase font-bold tracking-wider text-velora-text-muted text-center">
+                      {t("received_request_msg")}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={onAccept}
+                        disabled={loading}
+                        style={{
+                          background: `linear-gradient(135deg, var(--identity-accent), var(--identity-secondary))`
+                        }}
+                        className="flex-1 rounded-full py-2.5 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.2)] hover:opacity-95 transition-all flex items-center justify-center gap-1"
+                      >
+                        {loading ? "●" : t("btn_accept")}
+                      </button>
+                      <button
+                        onClick={onDecline}
+                        disabled={loading}
+                        className="flex-1 rounded-full border border-white/10 bg-white/[0.05] py-2.5 text-xs font-semibold text-velora-text hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1"
+                      >
+                        {loading ? "●" : t("btn_decline")}
+                      </button>
+                    </div>
+                  </div>
+                ) : relationship?.status === "connected" ? (
+                  <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                    {/* Status Badge */}
+                    <div
+                      style={{
+                        borderColor: "rgba(var(--identity-accent-rgb), 0.25)",
+                        background: "rgba(var(--identity-accent-rgb), 0.05)"
+                      }}
+                      className="w-full rounded-full border py-2.5 text-xs font-semibold text-[var(--identity-accent)] flex items-center justify-center gap-1.5"
+                    >
+                      <UserCheck size={14} className="text-[var(--identity-accent)]" />
+                      {t("in_network")}
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      {/* Save Contact (vCard) */}
+                      <button
+                        onClick={onDownloadVCard}
+                        className="flex-1 rounded-full border border-white/10 bg-white/[0.05] py-2.5 text-xs font-medium text-velora-text hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Bookmark size={13} />
+                        {t("save_contact")}
+                      </button>
+
+                      {/* Notes & Tags */}
+                      <button
+                        onClick={onEdit}
+                        className="flex-1 rounded-full border border-white/10 bg-white/[0.05] py-2.5 text-xs font-medium text-velora-text hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles size={13} className="text-[var(--identity-accent)]" />
+                        {t("notes") || "Notes"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </Reveal>
+          )}
 
           <Reveal delay={0.36}>
             <div className="mt-6 grid grid-cols-3 gap-2.5">
