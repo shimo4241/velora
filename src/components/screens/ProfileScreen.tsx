@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Divider } from "@/components/ui";
 import { FadeUp } from "@/components/motion/animations";
-import { ProfileHero } from "@/components/profile";
+import { PremiumPortfolioGallery, ProfileHero } from "@/components/profile";
 import {
   AvailabilityBadge,
   ContactActionGrid,
@@ -19,6 +19,7 @@ import {
 } from "@/components/profile/ProfileEditor";
 import { useProfile, usePortfolio, useExperience } from "@/hooks/useProfile";
 import { useConnections } from "@/hooks/useConnections";
+import { useActivity, useStats } from "@/hooks/useStats";
 import {
   addExperienceEntry,
   addPortfolioItem,
@@ -30,15 +31,18 @@ import {
 import {
   Briefcase,
   Check,
-  ExternalLink,
+  Activity,
+  Eye,
   Globe,
   LogOut,
   MessageCircle,
   Palette,
+  Shield,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import type { ExperienceEntry, PortfolioItem, VeloraProfile } from "@/types";
+import type { ActivityItem, ExperienceEntry, PortfolioItem, VeloraProfile } from "@/types";
 
 export function ProfileScreen() {
   const {
@@ -51,7 +55,9 @@ export function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { portfolio } = usePortfolio();
   const { experience } = useExperience();
-  const { count: connectionsCount } = useConnections();
+  const { connections, count: connectionsCount } = useConnections();
+  const { stats } = useStats();
+  const { activity } = useActivity();
   const [editingSection, setEditingSection] = useState<ProfileEditorSection | null>(null);
   const [profileOverride, setProfileOverride] = useState<Partial<Omit<VeloraProfile, "id" | "username">>>({});
   const [portfolioOverride, setPortfolioOverride] = useState<PortfolioItem[] | null>(null);
@@ -178,16 +184,26 @@ export function ProfileScreen() {
           location={effectiveProfile.location || ""}
           bio={effectiveProfile.bio || ""}
           avatarUrl={effectiveProfile.avatarUrl || ""}
+          coverUrl={effectiveProfile.coverUrl || ""}
           isVerified={Boolean(effectiveProfile.isVerified)}
           isPremium={Boolean(effectiveProfile.isPremium)}
           mode={effectiveProfile.professionalMode === "entrepreneur" ? "Entrepreneur" : effectiveProfile.professionalMode || ""}
           connectionsCount={connectionsCount}
           portfolioCount={effectivePortfolio.length}
+          profileViews={stats.views}
           profileTheme={effectiveProfile.profileTheme}
           showBio={false}
         />
         <FloatingEditButton label="Edit profile header" onClick={() => setEditingSection("header")} className="top-5" />
       </div>
+
+      <PremiumSocialProof
+        profile={effectiveProfile}
+        views={stats.views}
+        connectionsCount={connectionsCount}
+        mutualConnections={connections.slice(0, 3).map((connection) => connection.profile.fullName || "VELORA")}
+        recentActivity={activity.slice(0, 3)}
+      />
 
       <Divider className="mx-5" />
       <EditablePanel title="Bio" icon={Sparkles} editLabel="Edit bio" onEdit={() => setEditingSection("bio")}>
@@ -206,28 +222,11 @@ export function ProfileScreen() {
       <Divider className="mx-5" />
       <EditablePanel title="Portfolio" icon={Sparkles} editLabel="Edit portfolio" onEdit={() => setEditingSection("portfolio")}>
         {effectivePortfolio.length ? (
-          <div className="grid grid-cols-1 gap-3">
-            {effectivePortfolio.map((project) => (
-              <article key={project.id} className="overflow-hidden rounded-[var(--radius-md)] border border-white/8 bg-white/[0.03]">
-                {project.imageUrl && (
-                  <div className="aspect-[16/9] bg-cover bg-center" style={{ backgroundImage: `url(${project.imageUrl})` }} />
-                )}
-                <div className="p-3">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-velora-gold/70">{project.category || "Project"}</div>
-                  <h3 className="mt-1 text-sm font-semibold text-velora-text">{project.title}</h3>
-                  {project.description && <p className="mt-1 text-xs leading-relaxed text-velora-text-muted">{project.description}</p>}
-                  {project.link && (
-                    <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-[11px] text-velora-gold">
-                      View project
-                      <ExternalLink size={11} />
-                    </a>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+          <PremiumPortfolioGallery portfolio={effectivePortfolio} compact />
         ) : (
-          <EmptyEditableState>Add your first project</EmptyEditableState>
+          <EmptyEditableState ctaLabel="Add project" onAction={() => setEditingSection("portfolio")}>
+            Add your first project
+          </EmptyEditableState>
         )}
       </EditablePanel>
 
@@ -247,13 +246,20 @@ export function ProfileScreen() {
             ))}
           </div>
         ) : (
-          <EmptyEditableState>Add experience</EmptyEditableState>
+          <EmptyEditableState ctaLabel="Add experience" onAction={() => setEditingSection("experience")}>
+            Show your experience
+          </EmptyEditableState>
         )}
       </EditablePanel>
 
       <Divider className="mx-5" />
       <EditablePanel title="Services" icon={Briefcase} editLabel="Edit services" onEdit={() => setEditingSection("services")}>
-        <ServicesList services={effectiveProfile.services || []} />
+        <ServicesList
+          services={effectiveProfile.services || []}
+          emptyLabel="Add your services"
+          ctaLabel="Add service"
+          onAdd={() => setEditingSection("services")}
+        />
       </EditablePanel>
 
       <Divider className="mx-5" />
@@ -306,3 +312,97 @@ export function ProfileScreen() {
   );
 }
 
+function PremiumSocialProof({
+  profile,
+  views,
+  connectionsCount,
+  mutualConnections,
+  recentActivity,
+}: {
+  profile: VeloraProfile;
+  views: number;
+  connectionsCount: number;
+  mutualConnections: string[];
+  recentActivity: ActivityItem[];
+}) {
+  const proofStats = [
+    { label: "Profile views", value: views, icon: Eye },
+    { label: "Connections", value: connectionsCount, icon: Users },
+    { label: "Trust level", value: profile.isVerified ? "Verified" : "Review", icon: Shield },
+  ];
+  const activityItems = recentActivity.length
+    ? recentActivity
+    : [
+        { id: "ready", text: "Profile is ready for sharing", time: "now", icon: "sparkles", type: "view" as const },
+      ];
+
+  return (
+    <section className="px-5 pb-5">
+      <FadeUp delay={0.12}>
+        <div className="glass relative overflow-hidden rounded-[var(--radius-card)] border border-white/10 p-4">
+          <div className="pointer-events-none absolute inset-x-8 -top-20 h-36 rounded-full bg-velora-gold/10 blur-3xl" />
+          <div className="relative grid grid-cols-3 gap-2">
+            {proofStats.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="rounded-[var(--radius-md)] border border-white/8 bg-white/[0.035] p-3">
+                  <Icon size={14} className="mb-2 text-velora-gold" />
+                  <div className="text-data text-sm text-velora-text">{item.value}</div>
+                  <div className="mt-1 text-[9px] uppercase tracking-[0.12em] text-velora-text-muted">{item.label}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="relative mt-3 grid grid-cols-1 gap-3">
+            <div className="rounded-[var(--radius-md)] border border-velora-gold/15 bg-velora-gold/5 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-velora-gold">Verified badge architecture</span>
+                <span className={`h-2 w-2 rounded-full ${profile.isVerified ? "bg-velora-emerald" : "bg-velora-gold"}`} />
+              </div>
+              <p className="text-xs leading-relaxed text-velora-text-secondary">
+                {profile.isVerified
+                  ? "Identity, premium profile, and professional signals are active."
+                  : "Verification-ready profile structure is in place for approval."}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-[var(--radius-md)] border border-white/8 bg-white/[0.035] p-3">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-velora-text-muted">Mutual connections</div>
+                <div className="mt-1 text-xs text-velora-text-secondary">
+                  {mutualConnections.length ? `${mutualConnections.length} shared network signal${mutualConnections.length > 1 ? "s" : ""}` : "No mutual signals yet"}
+                </div>
+              </div>
+              <div className="flex -space-x-2">
+                {(mutualConnections.length ? mutualConnections : ["V"]).map((name, index) => (
+                  <div
+                    key={`${name}-${index}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-velora-black bg-velora-gold-dim text-[10px] font-semibold text-velora-gold"
+                  >
+                    {name.split(" ").map((part) => part[0]).join("").slice(0, 2) || "V"}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[var(--radius-md)] border border-white/8 bg-white/[0.035] p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <Activity size={13} className="text-velora-gold" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-velora-text-muted">Recent activity</span>
+              </div>
+              <div className="space-y-2">
+                {activityItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="truncate text-velora-text-secondary">{item.text}</span>
+                    <span className="shrink-0 font-mono text-[10px] text-velora-gold/70">{item.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </FadeUp>
+    </section>
+  );
+}

@@ -842,7 +842,7 @@ export async function getDiscoverUsers(
   let q = query(
     collection(db, "users"),
     orderBy("fullName"),
-    limit(pageSize)
+    limit(pageSize + 1)
   );
 
   if (lastDocSnap) {
@@ -850,7 +850,7 @@ export async function getDiscoverUsers(
       collection(db, "users"),
       orderBy("fullName"),
       startAfter(lastDocSnap),
-      limit(pageSize)
+      limit(pageSize + 1)
     );
   }
 
@@ -858,7 +858,7 @@ export async function getDiscoverUsers(
   const users: VeloraProfile[] = [];
   
   snap.forEach((doc) => {
-    if (doc.id !== currentUserId) {
+    if (doc.id !== currentUserId && users.length < pageSize) {
       users.push(normalizeProfile(doc.id, doc.data()));
     }
   });
@@ -867,4 +867,32 @@ export async function getDiscoverUsers(
     users,
     lastDoc: snap.docs[snap.docs.length - 1],
   };
+}
+
+export function onDiscoverUsersChange(
+  currentUserId: string,
+  pageSize = 10,
+  callback: (users: VeloraProfile[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, "users"),
+    orderBy("fullName"),
+    limit(pageSize + 1)
+  );
+
+  return onSnapshot(q, (snap) => {
+    const users: VeloraProfile[] = [];
+
+    snap.forEach((doc) => {
+      if (doc.id !== currentUserId && users.length < pageSize) {
+        users.push(normalizeProfile(doc.id, doc.data()));
+      }
+    });
+
+    callback(users);
+  }, (error) => {
+    console.error(`[Firestore Error] Discover listener failed for UID: ${currentUserId}`, error);
+    onError?.(error);
+  });
 }

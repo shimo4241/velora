@@ -2,13 +2,10 @@
 
 import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SplashScreen, OnboardingScreen } from "@/components/onboarding";
 import { HomeScreen } from "@/components/home";
-import { ProfileScreen } from "@/components/screens/ProfileScreen";
-import { ShareScreen } from "@/components/screens/ShareScreen";
-import { NetworkScreen } from "@/components/screens/NetworkScreen";
-import { AnalyticsScreen } from "@/components/screens/AnalyticsScreen";
 import { WelcomeScreen } from "@/components/screens/WelcomeScreen";
 import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -20,6 +17,26 @@ import type { AppTab } from "@/types";
    VELORA — App Orchestrator
    Splash → Welcome → Setup → Onboarding → App
    ═══════════════════════════════════════════════════ */
+
+const ProfileScreen = dynamic(
+  () => import("@/components/screens/ProfileScreen").then((mod) => mod.ProfileScreen),
+  { loading: () => <LoadingScreen message="Loading identity..." /> }
+);
+
+const ShareScreen = dynamic(
+  () => import("@/components/screens/ShareScreen").then((mod) => mod.ShareScreen),
+  { loading: () => <LoadingScreen message="Loading share hub..." /> }
+);
+
+const NetworkScreen = dynamic(
+  () => import("@/components/screens/NetworkScreen").then((mod) => mod.NetworkScreen),
+  { loading: () => <LoadingScreen message="Loading discover..." /> }
+);
+
+const AnalyticsScreen = dynamic(
+  () => import("@/components/screens/AnalyticsScreen").then((mod) => mod.AnalyticsScreen),
+  { loading: () => <LoadingScreen message="Loading insights..." /> }
+);
 
 function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => React.JSX.Element> {
   return {

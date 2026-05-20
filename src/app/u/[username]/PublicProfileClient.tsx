@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
   Briefcase,
-  ExternalLink,
   Globe,
   MapPin,
   Shield,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import { Divider, GoldBadge } from "@/components/ui";
 import { FadeUp, ScaleIn } from "@/components/motion/animations";
+import { PremiumPortfolioGallery, isVideoAsset } from "@/components/profile";
 import {
   AvailabilityBadge,
   ContactActionGrid,
@@ -42,26 +42,51 @@ export default function PublicProfileClient({
       <div className="relative">
         <div className="relative h-[320px] overflow-hidden">
           <motion.div
-            className="absolute inset-0"
+            className="absolute inset-x-0 -top-8 bottom-0"
             style={{ background: getProfileThemeGradient(profile.profileTheme) }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7 }}
           />
 
+          {profile.coverUrl && (
+            isVideoAsset(profile.coverUrl) ? (
+              <video
+                src={profile.coverUrl}
+                className="absolute inset-x-0 -top-8 h-[380px] w-full object-cover opacity-[0.42] mix-blend-screen"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <div
+                className="absolute inset-x-0 -top-8 h-[380px] bg-cover bg-center opacity-[0.42] mix-blend-screen"
+                style={{ backgroundImage: `url(${profile.coverUrl})` }}
+              />
+            )
+          )}
+
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(245,243,238,0.09),transparent_32%),linear-gradient(180deg,rgba(7,7,5,0)_0%,rgba(7,7,5,0.42)_68%,#070705_100%)]" />
+
           <motion.div
             className="absolute left-1/2 top-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(196,162,101,0.08) 0%, transparent 65%)" }}
+            style={{ background: "radial-gradient(circle, rgba(196,162,101,0.13) 0%, rgba(196,162,101,0.04) 42%, transparent 70%)" }}
             initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            animate={{ scale: [0.98, 1.05, 0.98], opacity: [0.78, 1, 0.78] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
           />
 
           <div className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
             <ScaleIn delay={0.2}>
               <div className="relative">
-                <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-velora-gold/20 to-transparent blur-sm" />
-                <div className="absolute -inset-0.5 rounded-full border border-velora-gold/20" />
+                <motion.div
+                  className="absolute -inset-4 rounded-full bg-velora-gold/20 blur-2xl"
+                  animate={{ opacity: [0.35, 0.75, 0.35], scale: [0.9, 1.08, 0.9] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-velora-gold/25 to-transparent blur-sm" />
+                <div className="absolute -inset-0.5 rounded-full border border-velora-gold/25" />
                 <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-velora-gold/30 bg-velora-surface">
                   {profile.avatarUrl ? (
                     <div
@@ -177,26 +202,7 @@ export default function PublicProfileClient({
           <Divider className="mx-5" />
           <section className="px-5 py-5">
             <h2 className="text-heading mb-4 text-base text-velora-text">{t("portfolio")}</h2>
-            <div className="grid grid-cols-1 gap-3">
-              {portfolio.map((project) => (
-                <article key={project.id} className="overflow-hidden rounded-[var(--radius-card)] border border-white/8 bg-white/[0.04]">
-                  {project.imageUrl && (
-                    <div className="aspect-[16/9] bg-cover bg-center" style={{ backgroundImage: `url(${project.imageUrl})` }} />
-                  )}
-                  <div className="p-4">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-velora-gold/70">{project.category || "Project"}</div>
-                    <h3 className="mt-1 text-sm font-semibold text-velora-text">{project.title}</h3>
-                    {project.description && <p className="mt-1 text-xs leading-relaxed text-velora-text-muted">{project.description}</p>}
-                    {project.link && (
-                      <a href={project.link} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[11px] text-velora-gold">
-                        View project
-                        <ExternalLink size={11} />
-                      </a>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
+            <PremiumPortfolioGallery portfolio={portfolio} />
           </section>
         </>
       )}

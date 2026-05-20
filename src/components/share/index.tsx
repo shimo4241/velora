@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Nfc,
@@ -20,6 +20,7 @@ import { FadeUp, ScaleIn, StaggerChildren, StaggerItem } from "../motion/animati
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharing, getProfileUrl, getProfileShortUrl } from "@/hooks/useSharing";
+import type { VeloraProfile } from "@/types";
 
 type NDEFWriter = {
   write: (message: { records: Array<{ recordType: "url"; data: string }> }) => Promise<void>;
@@ -29,6 +30,37 @@ type WebNFCWindow = Window &
   typeof globalThis & {
     NDEFReader?: new () => NDEFWriter;
   };
+
+function escapeVCard(value?: string) {
+  return (value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function downloadVCard(profile: VeloraProfile) {
+  const name = profile.fullName || "VELORA Contact";
+  const vcard = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${escapeVCard(name)}`,
+    `ORG:${escapeVCard(profile.company || "VELORA")}`,
+    `TITLE:${escapeVCard(profile.title)}`,
+    profile.email ? `EMAIL:${escapeVCard(profile.email)}` : "",
+    profile.phone || profile.whatsapp ? `TEL:${escapeVCard(profile.phone || profile.whatsapp)}` : "",
+    profile.website ? `URL:${escapeVCard(profile.website)}` : "",
+    `NOTE:${escapeVCard(`VELORA profile: ${getProfileUrl(profile.username)}`)}`,
+    "END:VCARD",
+  ].filter(Boolean).join("\n");
+  const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = `${name.replace(/[^\w-]+/g, "-").toLowerCase()}.vcf`;
+  link.click();
+  URL.revokeObjectURL(href);
+}
 
 /* ═══════════════════════════════════════════════════
    VELORA — Share Components
@@ -52,9 +84,30 @@ export function QRGenerator({
 
   return (
     <FadeUp delay={0.2}>
-      <GlassCard className="p-6 flex flex-col items-center" gold hover={false}>
+      <GlassCard className="relative overflow-hidden p-5" gold hover>
+        <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-velora-gold/16 blur-3xl" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.08),transparent)] animate-gold-scan" />
+
+        <div className="relative mb-5 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-gold/80">
+              VELORA business card
+            </div>
+            <div className="mt-1 text-heading text-lg text-velora-text">{name}</div>
+            <div className="mt-0.5 text-xs text-velora-text-muted">
+              {profile.title || "Premium network profile"}
+            </div>
+          </div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/25 bg-velora-gold-dim text-sm font-semibold text-velora-gold">
+            {profile.avatarUrl ? (
+              <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${profile.avatarUrl})` }} />
+            ) : (
+              name.split(" ").map((part) => part[0]).join("").slice(0, 2) || "V"
+            )}
+          </div>
+        </div>
         {/* Gold corner frame */}
-        <div className="relative">
+        <div className="relative flex justify-center">
           <div className="absolute -inset-3">
             <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-velora-gold/50 rounded-tl-lg" />
             <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-velora-gold/50 rounded-tr-lg" />
@@ -63,7 +116,13 @@ export function QRGenerator({
           </div>
 
           <ScaleIn delay={0.35}>
-            <div className="bg-white rounded-2xl p-4" id="velora-qr-container">
+            <motion.div
+              className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.35)]"
+              id="velora-qr-container"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <span className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-transparent via-velora-gold/20 to-transparent animate-gold-scan" />
               <QRCodeSVG
                 value={profileUrl}
                 size={180}
@@ -72,7 +131,7 @@ export function QRGenerator({
                 level="H"
                 includeMargin={false}
               />
-            </div>
+            </motion.div>
           </ScaleIn>
         </div>
 
@@ -90,38 +149,48 @@ export function QRGenerator({
           </div>
         </motion.div>
 
-        {/* Download QR button — real canvas export */}
+        {/* Download QR + vCard export */}
         <FadeUp delay={0.7}>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              const container = document.getElementById("velora-qr-container");
-              if (!container) return;
-              const svg = container.querySelector("svg");
-              if (!svg) return;
-              const svgData = new XMLSerializer().serializeToString(svg);
-              const canvas = document.createElement("canvas");
-              canvas.width = 360;
-              canvas.height = 360;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) return;
-              ctx.fillStyle = "#FFFFFF";
-              ctx.fillRect(0, 0, 360, 360);
-              const img = new Image();
-              img.onload = () => {
-                ctx.drawImage(img, 0, 0, 360, 360);
-                const link = document.createElement("a");
-                link.download = `velora-qr-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-              };
-              img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-            }}
-            className="flex items-center gap-2 mt-4 px-4 py-2 rounded-full glass text-xs text-velora-text-secondary font-medium"
-          >
-            <Download size={12} />
-            {t("download_qr")}
-          </motion.button>
+          <div className="mt-4 grid w-full grid-cols-2 gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                const container = document.getElementById("velora-qr-container");
+                if (!container) return;
+                const svg = container.querySelector("svg");
+                if (!svg) return;
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const canvas = document.createElement("canvas");
+                canvas.width = 360;
+                canvas.height = 360;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, 360, 360);
+                const img = new Image();
+                img.onload = () => {
+                  ctx.drawImage(img, 0, 0, 360, 360);
+                  const link = document.createElement("a");
+                  link.download = `velora-qr-${name.replace(/\s+/g, "-").toLowerCase()}.png`;
+                  link.href = canvas.toDataURL("image/png");
+                  link.click();
+                };
+                img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+              }}
+              className="haptic-press flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-velora-text-secondary"
+            >
+              <Download size={12} />
+              {t("download_qr")}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => downloadVCard(profile)}
+              className="haptic-press flex items-center justify-center gap-2 rounded-full border border-velora-gold/25 bg-velora-gold/10 px-3 py-2 text-xs font-semibold text-velora-gold"
+            >
+              <Smartphone size={12} />
+              Save Contact
+            </motion.button>
+          </div>
         </FadeUp>
       </GlassCard>
     </FadeUp>
@@ -162,16 +231,22 @@ export function NFCPrompt() {
 
   return (
     <FadeUp delay={0.4}>
-      <GlassCard className="p-5 flex flex-col items-center text-center" hover={false}>
+      <GlassCard className="p-5 flex flex-col items-center text-center" hover>
         {/* NFC animation — subtle ripples */}
-        <div className="relative w-20 h-20 flex items-center justify-center mb-3.5" onClick={handleNFCTap} style={{ cursor: 'pointer' }}>
+        <motion.button
+          type="button"
+          className="relative mb-3.5 flex h-20 w-20 items-center justify-center"
+          onClick={handleNFCTap}
+          whileTap={{ scale: 0.94 }}
+          aria-label="Write profile link to NFC tag"
+        >
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="absolute inset-0 rounded-full border border-velora-gold/15"
+              className={`absolute inset-0 rounded-full border ${nfcStatus === "success" ? "border-velora-emerald/25" : "border-velora-gold/15"}`}
               animate={{
                 scale: [0.6, 2],
-                opacity: [0.4, 0],
+                opacity: nfcStatus === "success" ? [0.65, 0] : [0.4, 0],
               }}
               transition={{
                 duration: 2.5,
@@ -184,13 +259,17 @@ export function NFCPrompt() {
 
           {/* Center icon */}
           <motion.div
-            className="relative z-10 w-14 h-14 rounded-xl glass-gold flex items-center justify-center"
+            className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-xl ${nfcStatus === "success" ? "border border-velora-emerald/25 bg-velora-emerald/12" : "glass-gold"}`}
             animate={{ scale: [1, nfcStatus === "writing" ? 1.1 : 1.03, 1] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           >
-            <Nfc size={24} className="text-velora-gold" />
+            {nfcStatus === "success" ? (
+              <Check size={24} className="text-velora-emerald" />
+            ) : (
+              <Nfc size={24} className="text-velora-gold" />
+            )}
           </motion.div>
-        </div>
+        </motion.button>
 
         <h3 className="text-heading text-sm text-velora-text">
           {t("nfc_tap")}
@@ -220,19 +299,27 @@ export function NFCPrompt() {
 /* ── WhatsApp Hero + Share Actions ── */
 export function ShareActions() {
   const [copied, setCopied] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState("");
   const { profile, isProfileReady } = useProfile();
   const { shareViaWhatsApp, copyProfileLink, trackShare } = useSharing();
   const { t } = useTranslation(profile?.locale || "fr");
 
   if (!isProfileReady || !profile) return null;
 
+  const celebrateShare = (label: string) => {
+    setShareSuccess(label);
+    setTimeout(() => setShareSuccess(""), 1800);
+  };
+
   const handleWhatsApp = () => {
     shareViaWhatsApp(profile);
+    celebrateShare("WhatsApp opened");
   };
 
   const handleCopy = () => {
     copyProfileLink(profile?.username || "");
     setCopied(true);
+    celebrateShare("Link copied");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -246,6 +333,7 @@ export function ShareActions() {
           url,
         });
         await trackShare("link");
+        celebrateShare("Profile shared");
       } catch {
         // User cancelled share
       }
@@ -259,16 +347,32 @@ export function ShareActions() {
     const url = getProfileUrl(profile.username);
     const body = encodeURIComponent(`Découvrez mon profil VELORA: ${url}`);
     window.open(`sms:?body=${body}`, "_self");
+    celebrateShare("SMS ready");
   };
 
   return (
-    <div className="px-5 py-4">
+    <div className="relative px-5 py-4">
+      <AnimatePresence>
+        {shareSuccess && (
+          <motion.div
+            className="pointer-events-none absolute inset-x-5 -top-2 z-20 flex justify-center"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          >
+            <div className="flex items-center gap-2 rounded-full border border-velora-emerald/20 bg-velora-emerald/12 px-4 py-2 text-xs font-semibold text-velora-emerald shadow-[0_12px_40px_rgba(107,191,138,0.12)] backdrop-blur-xl">
+              <Check size={13} />
+              {shareSuccess}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* WhatsApp Hero CTA — now functional */}
       <FadeUp delay={0.55}>
         <motion.button
           onClick={handleWhatsApp}
           whileTap={{ scale: 0.97 }}
-          className="w-full flex items-center justify-center gap-3 py-4 rounded-[var(--radius-card)] bg-velora-whatsapp/12 border border-velora-whatsapp/20 mb-3"
+          className="haptic-press w-full flex items-center justify-center gap-3 py-4 rounded-[var(--radius-card)] bg-velora-whatsapp/12 border border-velora-whatsapp/20 mb-3"
         >
           <MessageCircle size={20} className="text-velora-whatsapp" />
           <span className="text-sm font-semibold text-velora-whatsapp font-[family-name:var(--font-display)]">

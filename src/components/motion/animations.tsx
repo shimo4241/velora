@@ -4,7 +4,7 @@ import { motion, type Variants, type Easing } from "framer-motion";
 import { MOTION } from "@/lib/constants";
 import type { ReactNode } from "react";
 
-const EASE: Easing = [0.16, 1, 0.3, 1];
+export const PREMIUM_EASE: Easing = [0.16, 1, 0.3, 1];
 
 /* ═══════════════════════════════════════════════════
    VELORA — Motion Primitives
@@ -29,12 +29,13 @@ interface MotionProps {
 export function FadeUp({ children, delay = 0, className }: MotionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, amount: 0.22 }}
       transition={{
         duration: MOTION.duration.entrance,
         delay,
-        ease: EASE,
+        ease: PREMIUM_EASE,
       }}
       className={className}
     >
@@ -50,11 +51,12 @@ export function ScaleIn({ children, delay = 0, className }: MotionProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.35 }}
       transition={{
         duration: MOTION.duration.slow,
         delay,
-        ease: EASE,
+        ease: PREMIUM_EASE,
       }}
       className={className}
     >
@@ -69,11 +71,12 @@ export function SlideIn({ children, delay = 0, className }: MotionProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
       transition={{
         duration: MOTION.duration.slow,
         delay,
-        ease: EASE,
+        ease: PREMIUM_EASE,
       }}
       className={className}
     >
@@ -109,7 +112,7 @@ const staggerItem: Variants = {
     filter: "blur(0px)",
     transition: {
       duration: MOTION.duration.slow,
-      ease: EASE,
+      ease: PREMIUM_EASE,
     },
   },
 };
@@ -124,7 +127,8 @@ export function StaggerChildren({
     <motion.div
       variants={staggerContainer}
       initial="hidden"
-      animate="visible"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.18 }}
       custom={{ delay, stagger: staggerDelay }}
       className={className}
     >

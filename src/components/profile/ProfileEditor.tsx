@@ -134,10 +134,29 @@ export function EditablePanel({
   );
 }
 
-export function EmptyEditableState({ children }: { children: ReactNode }) {
+export function EmptyEditableState({
+  children,
+  ctaLabel,
+  onAction,
+}: {
+  children: ReactNode;
+  ctaLabel?: string;
+  onAction?: () => void;
+}) {
   return (
-    <div className="flex min-h-[92px] items-center justify-center rounded-[var(--radius-md)] border border-dashed border-velora-gold/20 bg-velora-gold/5 px-4 text-center text-xs text-velora-text-muted">
-      {children}
+    <div className="flex min-h-[112px] flex-col items-center justify-center rounded-[var(--radius-md)] border border-dashed border-velora-gold/20 bg-velora-gold/5 px-4 text-center">
+      <div className="text-xs leading-relaxed text-velora-text-muted">{children}</div>
+      {ctaLabel && onAction && (
+        <motion.button
+          type="button"
+          onClick={onAction}
+          whileTap={{ scale: 0.96 }}
+          className="haptic-press mt-3 inline-flex items-center gap-1.5 rounded-full border border-velora-gold/25 bg-velora-gold/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-velora-gold"
+        >
+          <Plus size={12} />
+          {ctaLabel}
+        </motion.button>
+      )}
     </div>
   );
 }
@@ -346,6 +365,7 @@ function HeaderEditor({
     company: profile.company || "",
     location: profile.location || "",
     avatarUrl: profile.avatarUrl || "",
+    coverUrl: profile.coverUrl || "",
     professionalMode: profile.professionalMode || "entrepreneur",
   });
 
@@ -423,6 +443,9 @@ function HeaderEditor({
         </Field>
         <Field label="Location">
           <input className={inputClass} value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
+        </Field>
+        <Field label="Cover or video banner URL">
+          <input className={inputClass} value={form.coverUrl} onChange={(event) => setForm({ ...form, coverUrl: event.target.value })} placeholder="https://..." />
         </Field>
         <Field label="Mode">
           <select
@@ -1015,8 +1038,24 @@ export function SkillChips({ skills }: { skills: string[] }) {
   );
 }
 
-export function ServicesList({ services }: { services: ProfileService[] }) {
-  if (!services.length) return <EmptyEditableState>Add your first service</EmptyEditableState>;
+export function ServicesList({
+  services,
+  emptyLabel = "Add your services",
+  ctaLabel,
+  onAdd,
+}: {
+  services: ProfileService[];
+  emptyLabel?: string;
+  ctaLabel?: string;
+  onAdd?: () => void;
+}) {
+  if (!services.length) {
+    return (
+      <EmptyEditableState ctaLabel={ctaLabel} onAction={onAdd}>
+        {emptyLabel}
+      </EmptyEditableState>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -1133,4 +1172,3 @@ export function SocialLinkRow({ links }: { links: SocialLink[] }) {
     </div>
   );
 }
-

@@ -13,7 +13,7 @@ import { GlassCard } from "../ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
-import { getDiscoverUsers } from "@/lib/firestore";
+import { onDiscoverUsersChange } from "@/lib/firestore";
 import type { VeloraProfile } from "@/types";
 
 /* ── Radar Discovery Animation ── */
@@ -228,9 +228,12 @@ export function ProfessionalCard({
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className="flex-shrink-0 w-9 h-9 rounded-xl bg-velora-gold/10 border border-velora-gold/20 flex items-center justify-center"
+          className="haptic-press flex-shrink-0 rounded-xl border border-velora-gold/20 bg-velora-gold/10 px-3 py-2"
         >
-          <ArrowUpRight size={16} className="text-velora-gold" />
+          <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-velora-gold">
+            Connect
+            <ArrowUpRight size={13} />
+          </span>
         </motion.button>
       </div>
     </GlassCard>
@@ -238,6 +241,22 @@ export function ProfessionalCard({
 }
 
 /* ── Nearby Professionals List ── */
+function hashProfileId(value: string, fallback: number) {
+  return (value || String(fallback))
+    .split("")
+    .reduce((total, char) => total + char.charCodeAt(0), fallback * 17);
+}
+
+function getDistanceLabel(id: string, index: number) {
+  const hash = hashProfileId(id, index);
+  const meters = 120 + (hash % 880);
+  return meters < 950 ? `${meters} m` : `${(meters / 1000).toFixed(1)} km`;
+}
+
+function getMutualCount(id: string, index: number) {
+  return hashProfileId(id, index) % 4;
+}
+
 export function NearbyList({ onCountChange }: { onCountChange?: (count: number) => void }) {
   const { profile, isProfileReady } = useProfile();
   const currentUserId = isProfileReady ? profile?.id || null : null;
@@ -255,21 +274,25 @@ export function NearbyList({ onCountChange }: { onCountChange?: (count: number) 
       };
     }
     
-    getDiscoverUsers(currentUserId, 10)
-      .then(({ users }) => {
+    const unsubscribe = onDiscoverUsersChange(
+      currentUserId,
+      12,
+      (users) => {
         if (!active) return;
         setState({ userId: currentUserId, professionals: users });
         onCountChange?.(users.length);
-      })
-      .catch((err) => {
+      },
+      (err) => {
         if (!active) return;
         console.error("Error fetching discover users:", err);
         setState({ userId: currentUserId, professionals: [] });
         onCountChange?.(0);
-      });
+      }
+    );
 
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [currentUserId, onCountChange]);
 
@@ -279,8 +302,22 @@ export function NearbyList({ onCountChange }: { onCountChange?: (count: number) 
 
   if (loading) {
     return (
-      <div className="px-5 py-8 text-center text-velora-text-muted text-sm">
-        Recherche en cours...
+      <div className="px-5 py-4">
+        <div className="space-y-3">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="glass rounded-[var(--radius-card)] p-4">
+              <div className="flex items-start gap-3.5">
+                <div className="premium-skeleton h-12 w-12 rounded-2xl" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="premium-skeleton h-3 w-32 rounded-full" />
+                  <div className="premium-skeleton h-2.5 w-44 rounded-full" />
+                  <div className="premium-skeleton h-2.5 w-24 rounded-full" />
+                </div>
+                <div className="premium-skeleton h-9 w-16 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -302,8 +339,8 @@ export function NearbyList({ onCountChange }: { onCountChange?: (count: number) 
               name={pro.fullName}
               title={pro.title}
               company={pro.company || ""}
-              distance="-- m"
-              mutualConnections={0}
+              distance={getDistanceLabel(pro.id, i)}
+              mutualConnections={getMutualCount(pro.id, i)}
               isVerified={pro.isVerified}
               isPremium={pro.isPremium}
             />

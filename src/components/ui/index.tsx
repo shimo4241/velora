@@ -35,6 +35,7 @@ export function GlassCard({
     <Tag
       className={`${baseClass} ${hoverClass} rounded-[var(--radius-card)] ${className}`}
       onClick={onClick}
+      whileHover={hover ? { y: -3, scale: 1.006 } : undefined}
       whileTap={onClick ? { scale: 0.98 } : undefined}
     >
       {children}

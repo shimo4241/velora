@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef, useState } from "react";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import {
   Shield,
   Star,
@@ -13,8 +14,14 @@ import {
   Mail,
   Phone,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
+  Eye,
+  Link2,
   Bookmark,
+  Play,
+  X,
 } from "lucide-react";
 import { GoldBadge } from "../ui";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motion/animations";
@@ -30,6 +37,10 @@ import type { ExperienceEntry, PortfolioItem, ProfileTheme } from "@/types";
    ═══════════════════════════════════════════════════ */
 
 /* ── Profile Hero ── */
+export function isVideoAsset(url?: string) {
+  return Boolean(url && /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url));
+}
+
 interface ProfileHeroProps {
   name: string;
   title: string;
@@ -37,11 +48,13 @@ interface ProfileHeroProps {
   location: string;
   bio: string;
   avatarUrl: string;
+  coverUrl?: string;
   isVerified?: boolean;
   isPremium?: boolean;
   mode?: string;
   connectionsCount?: number;
   portfolioCount?: number;
+  profileViews?: number;
   profileTheme?: ProfileTheme;
   showBio?: boolean;
 }
@@ -53,44 +66,77 @@ export function ProfileHero({
   location,
   bio,
   avatarUrl,
+  coverUrl,
   isVerified = true,
   isPremium = true,
   mode = "Entrepreneur",
   connectionsCount = 0,
   portfolioCount = 0,
+  profileViews = 0,
   profileTheme,
   showBio = true,
 }: ProfileHeroProps) {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const bannerY = useTransform(scrollYProgress, [0, 1], [0, 38]);
+  const avatarY = useTransform(scrollYProgress, [0, 1], [0, -16]);
 
   if (!isProfileReady || !profile) return null;
+  const hasVideoBanner = isVideoAsset(coverUrl);
 
   return (
-    <div className="relative">
+    <div ref={heroRef} className="relative">
       {/* ── Cinematic Background — Warm Espresso ── */}
-      <div className="relative h-[320px]">
+      <div className="relative h-[330px] overflow-hidden">
         {/* Warm gradient backdrop */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute inset-x-0 -top-8 bottom-0"
           style={{
             background: getProfileThemeGradient(profileTheme),
+            y: bannerY,
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7 }}
         />
 
+        {coverUrl && (
+          hasVideoBanner ? (
+            <motion.video
+              src={coverUrl}
+              className="absolute inset-x-0 -top-8 h-[380px] w-full object-cover opacity-[0.42] mix-blend-screen"
+              style={{ y: bannerY }}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <motion.div
+              className="absolute inset-x-0 -top-8 h-[380px] bg-cover bg-center opacity-[0.42] mix-blend-screen"
+              style={{ backgroundImage: `url(${coverUrl})`, y: bannerY }}
+            />
+          )
+        )}
+
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(245,243,238,0.09),transparent_32%),linear-gradient(180deg,rgba(7,7,5,0)_0%,rgba(7,7,5,0.42)_68%,#070705_100%)]" />
+        <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,rgba(196,162,101,0.12)_46%,transparent_54%)]" />
+
         {/* Gold atmospheric glow — subtle, centered */}
         <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] rounded-full"
+          className="absolute left-1/2 top-[56%] h-[310px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(196,162,101,0.08) 0%, transparent 65%)",
+              "radial-gradient(circle, rgba(196,162,101,0.13) 0%, rgba(196,162,101,0.04) 42%, transparent 70%)",
           }}
           initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          animate={{ scale: [0.98, 1.05, 0.98], opacity: [0.78, 1, 0.78] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
         />
 
         {/* Ambient particles — reduced to 4 for subtlety */}
@@ -116,15 +162,20 @@ export function ProfileHero({
         ))}
 
         {/* Avatar — positioned at bottom edge */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+        <motion.div className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2" style={{ y: avatarY }}>
           <ScaleIn delay={0.2}>
             <div className="relative">
               {/* Subtle glow ring */}
-              <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-velora-gold/20 to-transparent blur-sm" />
-              <div className="absolute -inset-0.5 rounded-full border border-velora-gold/20" />
+              <motion.div
+                className="absolute -inset-4 rounded-full bg-velora-gold/20 blur-2xl"
+                animate={{ opacity: [0.35, 0.75, 0.35], scale: [0.9, 1.08, 0.9] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-velora-gold/25 to-transparent blur-sm" />
+              <div className="absolute -inset-0.5 rounded-full border border-velora-gold/25" />
 
               {/* Avatar image */}
-              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-velora-gold/30 bg-velora-surface">
+              <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-velora-gold/35 bg-velora-surface shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
                 {avatarUrl ? (
                   <div
                     className="w-full h-full bg-cover bg-center"
@@ -154,7 +205,7 @@ export function ProfileHero({
               )}
             </div>
           </ScaleIn>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Profile Info ── */}
@@ -216,6 +267,7 @@ export function ProfileHero({
         <FadeUp delay={0.7}>
           <div className="flex items-center justify-center gap-8 mt-5">
             {[
+              { value: String(profileViews), label: "views" },
               { value: String(connectionsCount), label: t("connections") },
               { value: String(portfolioCount), label: t("portfolio") },
             ].map((stat, i) => (
@@ -301,6 +353,189 @@ export function PortfolioGallery({ portfolio = [] }: { portfolio?: PortfolioItem
 }
 
 /* ── CV Timeline ── */
+export function PremiumPortfolioGallery({
+  portfolio = [],
+  compact = false,
+}: {
+  portfolio?: PortfolioItem[];
+  compact?: boolean;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const activeProject = activeIndex === null ? null : portfolio[activeIndex];
+
+  const move = (direction: -1 | 1) => {
+    if (activeIndex === null || portfolio.length === 0) return;
+    setActiveIndex((activeIndex + direction + portfolio.length) % portfolio.length);
+  };
+
+  if (!portfolio.length) return null;
+
+  return (
+    <>
+      <StaggerChildren
+        staggerDelay={0.07}
+        delay={0.05}
+        className="[column-count:1] [column-gap:0.75rem] min-[380px]:[column-count:2]"
+      >
+        {portfolio.map((project, index) => {
+          const hasMedia = Boolean(project.imageUrl);
+          const isVideo = isVideoAsset(project.imageUrl);
+          const tall = index % 3 === 1;
+
+          return (
+            <StaggerItem key={project.id} className="mb-3 break-inside-avoid">
+              <motion.article
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.985 }}
+                onClick={() => setActiveIndex(index)}
+                className="card-interactive group relative cursor-pointer overflow-hidden rounded-[var(--radius-card)] border border-white/8 bg-white/[0.04] text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]"
+              >
+                <div className={`relative overflow-hidden ${tall ? "aspect-[4/5]" : "aspect-[4/3]"} ${compact ? "min-h-[150px]" : ""}`}>
+                  {hasMedia ? (
+                    isVideo ? (
+                      <video
+                        src={project.imageUrl}
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <div
+                        className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.04]"
+                        style={{ backgroundImage: `url(${project.imageUrl})` }}
+                      />
+                    )
+                  ) : (
+                    <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.22),transparent_34%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.035))]" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/76 via-black/12 to-transparent" />
+                  {isVideo && (
+                    <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/45 text-velora-gold backdrop-blur-xl">
+                      <Play size={13} fill="currentColor" />
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-velora-gold/80">
+                      {project.category || "Project"}
+                    </span>
+                    {project.link && <Link2 size={11} className="shrink-0 text-velora-gold/70" />}
+                  </div>
+                  <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-velora-text">
+                    {project.title}
+                  </h3>
+                </div>
+              </motion.article>
+            </StaggerItem>
+          );
+        })}
+      </StaggerChildren>
+
+      <AnimatePresence>
+        {activeProject && (
+          <motion.div
+            className="fixed inset-0 z-[260] flex items-center justify-center bg-black/82 px-4 py-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="relative w-full max-w-[430px] overflow-hidden rounded-[var(--radius-lg)] border border-white/12 bg-velora-black shadow-[0_30px_120px_rgba(0,0,0,0.75)]"
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveIndex(null)}
+                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                aria-label="Close portfolio preview"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="relative aspect-[4/5] max-h-[62dvh] overflow-hidden bg-velora-card">
+                {isVideoAsset(activeProject.imageUrl) ? (
+                  <video
+                    src={activeProject.imageUrl}
+                    className="h-full w-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls
+                  />
+                ) : activeProject.imageUrl ? (
+                  <div
+                    className="h-full w-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${activeProject.imageUrl})` }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.24),transparent_36%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.04))]" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-transparent to-black/18" />
+                {portfolio.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => move(-1)}
+                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                      aria-label="Previous project"
+                    >
+                      <ChevronLeft size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(1)}
+                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                      aria-label="Next project"
+                    >
+                      <ChevronRight size={17} />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-gold">
+                    {activeProject.category || "Project"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] text-velora-text-muted">
+                    <Eye size={11} />
+                    Preview
+                  </span>
+                </div>
+                <h3 className="text-heading text-lg text-velora-text">{activeProject.title}</h3>
+                {activeProject.description && (
+                  <p className="mt-2 text-sm leading-relaxed text-velora-text-secondary">
+                    {activeProject.description}
+                  </p>
+                )}
+                {activeProject.link && (
+                  <a
+                    href={activeProject.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="haptic-press mt-4 inline-flex items-center gap-2 rounded-full border border-velora-gold/25 bg-velora-gold/10 px-4 py-2 text-xs font-semibold text-velora-gold"
+                  >
+                    View project
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 export function CVTimeline({ experience = [] }: { experience?: ExperienceEntry[] }) {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
