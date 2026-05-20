@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
   /* ── Images ── */
   images: {
     unoptimized: isCapacitor, // Vercel optimizes; Capacitor needs raw
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
   },
 
   /* ── Security Headers (Vercel only) ── */

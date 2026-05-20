@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary";
 
 interface OptimizedImageProps {
@@ -21,6 +21,7 @@ export function OptimizedImage({
   const [prevSrc, setPrevSrc] = useState(src);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   if (src !== prevSrc) {
     setPrevSrc(src);
@@ -28,7 +29,52 @@ export function OptimizedImage({
     setError(false);
   }
 
-  if (!src) {
+  // 1. Sync checks for cached images on mount or src change
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+
+    if (img.complete) {
+      if (img.naturalWidth === 0) {
+        setError(true);
+      } else {
+        setLoaded(true);
+      }
+    }
+  }, [src]);
+
+  // 2. Loading Timeout Fallback: force loaded state if stuck > 3.5s to bypass skeletons
+  useEffect(() => {
+    if (!src || loaded || error) return;
+
+    const timer = setTimeout(() => {
+      console.warn(`[OptimizedImage] Loading timeout triggered for: ${src}`);
+      setLoaded(true);
+    }, 3500);
+
+    return () => clearTimeout(timer);
+  }, [src, loaded, error]);
+
+  const getInitials = (name: string): string => {
+    if (!name) return "";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const renderFallback = () => {
+    if (type === "avatar") {
+      const initials = getInitials(alt || "U");
+      return (
+        <div
+          className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(var(--identity-accent-rgb,196,162,101),0.22),transparent_48%),#111] font-[family-name:var(--font-display)] font-semibold text-[var(--identity-accent,#c4a265)] text-3xl ${className}`}
+          style={style}
+        >
+          {initials}
+        </div>
+      );
+    }
+
     return (
       <div
         className={`bg-velora-surface/40 flex items-center justify-center text-velora-text-muted ${className}`}
@@ -37,6 +83,10 @@ export function OptimizedImage({
         <span className="text-[10px] uppercase tracking-wider font-semibold">No Image</span>
       </div>
     );
+  };
+
+  if (!src) {
+    return renderFallback();
   }
 
   // Optimize URLs using Cloudinary delivery features
@@ -61,12 +111,16 @@ export function OptimizedImage({
       {/* 3. Main Image with elegant fade-in */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src={optimizedUrl}
         alt={alt}
         className={`h-full w-full object-cover transition-all duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          loaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[1.03] blur-[4px]"
+          loaded && !error ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[1.03] blur-[4px]"
         }`}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          setLoaded(true);
+          setError(false);
+        }}
         onError={() => {
           setError(true);
           setLoaded(true);
@@ -74,10 +128,10 @@ export function OptimizedImage({
         loading="lazy"
       />
 
-      {/* Error State Fallback */}
+      {/* 4. Error State Fallback */}
       {error && (
-        <div className="absolute inset-0 bg-velora-surface/60 flex items-center justify-center text-velora-text-muted text-xs">
-          <span>Failed to load</span>
+        <div className="absolute inset-0 h-full w-full">
+          {renderFallback()}
         </div>
       )}
     </div>
