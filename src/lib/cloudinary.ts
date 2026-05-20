@@ -430,8 +430,11 @@ function performCloudinaryUpload(
   options?: UploadOptions
 ): Promise<{ secure_url: string; delete_token?: string }> {
   return new Promise((resolve, reject) => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "velora_unsigned";
+    const rawCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+    const rawPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "velora_unsigned";
+
+    const cloudName = rawCloudName.replace(/['"]/g, "").trim();
+    const uploadPreset = rawPreset.replace(/['"]/g, "").trim();
 
     if (!cloudName || !uploadPreset) {
       reject(
@@ -649,7 +652,8 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<void>
   const deleteToken = getCachedDeleteToken(imageUrl);
   if (deleteToken) {
     try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const rawCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+      const cloudName = rawCloudName.replace(/['"]/g, "").trim();
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/delete_by_token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

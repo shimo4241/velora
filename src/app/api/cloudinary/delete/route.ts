@@ -9,9 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing publicId" }, { status: 400 });
     }
 
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    const rawCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "";
+    const rawApiKey = process.env.CLOUDINARY_API_KEY || "";
+    const rawApiSecret = process.env.CLOUDINARY_API_SECRET || "";
+
+    const cloudName = rawCloudName.replace(/['"]/g, "").trim();
+    const apiKey = rawApiKey.replace(/['"]/g, "").trim();
+    const apiSecret = rawApiSecret.replace(/['"]/g, "").trim();
 
     if (!cloudName || !apiKey || !apiSecret) {
       console.warn("[Cloudinary Server Delete] Cloudinary credentials not configured in environment. Skipping asset deletion.");
