@@ -2,9 +2,9 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // ── Avatars ──
-    // Anyone can read (public profile images)
-    // Only the owner can upload, max 5MB, images only
+    // Avatars
+    // Anyone can read public profile images.
+    // Only the owner can upload, max 5MB, images only.
     match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null
@@ -13,9 +13,20 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
 
-    // ── Portfolio ──
-    // Anyone can read (public portfolio)
-    // Only the owner can upload, max 10MB, images only
+    // Covers
+    // Anyone can read public profile banners.
+    // Only the owner can upload, max 10MB, images only.
+    match /covers/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Portfolio
+    // Anyone can read public portfolio images.
+    // Only the owner can upload, max 10MB, images only.
     match /portfolio/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null

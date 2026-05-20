@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -19,6 +19,8 @@ import {
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/components/providers/ToastProvider";
+import { getUploadErrorMessage, validateUploadImageFile } from "@/lib/firestore";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Edit Profile Screen
@@ -31,7 +33,9 @@ interface EditProfileScreenProps {
 
 export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   const { profile, updateProfile, uploadAvatar, isProfileReady } = useProfile();
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef<string[]>([]);
 
   // Local form state
   const [form, setForm] = useState({
@@ -48,7 +52,15 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || "");
+
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
+    };
+  }, []);
 
   if (!isProfileReady || !profile) return null;
 
@@ -58,22 +70,35 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Preview immediately
-    const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    e.currentTarget.value = "";
+    if (!file) {
+      console.warn("[Upload:avatar] image-picker:no file selected");
+      return;
+    }
 
     // Upload to Firebase Storage
+    const previousPreview = avatarPreview;
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const url = await uploadAvatar(file);
+      validateUploadImageFile(file, "avatar");
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(previewUrl);
+      setAvatarPreview(previewUrl);
+      const url = await uploadAvatar(file, {
+        onProgress: ({ percent }) => setUploadProgress(percent),
+      });
+      previewUrlsRef.current.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
+      previewUrlsRef.current = [];
       setAvatarPreview(url);
+      showToast({ tone: "success", title: "Avatar updated", message: "Your profile image has been uploaded." });
     } catch (err) {
-      console.error("Avatar upload failed:", err);
+      console.error("[Upload:avatar] edit screen failed:", err);
+      setAvatarPreview(previousPreview);
+      showToast({ tone: "error", title: "Avatar upload failed", message: getUploadErrorMessage(err, "avatar") });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -85,6 +110,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       setTimeout(() => { setSaved(false); onClose(); }, 1200);
     } catch (err) {
       console.error("Save failed:", err);
+      showToast({ tone: "error", title: "Save failed", message: err instanceof Error ? err.message : "Profile changes could not be saved." });
     } finally {
       setSaving(false);
     }
@@ -161,7 +187,10 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
                 className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-velora-gold flex items-center justify-center shadow-lg"
               >
                 {uploading ? (
-                  <Loader2 size={14} className="text-velora-black animate-spin" />
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-velora-black">
+                    <Loader2 size={12} className="animate-spin" />
+                    {uploadProgress}%
+                  </span>
                 ) : (
                   <Camera size={14} className="text-velora-black" />
                 )}
@@ -170,7 +199,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleAvatarUpload}
                 className="hidden"
               />

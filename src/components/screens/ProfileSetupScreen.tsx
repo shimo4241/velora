@@ -1,13 +1,20 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
-import { uploadAvatarImage, generateUniqueUsername, createProfile } from "@/lib/firestore";
+import {
+  createProfile,
+  generateUniqueUsername,
+  getUploadErrorMessage,
+  uploadAvatarImage,
+  validateUploadImageFile,
+} from "@/lib/firestore";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/components/providers/ToastProvider";
 import type { VeloraProfile, VeloraRole } from "@/types";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -19,7 +26,9 @@ import "react-phone-number-input/style.css";
 export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
   const { profile, refreshProfile, updateProfile } = useProfile();
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef<string[]>([]);
 
   const [form, setForm] = useState({
     fullName: profile?.fullName || user?.displayName || "",
@@ -33,9 +42,17 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
   const [setupError, setSetupError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || user?.photoURL || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
+    };
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setSetupError("");
@@ -44,18 +61,33 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.currentTarget.value = "";
+    if (!file) {
+      console.warn("[Upload:avatar] image-picker:no file selected");
+      return;
+    }
 
-    setAvatarFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    try {
+      validateUploadImageFile(file, "avatar");
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(previewUrl);
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
+    } catch (error) {
+      console.error("[Upload:avatar] setup image-picker failed", error);
+      setAvatarFile(null);
+      showToast({ tone: "error", title: "Avatar upload failed", message: getUploadErrorMessage(error, "avatar") });
+    }
   };
 
   const handleSubmit = async () => {
 
     if (!user) {
       console.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
+      setSetupError("Please sign in again before uploading an image.");
+      showToast({ tone: "error", title: "Authentication required", message: "Please sign in again before uploading an image." });
       return;
     }
     if (!form.fullName || !form.title || !form.whatsapp) {
@@ -75,8 +107,10 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       let finalAvatarUrl = "";
       if (avatarFile) {
         setUploading(true);
-        finalAvatarUrl = await uploadAvatarImage(user.uid, avatarFile);
-        setUploading(false);
+        setUploadProgress(0);
+        finalAvatarUrl = await uploadAvatarImage(user.uid, avatarFile, {
+          onProgress: ({ percent }) => setUploadProgress(percent),
+        });
       }
 
       const now = new Date().toISOString();
@@ -119,11 +153,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       onComplete();
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
-      if (err instanceof Error) {
-        setSetupError(err.message);
-      }
+      const message = avatarFile ? getUploadErrorMessage(err, "avatar") : err instanceof Error ? err.message : "Profile setup failed.";
+      setSetupError(message);
+      showToast({ tone: "error", title: "Profile setup failed", message });
+    } finally {
       setSaving(false);
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -178,11 +214,17 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleAvatarSelect}
                 className="hidden"
               />
             </div>
+            {uploading && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-velora-gold">
+                <Loader2 size={13} className="animate-spin" />
+                {uploadProgress}%
+              </div>
+            )}
           </div>
         </FadeUp>
 
@@ -328,7 +370,10 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
             disabled={!form.fullName || !form.title || !form.whatsapp || !isValidPhoneNumber(form.whatsapp || "") || saving || uploading}
           >
             {saving || uploading ? (
-              <Loader2 size={16} className="animate-spin" />
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {uploading ? `${uploadProgress}%` : null}
+              </>
             ) : (
               <>
                 Finaliser le profil

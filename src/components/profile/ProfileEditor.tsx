@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Briefcase,
@@ -22,6 +22,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { GoldButton } from "@/components/ui";
+import { useToast } from "@/components/providers/ToastProvider";
+import {
+  getUploadErrorMessage,
+  validateUploadImageFile,
+  type UploadOptions,
+} from "@/lib/firestore";
 import type {
   AvailabilityStatus,
   ContactActionSettings,
@@ -293,9 +299,9 @@ export function ProfileEditorSheet({
   onSaveProfile: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
   onSavePortfolio: (items: PortfolioItem[]) => Promise<void>;
   onSaveExperience: (items: ExperienceEntry[]) => Promise<void>;
-  onUploadAvatar: (file: File) => Promise<string>;
-  onUploadCover: (file: File) => Promise<string>;
-  onUploadPortfolioImage: (file: File) => Promise<string>;
+  onUploadAvatar: (file: File, options?: UploadOptions) => Promise<string>;
+  onUploadCover: (file: File, options?: UploadOptions) => Promise<string>;
+  onUploadPortfolioImage: (file: File, options?: UploadOptions) => Promise<string>;
 }) {
   return (
     <AnimatePresence>
@@ -361,14 +367,18 @@ function HeaderEditor({
   profile: VeloraProfile;
   onCancel: () => void;
   onSave: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
-  onUploadAvatar: (file: File) => Promise<string>;
-  onUploadCover: (file: File) => Promise<string>;
+  onUploadAvatar: (file: File, options?: UploadOptions) => Promise<string>;
+  onUploadCover: (file: File, options?: UploadOptions) => Promise<string>;
 }) {
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
+  const [coverProgress, setCoverProgress] = useState(0);
   const [form, setForm] = useState({
     fullName: profile.fullName || "",
     title: profile.title || "",
@@ -379,37 +389,75 @@ function HeaderEditor({
     professionalMode: profile.professionalMode || "entrepreneur",
   });
 
-  const handleAvatar = async (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setForm((current) => ({ ...current, avatarUrl: String(event.target?.result || "") }));
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
     };
-    reader.readAsDataURL(file);
+  }, []);
 
+  const setLocalPreview = (field: "avatarUrl" | "coverUrl", file: File) => {
+    const previewUrl = URL.createObjectURL(file);
+    previewUrlsRef.current.push(previewUrl);
+    setForm((current) => ({ ...current, [field]: previewUrl }));
+  };
+
+  const clearLocalPreviews = () => {
+    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrlsRef.current = [];
+  };
+
+  const handleAvatar = async (file?: File) => {
+    if (!file) {
+      console.warn("[Upload:avatar] image-picker:no file selected");
+      return;
+    }
+    const previousAvatarUrl = form.avatarUrl;
     setUploading(true);
+    setAvatarProgress(0);
     try {
-      const avatarUrl = await onUploadAvatar(file);
+      validateUploadImageFile(file, "avatar");
+      setLocalPreview("avatarUrl", file);
+      const avatarUrl = await onUploadAvatar(file, {
+        onProgress: ({ percent }) => setAvatarProgress(percent),
+      });
+      clearLocalPreviews();
       setForm((current) => ({ ...current, avatarUrl }));
+      showToast({ tone: "success", title: "Avatar updated", message: "Your profile image has been uploaded." });
+    } catch (error) {
+      console.error("[Upload:avatar] UI handler failed", error);
+      setForm((current) => ({ ...current, avatarUrl: previousAvatarUrl }));
+      showToast({ tone: "error", title: "Avatar upload failed", message: getUploadErrorMessage(error, "avatar") });
     } finally {
       setUploading(false);
+      setAvatarProgress(0);
     }
   };
 
   const handleCover = async (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setForm((current) => ({ ...current, coverUrl: String(event.target?.result || "") }));
-    };
-    reader.readAsDataURL(file);
-
+    if (!file) {
+      console.warn("[Upload:cover] image-picker:no file selected");
+      return;
+    }
+    const previousCoverUrl = form.coverUrl;
     setCoverUploading(true);
+    setCoverProgress(0);
     try {
-      const coverUrl = await onUploadCover(file);
+      validateUploadImageFile(file, "cover");
+      setLocalPreview("coverUrl", file);
+      const coverUrl = await onUploadCover(file, {
+        onProgress: ({ percent }) => setCoverProgress(percent),
+      });
+      clearLocalPreviews();
       setForm((current) => ({ ...current, coverUrl }));
+      showToast({ tone: "success", title: "Banner updated", message: "Your profile banner has been uploaded." });
+    } catch (error) {
+      console.error("[Upload:cover] UI handler failed", error);
+      setForm((current) => ({ ...current, coverUrl: previousCoverUrl }));
+      showToast({ tone: "error", title: "Banner upload failed", message: getUploadErrorMessage(error, "cover") });
     } finally {
       setCoverUploading(false);
+      setCoverProgress(0);
     }
   };
 
@@ -435,8 +483,9 @@ function HeaderEditor({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/10 to-transparent" />
             {coverUploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45">
                 <Loader2 size={20} className="animate-spin text-velora-gold" />
+                <span className="text-xs font-medium text-velora-gold">{coverProgress}%</span>
               </div>
             )}
             <button
@@ -450,8 +499,12 @@ function HeaderEditor({
             <input
               ref={coverInputRef}
               type="file"
-              accept="image/*"
-              onChange={(event) => void handleCover(event.target.files?.[0])}
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.currentTarget.value = "";
+                void handleCover(file);
+              }}
               className="hidden"
             />
           </div>
@@ -467,8 +520,9 @@ function HeaderEditor({
               </div>
             )}
             {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/45">
                 <Loader2 size={18} className="animate-spin text-velora-gold" />
+                <span className="text-[10px] font-medium text-velora-gold">{avatarProgress}%</span>
               </div>
             )}
           </div>
@@ -484,8 +538,12 @@ function HeaderEditor({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
-              onChange={(event) => void handleAvatar(event.target.files?.[0])}
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.currentTarget.value = "";
+                void handleAvatar(file);
+              }}
               className="hidden"
             />
           </div>
@@ -693,30 +751,56 @@ function PortfolioEditor({
   items: PortfolioItem[];
   onCancel: () => void;
   onSave: (items: PortfolioItem[]) => Promise<void>;
-  onUploadImage: (file: File) => Promise<string>;
+  onUploadImage: (file: File, options?: UploadOptions) => Promise<string>;
 }) {
+  const { showToast } = useToast();
+  const previewUrlsRef = useRef<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [drafts, setDrafts] = useState<PortfolioItem[]>(
     items.length ? items : [{ id: createLocalId("portfolio"), title: "", category: "General", description: "", link: "", imageUrl: "", order: 0 }]
   );
 
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
+    };
+  }, []);
+
   const updateItem = (id: string, data: Partial<PortfolioItem>) => {
-    setDrafts(drafts.map((item) => (item.id === id ? { ...item, ...data } : item)));
+    setDrafts((current) => current.map((item) => (item.id === id ? { ...item, ...data } : item)));
   };
 
   const handleImage = async (id: string, file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => updateItem(id, { imageUrl: String(event.target?.result || "") });
-    reader.readAsDataURL(file);
+    if (!file) {
+      console.warn("[Upload:portfolio] image-picker:no file selected", { id });
+      return;
+    }
+    const previousImageUrl = drafts.find((item) => item.id === id)?.imageUrl || "";
 
     setUploadingId(id);
+    setUploadProgress(0);
     try {
-      const imageUrl = await onUploadImage(file);
+      validateUploadImageFile(file, "portfolio");
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(previewUrl);
+      updateItem(id, { imageUrl: previewUrl });
+      const imageUrl = await onUploadImage(file, {
+        onProgress: ({ percent }) => setUploadProgress(percent),
+      });
       updateItem(id, { imageUrl });
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrlsRef.current = [];
+      showToast({ tone: "success", title: "Portfolio image updated", message: "The project image has been uploaded." });
+    } catch (error) {
+      console.error("[Upload:portfolio] UI handler failed", error);
+      updateItem(id, { imageUrl: previousImageUrl });
+      showToast({ tone: "error", title: "Portfolio upload failed", message: getUploadErrorMessage(error, "portfolio") });
     } finally {
       setUploadingId(null);
+      setUploadProgress(0);
     }
   };
 
@@ -747,14 +831,31 @@ function PortfolioEditor({
             </div>
             <label className="mb-3 flex aspect-[16/9] cursor-pointer items-center justify-center overflow-hidden rounded-[var(--radius-md)] border border-dashed border-velora-gold/25 bg-velora-gold/5">
               {item.imageUrl ? (
-                <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.imageUrl})` }} />
+                <div className="relative h-full w-full">
+                  <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.imageUrl})` }} />
+                  {uploadingId === item.id && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45">
+                      <Loader2 size={16} className="animate-spin text-velora-gold" />
+                      <span className="text-xs font-medium text-velora-gold">{uploadProgress}%</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <span className="flex items-center gap-2 text-xs text-velora-gold">
                   {uploadingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-                  Upload image
+                  {uploadingId === item.id ? `${uploadProgress}%` : "Upload image"}
                 </span>
               )}
-              <input type="file" accept="image/*" className="hidden" onChange={(event) => void handleImage(item.id, event.target.files?.[0])} />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.currentTarget.value = "";
+                  void handleImage(item.id, file);
+                }}
+              />
             </label>
             <div className="space-y-3">
               <input className={inputClass} value={item.title} onChange={(event) => updateItem(item.id, { title: event.target.value })} placeholder="Project title" />

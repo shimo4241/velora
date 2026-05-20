@@ -19,6 +19,7 @@ import {
   uploadAvatar as firestoreUploadAvatar,
   uploadCover as firestoreUploadCover,
   uploadPortfolioImage as firestoreUploadPortfolioImage,
+  type UploadOptions,
 } from "@/lib/firestore";
 import type { VeloraProfile } from "@/types";
 
@@ -30,9 +31,9 @@ export interface ProfileContextValue {
   error: Error | null;
   refreshProfile: () => Promise<VeloraProfile | null>;
   updateProfile: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
-  uploadAvatar: (file: File) => Promise<string>;
-  uploadCover: (file: File) => Promise<string>;
-  uploadPortfolioImage: (file: File) => Promise<string>;
+  uploadAvatar: (file: File, options?: UploadOptions) => Promise<string>;
+  uploadCover: (file: File, options?: UploadOptions) => Promise<string>;
+  uploadPortfolioImage: (file: File, options?: UploadOptions) => Promise<string>;
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
@@ -166,19 +167,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     await firestoreUpdateProfile(uid, data);
   }, [uid]);
 
-  const uploadAvatar = useCallback(async (file: File): Promise<string> => {
-    if (!uid) throw new Error("Unauthenticated");
-    return firestoreUploadAvatar(uid, file);
+  const uploadAvatar = useCallback(async (file: File, options?: UploadOptions): Promise<string> => {
+    if (!uid) throw new Error("Please sign in again before uploading an image.");
+    return firestoreUploadAvatar(uid, file, options);
   }, [uid]);
 
-  const uploadCover = useCallback(async (file: File): Promise<string> => {
-    if (!uid) throw new Error("Unauthenticated");
-    return firestoreUploadCover(uid, file);
+  const uploadCover = useCallback(async (file: File, options?: UploadOptions): Promise<string> => {
+    if (!uid) throw new Error("Please sign in again before uploading an image.");
+    return firestoreUploadCover(uid, file, options);
   }, [uid]);
 
-  const uploadPortfolioImage = useCallback(async (file: File): Promise<string> => {
-    if (!uid) throw new Error("Unauthenticated");
-    return firestoreUploadPortfolioImage(uid, file);
+  const uploadPortfolioImage = useCallback(async (file: File, options?: UploadOptions): Promise<string> => {
+    if (!uid) throw new Error("Please sign in again before uploading an image.");
+    return firestoreUploadPortfolioImage(uid, file, options);
   }, [uid]);
 
   const isCurrentProfile = profileState.uid === uid;
