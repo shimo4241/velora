@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform, type PanInfo } from "framer-motion";
 import {
   Shield,
   Star,
@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { GoldBadge } from "../ui";
+import { OptimizedImage } from "../ui/OptimizedImage";
 import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motion/animations";
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
@@ -118,9 +119,16 @@ export function ProfileHero({
             />
           ) : (
             <motion.div
-              className="absolute inset-x-0 -top-8 h-[380px] bg-cover bg-center opacity-[0.28]"
-              style={{ backgroundImage: `url(${coverUrl})`, y: bannerY }}
-            />
+              className="absolute inset-x-0 -top-8 h-[380px] opacity-[0.28]"
+              style={{ y: bannerY }}
+            >
+              <OptimizedImage
+                src={coverUrl}
+                type="cover"
+                className="w-full h-full"
+                alt={`${name}'s profile banner`}
+              />
+            </motion.div>
           )
         )}
 
@@ -177,9 +185,11 @@ export function ProfileHero({
               {/* Avatar image */}
               <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-velora-gold/35 bg-velora-surface shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
                 {avatarUrl ? (
-                  <div
-                    className="w-full h-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${avatarUrl})` }}
+                  <OptimizedImage
+                    src={avatarUrl}
+                    type="avatar"
+                    className="w-full h-full"
+                    alt={`${name}'s avatar`}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-velora-gold font-[family-name:var(--font-display)]">
@@ -339,7 +349,7 @@ export function PortfolioGallery({ portfolio = [] }: { portfolio?: PortfolioItem
 
                 <div className="relative z-10">
                   <div className="text-caption mb-0.5">{project.category}</div>
-                  <div className="text-xs font-medium text-velora-text leading-tight">
+                  <div className="text-xs font-medium text-velora-text-secondary leading-tight">
                     {project.title}
                   </div>
                 </div>
@@ -362,10 +372,40 @@ export function PremiumPortfolioGallery({
 }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const activeProject = activeIndex === null ? null : portfolio[activeIndex];
+  const [scale, setScale] = useState(1);
+  const [dragEnabled, setDragEnabled] = useState(false);
 
   const move = (direction: -1 | 1) => {
     if (activeIndex === null || portfolio.length === 0) return;
+    // Reset zoom state on page change
+    setScale(1);
+    setDragEnabled(false);
     setActiveIndex((activeIndex + direction + portfolio.length) % portfolio.length);
+  };
+
+  const toggleZoom = () => {
+    if (scale === 1) {
+      setScale(2.2);
+      setDragEnabled(true);
+    } else {
+      setScale(1);
+      setDragEnabled(false);
+    }
+  };
+
+  const handleDoubleTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleZoom();
+  };
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (scale > 1) return; // Zoom overrides swipe
+    const swipeThreshold = 50;
+    if (info.offset.x < -swipeThreshold) {
+      move(1);
+    } else if (info.offset.x > swipeThreshold) {
+      move(-1);
+    }
   };
 
   if (!portfolio.length) return null;
@@ -402,22 +442,24 @@ export function PremiumPortfolioGallery({
                         playsInline
                       />
                     ) : (
-                      <div
-                        className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.04]"
-                        style={{ backgroundImage: `url(${project.imageUrl})` }}
+                      <OptimizedImage
+                        src={project.imageUrl}
+                        type="portfolio"
+                        className="h-full w-full transition-transform duration-700 group-hover:scale-[1.04]"
+                        alt={project.title}
                       />
                     )
                   ) : (
                     <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.22),transparent_34%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.035))]" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/76 via-black/12 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/76 via-black/12 to-transparent pointer-events-none" />
                   {isVideo && (
                     <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/45 text-velora-gold backdrop-blur-md">
                       <Play size={13} fill="currentColor" />
                     </div>
                   )}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 p-3">
+                <div className="absolute inset-x-0 bottom-0 p-3 pointer-events-none">
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-velora-gold/80">
                       {project.category || "Project"}
@@ -441,6 +483,7 @@ export function PremiumPortfolioGallery({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => setActiveIndex(null)}
           >
             <motion.div
               className="relative w-full max-w-[430px] overflow-hidden rounded-[var(--radius-lg)] border border-white/12 bg-velora-black shadow-[0_30px_120px_rgba(0,0,0,0.75)]"
@@ -448,6 +491,7 @@ export function PremiumPortfolioGallery({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.98 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
@@ -458,11 +502,17 @@ export function PremiumPortfolioGallery({
                 <X size={16} />
               </button>
 
-              <div className="relative aspect-[4/5] max-h-[62dvh] overflow-hidden bg-velora-card">
+              <motion.div
+                className="relative aspect-[4/5] max-h-[62dvh] overflow-hidden bg-velora-card flex items-center justify-center"
+                drag={scale === 1 ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.3}
+                onDragEnd={handleDragEnd}
+              >
                 {isVideoAsset(activeProject.imageUrl) ? (
                   <video
                     src={activeProject.imageUrl}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                     autoPlay
                     muted
                     loop
@@ -470,44 +520,65 @@ export function PremiumPortfolioGallery({
                     controls
                   />
                 ) : activeProject.imageUrl ? (
-                  <div
-                    className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${activeProject.imageUrl})` }}
-                  />
+                  <motion.div
+                    className="w-full h-full cursor-zoom-in flex items-center justify-center select-none"
+                    onClick={handleDoubleTap}
+                    drag={dragEnabled}
+                    dragConstraints={{ left: -180, right: 180, top: -180, bottom: 180 }}
+                    dragElastic={0.1}
+                    animate={{ scale }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  >
+                    <OptimizedImage
+                      src={activeProject.imageUrl}
+                      type="raw"
+                      className="w-full h-full object-contain pointer-events-none"
+                      alt={activeProject.title}
+                    />
+                  </motion.div>
                 ) : (
                   <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.24),transparent_36%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.04))]" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-transparent to-black/18" />
-                {portfolio.length > 1 && (
+                
+                {/* Visual Indicators */}
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                
+                {portfolio.length > 1 && scale === 1 && (
                   <>
                     <button
                       type="button"
-                      onClick={() => move(-1)}
-                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        move(-1);
+                      }}
+                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
                       aria-label="Previous project"
                     >
                       <ChevronLeft size={17} />
                     </button>
                     <button
                       type="button"
-                      onClick={() => move(1)}
-                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        move(1);
+                      }}
+                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
                       aria-label="Next project"
                     >
                       <ChevronRight size={17} />
                     </button>
                   </>
                 )}
-              </div>
+              </motion.div>
 
               <div className="p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-gold">
                     {activeProject.category || "Project"}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] text-velora-text-muted">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] text-velora-text-muted">
                     <Eye size={11} />
-                    Preview
+                    Double-tap to zoom • Swipe to navigate
                   </span>
                 </div>
                 <h3 className="text-heading text-lg text-velora-text">{activeProject.title}</h3>
@@ -521,7 +592,7 @@ export function PremiumPortfolioGallery({
                     href={activeProject.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="haptic-press mt-4 inline-flex items-center gap-2 rounded-full border border-velora-gold/25 bg-velora-gold/10 px-4 py-2 text-xs font-semibold text-velora-gold"
+                    className="haptic-press mt-4 inline-flex items-center gap-2 rounded-full border border-velora-gold/25 bg-velora-gold/10 px-4 py-2 text-xs font-semibold text-velora-gold hover:bg-velora-gold/18 transition-all"
                   >
                     View project
                     <ExternalLink size={13} />

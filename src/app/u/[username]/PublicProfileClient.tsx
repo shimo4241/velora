@@ -17,6 +17,7 @@ import {
   useScroll,
   useTransform,
   type Easing,
+  type PanInfo,
 } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -42,6 +43,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { isVideoAsset } from "@/components/profile";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { useTranslation } from "@/lib/i18n";
 import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
 import type {
@@ -307,14 +309,17 @@ export function IdentityHero({
             preload="metadata"
           />
         ) : (
-          <motion.img
-            src={profile.coverUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-[0.24]"
+          <motion.div
+            className="absolute inset-0 h-full w-full opacity-[0.24]"
             style={{ y: reduceMotion ? undefined : backgroundY }}
-            loading="eager"
-            decoding="async"
-          />
+          >
+            <OptimizedImage
+              src={profile.coverUrl}
+              type="cover"
+              className="h-full w-full"
+              alt={`${profile.fullName}'s profile banner`}
+            />
+          </motion.div>
         ))}
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.1)_42%,#070705_100%)]" />
@@ -390,12 +395,11 @@ export function IdentityHero({
             <div className="h-full w-full rounded-full bg-black p-[5px]">
               <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10 bg-velora-surface">
                 {profile.avatarUrl ? (
-                  <img
+                  <OptimizedImage
                     src={profile.avatarUrl}
+                    type="avatar"
+                    className="h-full w-full"
                     alt={profile.fullName}
-                    className="h-full w-full object-cover"
-                    loading="eager"
-                    decoding="async"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(var(--identity-accent-rgb),0.22),transparent_48%),#111] font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--identity-accent)]">
@@ -717,6 +721,42 @@ function PortfolioModal({
   onClose: () => void;
   onMove: (direction: -1 | 1) => void;
 }) {
+  const projectIdOrIndex = project.id || String(index);
+  const [prevId, setPrevId] = useState(projectIdOrIndex);
+  const [scale, setScale] = useState(1);
+  const [dragEnabled, setDragEnabled] = useState(false);
+
+  if (projectIdOrIndex !== prevId) {
+    setPrevId(projectIdOrIndex);
+    setScale(1);
+    setDragEnabled(false);
+  }
+
+  const toggleZoom = () => {
+    if (scale === 1) {
+      setScale(2.2);
+      setDragEnabled(true);
+    } else {
+      setScale(1);
+      setDragEnabled(false);
+    }
+  };
+
+  const handleDoubleTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleZoom();
+  };
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (scale > 1) return;
+    const swipeThreshold = 50;
+    if (info.offset.x < -swipeThreshold) {
+      onMove(1);
+    } else if (info.offset.x > swipeThreshold) {
+      onMove(-1);
+    }
+  };
+
   return (
     <motion.div
       className="fixed inset-0 z-[260] bg-black/92 backdrop-blur-md"
@@ -756,16 +796,34 @@ function PortfolioModal({
         )}
 
         <motion.div
-          className="relative min-h-0 flex-1 overflow-hidden"
+          className="relative min-h-0 flex-1 overflow-hidden flex items-center justify-center"
           initial={{ scale: 1.04, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 1.02, opacity: 0 }}
           transition={{ duration: 0.45, ease: LUXURY_EASE }}
+          drag={scale === 1 ? "x" : false}
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.3}
+          onDragEnd={handleDragEnd}
         >
-          <ProjectMedia project={project} index={index} priority modal />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.18)_45%,#000_100%)]" />
+          {isVideoAsset(project.imageUrl) ? (
+            <ProjectMedia project={project} index={index} priority modal />
+          ) : (
+            <motion.div
+              className="w-full h-full cursor-zoom-in flex items-center justify-center select-none"
+              onClick={handleDoubleTap}
+              drag={dragEnabled}
+              dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
+              dragElastic={0.1}
+              animate={{ scale }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <ProjectMedia project={project} index={index} priority modal />
+            </motion.div>
+          )}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.18)_45%,#000_100%)] pointer-events-none" />
           <div
-            className="glow-layer absolute inset-x-0 top-0 h-1/2 opacity-60 blur-xl"
+            className="glow-layer absolute inset-x-0 top-0 h-1/2 opacity-60 blur-xl pointer-events-none"
             style={{ background: `radial-gradient(circle at 50% 0%, rgba(${theme.accentRgb},0.22), transparent 48%)` }}
           />
         </motion.div>
@@ -815,7 +873,6 @@ function PortfolioModal({
 function ProjectMedia({
   project,
   index,
-  priority = false,
   modal = false,
 }: {
   project: PortfolioItem;
@@ -825,14 +882,15 @@ function ProjectMedia({
 }) {
   const src = project.imageUrl || PROJECT_FALLBACKS[index % PROJECT_FALLBACKS.length];
   const className = modal
-    ? "h-full w-full object-cover"
+    ? "h-full w-full object-contain pointer-events-none"
     : "h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.045]";
 
   if (isVideoAsset(src)) {
+    const videoClassName = modal ? "h-full w-full object-contain" : "h-full w-full object-cover";
     return (
       <video
         src={src}
-        className={className}
+        className={videoClassName}
         autoPlay
         muted
         loop
@@ -844,12 +902,11 @@ function ProjectMedia({
   }
 
   return (
-    <img
+    <OptimizedImage
       src={src}
-      alt={project.title}
+      type={modal ? "raw" : "portfolio"}
       className={className}
-      loading={priority ? "eager" : "lazy"}
-      decoding="async"
+      alt={project.title}
     />
   );
 }

@@ -26,13 +26,11 @@ import {
   startAfter,
 } from "firebase/firestore";
 import {
-  getDownloadURL,
-  ref,
-  uploadBytesResumable,
-  type StorageReference,
-  type UploadMetadata,
-} from "firebase/storage";
-import { auth, db, storage } from "./firebase";
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+  validateImageFile,
+} from "./cloudinary";
+import { db } from "./firebase";
 import {
   USERNAME_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
@@ -142,10 +140,7 @@ const UPLOAD_CONFIG: Record<UploadKind, UploadConfig> = {
 };
 
 const SUPPORTED_UPLOAD_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CANVAS_TIMEOUT_MS = 15000;
-const BLOB_TIMEOUT_MS = 10000;
-const DEFAULT_UPLOAD_TIMEOUT_MS = 60000;
-const MAX_SOURCE_PIXELS = 40_000_000;
+
 
 export class UploadPipelineError extends Error {
   code?: string;
@@ -228,6 +223,15 @@ function toUploadPipelineError(error: unknown, stage: UploadStage, kind: UploadK
     return error;
   }
 
+  if (error && typeof error === "object" && "name" in error && (error as { name?: string }).name === "CloudinaryUploadError") {
+    const err = error as { message?: string; code?: string; stage?: string; cause?: unknown };
+    return new UploadPipelineError(err.message || "Upload failed", {
+      code: err.code || "upload/failed",
+      stage: (err.stage as UploadStage) || stage,
+      cause: err.cause,
+    });
+  }
+
   const code = getFirebaseErrorCode(error);
   const message = getUploadErrorMessage(error, kind);
   return new UploadPipelineError(message, { code, stage, cause: error });
@@ -241,28 +245,11 @@ function getFirebaseErrorCode(error: unknown): string | undefined {
   return undefined;
 }
 
-function isStorageUnauthorized(error: unknown) {
-  return getFirebaseErrorCode(error) === "storage/unauthorized";
-}
-
 export function getUploadErrorMessage(error: unknown, kind: UploadKind = "avatar"): string {
   if (error instanceof UploadPipelineError) return error.message;
 
-  const code = getFirebaseErrorCode(error);
-  if (code === "storage/unauthorized") {
-    return "Storage rejected this image. Please sign in again and make sure you are updating your own profile.";
-  }
-  if (code === "storage/canceled") {
-    return "The image upload was canceled. Please try again.";
-  }
-  if (code === "storage/quota-exceeded") {
-    return "Storage quota has been exceeded. Please try again later.";
-  }
-  if (code === "storage/retry-limit-exceeded") {
-    return "The network stalled during image upload. Please try again on a stronger connection.";
-  }
-  if (code?.startsWith("auth/")) {
-    return "Your session expired. Please sign in again before uploading an image.";
+  if (error && typeof error === "object" && "name" in error && (error as { name?: string }).name === "CloudinaryUploadError") {
+    return (error as { message?: string }).message || "Upload failed";
   }
 
   if (error instanceof Error && error.message) return error.message;
@@ -324,37 +311,7 @@ export function validateUploadImageFile(file: File | null | undefined, kind: Upl
   }
 }
 
-function randomUploadId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
-}
 
-function getCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const ctx = canvas.getContext("2d", { alpha: false });
-  if (!ctx) {
-    throw new UploadPipelineError("Canvas compression is not supported in this browser.", {
-      code: "upload/canvas-unsupported",
-      stage: "canvas-compression",
-    });
-  }
-  return ctx;
-}
-
-function dataUrlToBlob(dataUrl: string): Blob {
-  const [header, base64] = dataUrl.split(",");
-  const mimeMatch = /data:([^;]+);base64/.exec(header);
-  const mimeType = mimeMatch?.[1] || "image/jpeg";
-  const binary = atob(base64 || "");
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index++) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return new Blob([bytes], { type: mimeType });
-}
 
 function asString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
@@ -808,304 +765,21 @@ export async function updateProfile(
   }
 }
 
-function loadImage(file: File, context: UploadContext): Promise<HTMLImageElement> {
-  return runUploadStage("image-decode", context, () => {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      let settled = false;
-      const timeoutId = window.setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        URL.revokeObjectURL(objectUrl);
-        reject(
-          new UploadPipelineError("Image decoding timed out. Please try a smaller JPG, PNG, or WebP image.", {
-            code: "upload/image-decode-timeout",
-            stage: "image-decode",
-          })
-        );
-      }, CANVAS_TIMEOUT_MS);
 
-      const settle = (callback: () => void) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeoutId);
-        URL.revokeObjectURL(objectUrl);
-        callback();
-      };
-
-      img.decoding = "async";
-      img.onload = () => {
-        settle(() => {
-          if (!img.naturalWidth || !img.naturalHeight) {
-            reject(
-              new UploadPipelineError("The selected image has invalid dimensions.", {
-                code: "upload/invalid-dimensions",
-                stage: "image-decode",
-              })
-            );
-            return;
-          }
-
-          if (img.naturalWidth * img.naturalHeight > MAX_SOURCE_PIXELS) {
-            reject(
-              new UploadPipelineError("That image is too large to process on this device. Please choose a smaller image.", {
-                code: "upload/pixel-count-too-large",
-                stage: "image-decode",
-              })
-            );
-            return;
-          }
-
-          resolve(img);
-        });
-      };
-      img.onerror = () => {
-        settle(() => {
-          reject(
-            new UploadPipelineError("This browser could not decode the selected image. Please choose a JPG, PNG, or WebP image.", {
-              code: "upload/image-load-error",
-              stage: "image-decode",
-            })
-          );
-        });
-      };
-      img.src = objectUrl;
-    });
-  });
-}
-
-async function canvasToBlobWithTimeout(canvas: HTMLCanvasElement, context: UploadContext): Promise<Blob> {
-  return runUploadStage("blob-conversion", context, () => {
-    return new Promise<Blob>((resolve, reject) => {
-      let settled = false;
-
-      const settle = (callback: () => void) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeoutId);
-        callback();
-      };
-
-      const resolveFromDataUrl = () => {
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-        const fallbackBlob = dataUrlToBlob(dataUrl);
-        if (!fallbackBlob.size) {
-          reject(
-            new UploadPipelineError("Image compression failed. Please choose another image.", {
-              code: "upload/blob-empty",
-              stage: "blob-conversion",
-            })
-          );
-          return;
-        }
-        resolve(fallbackBlob);
-      };
-
-      const timeoutId = window.setTimeout(() => {
-        settle(() => {
-          try {
-            resolveFromDataUrl();
-          } catch (error) {
-            reject(
-              new UploadPipelineError("Image compression timed out. Please try a smaller image.", {
-                code: "upload/blob-timeout",
-                stage: "blob-conversion",
-                cause: error,
-              })
-            );
-          }
-        });
-      }, BLOB_TIMEOUT_MS);
-
-      if (typeof canvas.toBlob !== "function") {
-        settle(resolveFromDataUrl);
-        return;
-      }
-
-      canvas.toBlob(
-        (blob) => {
-          settle(() => {
-            if (blob?.size) {
-              resolve(blob);
-              return;
-            }
-
-            try {
-              resolveFromDataUrl();
-            } catch (error) {
-              reject(
-                new UploadPipelineError("Image compression failed. Please choose another image.", {
-                  code: "upload/blob-null",
-                  stage: "blob-conversion",
-                  cause: error,
-                })
-              );
-            }
-          });
-        },
-        "image/jpeg",
-        0.85
-      );
-    });
-  });
-}
-
-/** Compress image using canvas with Android-safe blob fallback */
-async function compressImage(file: File, config: UploadConfig, context: UploadContext, options?: UploadOptions): Promise<Blob> {
-  return runUploadStage("canvas-compression", context, async () => {
-    reportProgress(options, { stage: "compressing", percent: 5 });
-    const decodedImage = await loadImage(file, context);
-    let width = decodedImage.naturalWidth;
-    let height = decodedImage.naturalHeight;
-
-    if (width > config.maxWidth) {
-      height = Math.max(1, Math.round((height * config.maxWidth) / width));
-      width = config.maxWidth;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = getCanvasContext(canvas);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(decodedImage, 0, 0, width, height);
-    reportProgress(options, { stage: "compressing", percent: 20 });
-
-    const blob = await canvasToBlobWithTimeout(canvas, context);
-    if (blob.size >= config.maxUploadedBytes) {
-      throw new UploadPipelineError(
-        `The compressed image is still too large. Please choose an image under ${formatBytes(config.maxUploadedBytes)}.`,
-        {
-          code: "upload/compressed-too-large",
-          stage: "blob-conversion",
-        }
-      );
-    }
-
-    reportProgress(options, { stage: "compressing", percent: 30 });
-    return blob;
-  });
-}
-
-async function requireAuthenticatedUploadUser(uid: string, context: UploadContext, forceRefresh = false) {
-  return runUploadStage(forceRefresh ? "auth-token-refresh" : "auth-state", context, async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new UploadPipelineError("Please sign in again before uploading an image.", {
-        code: "auth/missing-user",
-        stage: "auth-state",
-      });
-    }
-
-    if (currentUser.uid !== uid) {
-      throw new UploadPipelineError("Your session changed. Please reload the app and try again.", {
-        code: "auth/user-mismatch",
-        stage: "auth-state",
-      });
-    }
-
-    await currentUser.getIdToken(forceRefresh);
-    return currentUser;
-  });
-}
-
-function createStorageRef(uid: string, config: UploadConfig, context: UploadContext): StorageReference {
-  const path = `${config.folder}/${uid}/${Date.now()}-${randomUploadId()}.jpg`;
-  context.path = path;
-  return ref(storage, path);
-}
-
-function uploadBlobWithProgress(
-  storageRef: StorageReference,
-  blob: Blob,
-  metadata: UploadMetadata,
-  context: UploadContext,
-  options?: UploadOptions,
-  stage: UploadStage = "firebase-storage-upload"
-): Promise<void> {
-  return runUploadStage(stage, context, () => {
-    return new Promise<void>((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
-      let settled = false;
-
-      const settle = (callback: () => void) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeoutId);
-        callback();
-      };
-
-      const timeoutId = window.setTimeout(() => {
-        settle(() => {
-          uploadTask.cancel();
-          reject(
-            new UploadPipelineError("Image upload timed out. Please try again on a stronger connection.", {
-              code: "upload/storage-timeout",
-              stage,
-            })
-          );
-        });
-      }, options?.timeoutMs || DEFAULT_UPLOAD_TIMEOUT_MS);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const uploadPercent = snapshot.totalBytes
-            ? (snapshot.bytesTransferred / snapshot.totalBytes) * 65
-            : 0;
-          reportProgress(options, {
-            stage: "uploading",
-            percent: 30 + uploadPercent,
-            bytesTransferred: snapshot.bytesTransferred,
-            totalBytes: snapshot.totalBytes,
-          });
-        },
-        (error) => {
-          settle(() => reject(error));
-        },
-        () => {
-          settle(resolve);
-        }
-      );
-    });
-  });
-}
 
 async function uploadImage(uid: string, file: File, kind: UploadKind, options?: UploadOptions): Promise<string> {
   const config = UPLOAD_CONFIG[kind];
   const context = uploadContext(config, uid, file);
 
-  await runUploadStage("image-picker", context, () => {
+  await runUploadStage("image-picker", context, async () => {
     reportProgress(options, { stage: "validating", percent: 1 });
-    validateUploadImageFile(file, kind);
+    await validateImageFile(file, kind);
   });
-  await requireAuthenticatedUploadUser(uid, context);
-  reportProgress(options, { stage: "authenticating", percent: 3 });
 
-  const compressedBlob = await compressImage(file, config, context, options);
-  const storageRef = await runUploadStage("storage-path", context, () => createStorageRef(uid, config, context));
-  const metadata: UploadMetadata = {
-    contentType: "image/jpeg",
-    cacheControl: "public,max-age=31536000,immutable",
-    customMetadata: {
-      ownerUid: uid,
-      uploadKind: kind,
-      sourceType: file.type,
-    },
-  };
+  const url = await runUploadStage("firebase-storage-upload", context, async () => {
+    return await uploadImageToCloudinary(uid, file, kind, options);
+  });
 
-  try {
-    await uploadBlobWithProgress(storageRef, compressedBlob, metadata, context, options);
-  } catch (error) {
-    if (!isStorageUnauthorized(error)) throw error;
-    await requireAuthenticatedUploadUser(uid, context, true);
-    await uploadBlobWithProgress(storageRef, compressedBlob, metadata, context, options, "firebase-storage-upload-retry");
-  }
-
-  const url = await runUploadStage("download-url", context, () => getDownloadURL(storageRef));
-  reportProgress(options, { stage: "complete", percent: 100 });
   return url;
 }
 
@@ -1118,9 +792,19 @@ export async function uploadAvatarImage(uid: string, file: File, options?: Uploa
 export async function uploadAvatar(uid: string, file: File, options?: UploadOptions): Promise<string> {
   const context = uploadContext(UPLOAD_CONFIG.avatar, uid, file);
   try {
+    const profile = await getProfile(uid);
+    const oldAvatarUrl = profile?.avatarUrl;
+
     const url = await uploadAvatarImage(uid, file, options);
     reportProgress(options, { stage: "updating-profile", percent: 98 });
     await runUploadStage("firestore-profile-update", context, () => updateProfile(uid, { avatarUrl: url }));
+
+    if (oldAvatarUrl) {
+      deleteImageFromCloudinary(oldAvatarUrl).catch((err) =>
+        console.warn("[Cloudinary Delete] Failed to clean up old avatar:", err)
+      );
+    }
+
     reportProgress(options, { stage: "complete", percent: 100 });
     return url;
   } catch (error) {
@@ -1138,9 +822,19 @@ export async function uploadCoverImage(uid: string, file: File, options?: Upload
 export async function uploadCover(uid: string, file: File, options?: UploadOptions): Promise<string> {
   const context = uploadContext(UPLOAD_CONFIG.cover, uid, file);
   try {
+    const profile = await getProfile(uid);
+    const oldCoverUrl = profile?.coverUrl;
+
     const url = await uploadCoverImage(uid, file, options);
     reportProgress(options, { stage: "updating-profile", percent: 98 });
     await runUploadStage("firestore-profile-update", context, () => updateProfile(uid, { coverUrl: url }));
+
+    if (oldCoverUrl) {
+      deleteImageFromCloudinary(oldCoverUrl).catch((err) =>
+        console.warn("[Cloudinary Delete] Failed to clean up old cover:", err)
+      );
+    }
+
     reportProgress(options, { stage: "complete", percent: 100 });
     return url;
   } catch (error) {
@@ -1209,6 +903,21 @@ export async function updatePortfolioItem(
 }
 
 export async function deletePortfolioItem(uid: string, itemId: string): Promise<void> {
+  try {
+    const docRef = doc(db, "users", uid, "portfolio", itemId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const imageUrl = data?.imageUrl;
+      if (imageUrl) {
+        deleteImageFromCloudinary(imageUrl).catch((err) =>
+          console.warn("[Cloudinary Delete] Failed to clean up portfolio image:", err)
+        );
+      }
+    }
+  } catch (error) {
+    console.error("[Firestore] Failed to get portfolio item for deletion:", error);
+  }
   await deleteDoc(doc(db, "users", uid, "portfolio", itemId));
 }
 
