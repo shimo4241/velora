@@ -43,16 +43,7 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-velora-gold/10 via-velora-black to-velora-black" />
-        <motion.div
-          animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[30%] -right-[30%] w-[80%] h-[80%] rounded-full bg-velora-gold/5 blur-[120px]"
-        />
-        <motion.div
-          animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-[20%] -left-[20%] w-[70%] h-[70%] rounded-full bg-velora-gold/5 blur-[100px]"
-        />
+        <div className="welcome-gold-field" />
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
@@ -79,7 +70,7 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
 
       <div className="relative z-10 w-full p-6 pb-safe">
         <FadeUp delay={0.6}>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl">
+          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl">
             {error && (
               <div
                 role="alert"
@@ -114,9 +105,9 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
             <button
               onClick={handleCreateIdentity}
               disabled={isSigningIn}
-              className="relative w-full h-12 flex items-center justify-center gap-2 bg-velora-gold text-velora-black rounded-xl font-medium tracking-wide shadow-[0_0_20px_rgba(196,162,101,0.3)] hover:shadow-[0_0_30px_rgba(196,162,101,0.5)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
+              className="relative w-full h-12 flex items-center justify-center gap-2 bg-velora-gold text-velora-black rounded-xl font-medium tracking-wide shadow-[0_0_20px_rgba(196,162,101,0.24)] transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
             >
-              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="absolute inset-y-0 left-0 w-1/3 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover:animate-gold-scan" />
               {isSigningIn ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (

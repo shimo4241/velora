@@ -153,17 +153,19 @@ body {
 /* Tier 1: Standard card — subtle, ambient */
 .glass {
   background: var(--color-velora-glass);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.25);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
   border: 1px solid var(--color-velora-glass-border);
+  transform: translateZ(0);
 }
 
 /* Tier 2: Elevated — navigation, modals */
 .glass-strong {
   background: var(--color-velora-glass-strong);
-  backdrop-filter: blur(32px) saturate(1.8);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
   border: 1px solid var(--color-velora-glass-strong-border);
+  transform: translateZ(0);
 }
 
 /* Tier 3: Gold-tinted — premium CTAs, featured cards */
@@ -173,9 +175,10 @@ body {
     var(--color-velora-gold-dim),
     var(--color-velora-glass)
   );
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.25);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
   border: 1px solid var(--color-velora-gold-glow);
+  transform: translateZ(0);
 }
 
 
@@ -210,6 +213,13 @@ body {
     var(--color-velora-gold-light),
     var(--color-velora-gold)
   );
+}
+
+.glow-layer {
+  contain: paint;
+  translate: 0 0 0;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 
@@ -268,7 +278,8 @@ body {
    
    Rules:
    - Max 700ms for entrances (splash exempted)
-   - GPU-safe only: transform, opacity, filter
+   - GPU-safe only: transform and one-shot opacity
+   - Never animate filters, shadows, backgrounds, or backdrop blur
    - No spring/bounce easing
    - No infinite loops (except ambient breathing)
    - Stagger: 60ms between siblings
@@ -279,12 +290,10 @@ body {
   from {
     opacity: 0;
     transform: translateY(16px);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -314,8 +323,8 @@ body {
 
 /* Ambient: Gentle breathing for persistent glows */
 @keyframes v-breathe {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, 0, 0) scale(1.025); }
 }
 
 /* Ambient: slow premium float for cards and QR surfaces */
@@ -333,8 +342,18 @@ body {
 
 /* Ambient: Gold shimmer for loading states */
 @keyframes v-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% { transform: translate3d(-140%, 0, 0); }
+  100% { transform: translate3d(240%, 0, 0); }
+}
+
+/* Ambient: welcome glow drift. Transform-only to keep the blur raster stable. */
+@keyframes v-welcome-glow-drift {
+  0%, 100% {
+    transform: translate3d(-1.4%, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(1.4%, -1%, 0) scale(1.025);
+  }
 }
 
 /* NFC: Calm ripple expansion */
@@ -360,6 +379,7 @@ body {
 
 .animate-breathe {
   animation: v-breathe 3s var(--ease-in-out) infinite;
+  will-change: transform;
 }
 
 .animate-float {
@@ -377,8 +397,30 @@ body {
     var(--color-velora-gold-dim) 50%,
     transparent 100%
   );
-  background-size: 200% 100%;
   animation: v-shimmer 2s var(--ease-in-out) infinite;
+  will-change: transform;
+}
+
+.welcome-gold-field {
+  position: absolute;
+  inset: -10% -8%;
+  pointer-events: none;
+  contain: paint;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+  filter: blur(46px);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(196, 162, 101, 0.12), transparent 34%),
+    radial-gradient(circle at 8% 82%, rgba(196, 162, 101, 0.09), transparent 38%);
+  animation: v-welcome-glow-drift 18s var(--ease-in-out) infinite;
+}
+
+@media (max-width: 540px) {
+  .welcome-gold-field {
+    inset: -4%;
+    filter: blur(34px);
+  }
 }
 
 
@@ -395,10 +437,10 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.012;
+  opacity: 0.014;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  mix-blend-mode: overlay;
+  transform: translateZ(0);
 }
 
 /* Zellige-inspired geometric overlay — barely visible cultural texture */
@@ -450,8 +492,8 @@ body {
   align-items: center;
   justify-content: space-around;
   background: var(--color-velora-glass-strong);
-  backdrop-filter: blur(32px) saturate(1.8);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
   border: 1px solid var(--color-velora-glass-strong-border);
   border-radius: var(--radius-lg);
   padding: 6px 8px;
@@ -483,32 +525,23 @@ body {
 /* Interactive card — hover lifts subtly */
 .card-interactive {
   transition: transform var(--duration-base) var(--ease-out),
-              border-color var(--duration-base) var(--ease-out),
-              box-shadow var(--duration-base) var(--ease-out),
-              background var(--duration-base) var(--ease-out),
-              filter var(--duration-base) var(--ease-out);
+              border-color var(--duration-base) var(--ease-out);
   will-change: transform;
 }
 .card-interactive:hover {
-  transform: translateY(-3px);
+  transform: translate3d(0, -3px, 0);
   border-color: rgba(196, 162, 101, 0.22);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.32),
-    0 0 42px rgba(196, 162, 101, 0.08);
-  filter: saturate(1.06);
 }
 .card-interactive:active {
   transform: scale(0.985);
 }
 
 .haptic-press {
-  transition: transform var(--duration-fast) var(--ease-out),
-              filter var(--duration-fast) var(--ease-out);
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
 .haptic-press:active {
   transform: scale(0.97);
-  filter: brightness(1.08);
 }
 
 .premium-skeleton {
@@ -520,15 +553,16 @@ body {
 .premium-skeleton::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 0 auto 0 -42%;
+  width: 42%;
   background: linear-gradient(
     100deg,
     transparent 0%,
     rgba(196, 162, 101, 0.08) 45%,
     transparent 85%
   );
-  background-size: 220% 100%;
   animation: v-shimmer 1.9s var(--ease-in-out) infinite;
+  will-change: transform;
 }
 
 /* Section spacing — consistent vertical rhythm */
@@ -543,8 +577,12 @@ body {
   background:
     linear-gradient(120deg, transparent 8%, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.22), transparent 46%),
     linear-gradient(240deg, transparent 20%, rgba(var(--identity-secondary-rgb, 255, 241, 194), 0.12), transparent 58%);
-  filter: blur(38px);
+  opacity: 0.68;
+  filter: blur(22px);
   transform: translate3d(0, 0, 0);
+  contain: paint;
+  backface-visibility: hidden;
+  will-change: transform;
   animation: identity-drift 11s var(--ease-in-out) infinite;
 }
 
@@ -561,8 +599,8 @@ body {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.026)),
     rgba(0, 0, 0, 0.16);
-  backdrop-filter: blur(26px) saturate(1.35);
-  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
   box-shadow:
     0 22px 70px rgba(0, 0, 0, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -616,10 +654,10 @@ body {
     linear-gradient(135deg, rgba(var(--identity-accent-rgb, 216, 181, 109), 0.2), rgba(255, 255, 255, 0.05)),
     rgba(255, 255, 255, 0.045);
   box-shadow:
-    0 26px 90px rgba(0, 0, 0, 0.42),
-    0 0 60px rgba(var(--identity-accent-rgb, 216, 181, 109), 0.14);
-  backdrop-filter: blur(22px) saturate(1.4);
-  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    0 22px 68px rgba(0, 0, 0, 0.38),
+    0 0 36px rgba(var(--identity-accent-rgb, 216, 181, 109), 0.1);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
 }
 
 .identity-qr-frame::before,
@@ -646,26 +684,16 @@ body {
   mask-composite: exclude;
   -webkit-mask-composite: xor;
   padding: 1px;
-  animation: identity-frame-scan 4.8s var(--ease-in-out) infinite;
+  opacity: 0.28;
+  transform: translateZ(0);
 }
 
 @keyframes identity-drift {
   0%, 100% {
     transform: translate3d(-3%, 0, 0) scale(1);
-    opacity: 0.62;
   }
   50% {
     transform: translate3d(3%, 4%, 0) scale(1.04);
-    opacity: 0.92;
-  }
-}
-
-@keyframes identity-frame-scan {
-  0%, 100% {
-    opacity: 0.16;
-  }
-  50% {
-    opacity: 0.62;
   }
 }
 

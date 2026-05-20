@@ -115,7 +115,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       className="fixed inset-0 z-50 bg-velora-black overflow-y-auto"
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-velora-black/80 border-b border-velora-border/20">
+      <div className="sticky top-0 z-10 backdrop-blur-md bg-velora-black/80 border-b border-velora-border/20">
         <div className="flex items-center justify-between px-5 pt-14 pb-3">
           <button onClick={onClose} className="flex items-center gap-1 text-sm text-velora-text-muted">
             <ArrowLeft size={16} />

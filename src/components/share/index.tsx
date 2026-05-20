@@ -85,7 +85,7 @@ export function QRGenerator({
   return (
     <FadeUp delay={0.2}>
       <GlassCard className="relative overflow-hidden p-5" gold hover>
-        <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-velora-gold/16 blur-3xl" />
+        <div className="glow-layer pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-velora-gold/14 blur-xl" />
         <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.08),transparent)] animate-gold-scan" />
 
         <div className="relative mb-5 flex items-center justify-between gap-3">
@@ -360,7 +360,7 @@ export function ShareActions() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
           >
-            <div className="flex items-center gap-2 rounded-full border border-velora-emerald/20 bg-velora-emerald/12 px-4 py-2 text-xs font-semibold text-velora-emerald shadow-[0_12px_40px_rgba(107,191,138,0.12)] backdrop-blur-xl">
+            <div className="flex items-center gap-2 rounded-full border border-velora-emerald/20 bg-velora-emerald/12 px-4 py-2 text-xs font-semibold text-velora-emerald shadow-[0_12px_32px_rgba(107,191,138,0.1)] backdrop-blur-md">
               <Check size={13} />
               {shareSuccess}
             </div>

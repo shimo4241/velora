@@ -109,7 +109,7 @@ export function ProfileHero({
           hasVideoBanner ? (
             <motion.video
               src={coverUrl}
-              className="absolute inset-x-0 -top-8 h-[380px] w-full object-cover opacity-[0.42] mix-blend-screen"
+              className="absolute inset-x-0 -top-8 h-[380px] w-full object-cover opacity-[0.28]"
               style={{ y: bannerY }}
               autoPlay
               muted
@@ -118,7 +118,7 @@ export function ProfileHero({
             />
           ) : (
             <motion.div
-              className="absolute inset-x-0 -top-8 h-[380px] bg-cover bg-center opacity-[0.42] mix-blend-screen"
+              className="absolute inset-x-0 -top-8 h-[380px] bg-cover bg-center opacity-[0.28]"
               style={{ backgroundImage: `url(${coverUrl})`, y: bannerY }}
             />
           )
@@ -129,13 +129,14 @@ export function ProfileHero({
 
         {/* Gold atmospheric glow — subtle, centered */}
         <motion.div
-          className="absolute left-1/2 top-[56%] h-[310px] w-[310px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="glow-layer absolute left-1/2 top-[56%] h-[280px] w-[280px] rounded-full opacity-80"
           style={{
             background:
               "radial-gradient(circle, rgba(196,162,101,0.13) 0%, rgba(196,162,101,0.04) 42%, transparent 70%)",
+            x: "-50%",
+            y: "-50%",
           }}
-          initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: [0.98, 1.05, 0.98], opacity: [0.78, 1, 0.78] }}
+          animate={{ scale: [0.98, 1.04, 0.98] }}
           transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
         />
 
@@ -143,14 +144,13 @@ export function ProfileHero({
         {[...Array(4)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-0.5 h-0.5 rounded-full bg-velora-gold/20"
+            className="absolute w-0.5 h-0.5 rounded-full bg-velora-gold/30 opacity-50"
             style={{
               left: `${20 + i * 18}%`,
               top: `${25 + (i % 2) * 30}%`,
             }}
             animate={{
               y: [0, -10, 0],
-              opacity: [0.15, 0.4, 0.15],
             }}
             transition={{
               duration: 3 + i * 0.8,
@@ -167,8 +167,8 @@ export function ProfileHero({
             <div className="relative">
               {/* Subtle glow ring */}
               <motion.div
-                className="absolute -inset-4 rounded-full bg-velora-gold/20 blur-2xl"
-                animate={{ opacity: [0.35, 0.75, 0.35], scale: [0.9, 1.08, 0.9] }}
+                className="glow-layer absolute -inset-3 rounded-full bg-velora-gold/16 opacity-60 blur-xl"
+                animate={{ scale: [0.94, 1.06, 0.94] }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
               />
               <div className="absolute -inset-1.5 rounded-full bg-gradient-to-br from-velora-gold/25 to-transparent blur-sm" />
@@ -412,7 +412,7 @@ export function PremiumPortfolioGallery({
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/76 via-black/12 to-transparent" />
                   {isVideo && (
-                    <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/45 text-velora-gold backdrop-blur-xl">
+                    <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/45 text-velora-gold backdrop-blur-md">
                       <Play size={13} fill="currentColor" />
                     </div>
                   )}
@@ -437,7 +437,7 @@ export function PremiumPortfolioGallery({
       <AnimatePresence>
         {activeProject && (
           <motion.div
-            className="fixed inset-0 z-[260] flex items-center justify-center bg-black/82 px-4 py-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl"
+            className="fixed inset-0 z-[260] flex items-center justify-center bg-black/82 px-4 py-[max(1rem,env(safe-area-inset-top))] backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -452,7 +452,7 @@ export function PremiumPortfolioGallery({
               <button
                 type="button"
                 onClick={() => setActiveIndex(null)}
-                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
                 aria-label="Close portfolio preview"
               >
                 <X size={16} />
@@ -483,7 +483,7 @@ export function PremiumPortfolioGallery({
                     <button
                       type="button"
                       onClick={() => move(-1)}
-                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
                       aria-label="Previous project"
                     >
                       <ChevronLeft size={17} />
@@ -491,7 +491,7 @@ export function PremiumPortfolioGallery({
                     <button
                       type="button"
                       onClick={() => move(1)}
-                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
                       aria-label="Next project"
                     >
                       <ChevronRight size={17} />

@@ -11,7 +11,7 @@ export const PREMIUM_EASE: Easing = [0.16, 1, 0.3, 1];
    
    Rules (enforced):
    - Max 700ms for entrances
-   - GPU-safe only: transform, opacity, filter
+   - GPU-safe only: transform and one-shot opacity
    - No spring/bounce easing
    - No infinite loops (except ambient)
    - Stagger: 60ms between siblings
@@ -24,13 +24,12 @@ interface MotionProps {
 }
 
 /* ── Fade Up ── 
-   Primary entrance animation. 
-   Subtle upward drift with blur dissolve. */
+   Primary entrance animation with composited movement only. */
 export function FadeUp({ children, delay = 0, className }: MotionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.22 }}
       transition={{
         duration: MOTION.duration.entrance,
@@ -105,11 +104,10 @@ const staggerContainer: Variants = {
 };
 
 const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: {
       duration: MOTION.duration.slow,
       ease: PREMIUM_EASE,

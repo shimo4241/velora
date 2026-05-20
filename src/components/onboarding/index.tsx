@@ -32,22 +32,21 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     >
       {/* Ambient glow */}
       <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full"
+        className="glow-layer absolute w-[320px] h-[320px] rounded-full opacity-60"
         style={{
           background:
-            "radial-gradient(circle, rgba(196,162,101,0.06) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(196,162,101,0.08) 0%, transparent 68%)",
         }}
         animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.4, 0.7, 0.4],
+          scale: [1, 1.08, 1],
         }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Logo */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, filter: "blur(16px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10"
       >

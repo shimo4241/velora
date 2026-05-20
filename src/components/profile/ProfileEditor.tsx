@@ -96,7 +96,7 @@ export function FloatingEditButton({
       whileHover={{ y: -2, scale: 1.04 }}
       whileTap={{ scale: 0.92 }}
       transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-      className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-velora-gold/35 bg-[linear-gradient(135deg,rgba(216,181,109,0.22),rgba(255,255,255,0.06))] text-velora-gold shadow-[0_12px_34px_rgba(0,0,0,0.34),0_0_34px_rgba(196,162,101,0.14)] backdrop-blur-2xl transition-colors duration-300 hover:border-velora-gold/60 hover:bg-velora-gold/16 focus:border-velora-gold/70 ${className}`}
+      className={`absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-velora-gold/35 bg-[linear-gradient(135deg,rgba(216,181,109,0.22),rgba(255,255,255,0.06))] text-velora-gold shadow-[0_12px_34px_rgba(0,0,0,0.34),0_0_24px_rgba(196,162,101,0.1)] backdrop-blur-md transition-colors duration-300 hover:border-velora-gold/60 hover:bg-velora-gold/16 focus:border-velora-gold/70 ${className}`}
     >
       <Pencil size={14} />
     </motion.button>
@@ -213,16 +213,16 @@ function EditorChrome({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-      animate={{ opacity: 1, backdropFilter: "blur(18px)" }}
-      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-[220] flex items-end justify-center bg-black/62 px-0 sm:items-center sm:px-5"
+      className="fixed inset-0 z-[220] flex items-end justify-center bg-black/62 px-0 backdrop-blur-md sm:items-center sm:px-5"
     >
       <motion.div
-        initial={{ y: 34, opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-        animate={{ y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
-        exit={{ y: 24, opacity: 0, scale: 0.985, filter: "blur(8px)" }}
+        initial={{ y: 34, opacity: 0, scale: 0.98 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 24, opacity: 0, scale: 0.985 }}
         transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
         className="glass-strong max-h-[88dvh] w-full max-w-[430px] overflow-hidden rounded-t-[var(--radius-lg)] border border-velora-gold/20 bg-velora-black/96 shadow-[0_-24px_90px_rgba(0,0,0,0.64),0_0_70px_rgba(196,162,101,0.08)] sm:rounded-[var(--radius-lg)]"
       >
@@ -442,7 +442,7 @@ function HeaderEditor({
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
-              className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-2 rounded-full border border-velora-gold/30 bg-black/35 px-3 text-xs font-semibold text-velora-gold backdrop-blur-xl"
+              className="absolute bottom-3 right-3 inline-flex h-10 items-center gap-2 rounded-full border border-velora-gold/30 bg-black/35 px-3 text-xs font-semibold text-velora-gold backdrop-blur-md"
             >
               <Camera size={14} />
               Upload banner

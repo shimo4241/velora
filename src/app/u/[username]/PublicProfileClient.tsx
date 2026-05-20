@@ -298,7 +298,7 @@ export function IdentityHero({
         (hasCoverVideo ? (
           <motion.video
             src={profile.coverUrl}
-            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen"
+            className="absolute inset-0 h-full w-full object-cover opacity-[0.24]"
             style={{ y: reduceMotion ? undefined : backgroundY }}
             autoPlay
             muted
@@ -310,7 +310,7 @@ export function IdentityHero({
           <motion.img
             src={profile.coverUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen"
+            className="absolute inset-0 h-full w-full object-cover opacity-[0.24]"
             style={{ y: reduceMotion ? undefined : backgroundY }}
             loading="eager"
             decoding="async"
@@ -318,15 +318,15 @@ export function IdentityHero({
         ))}
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.1)_42%,#070705_100%)]" />
-      <div className="identity-aurora absolute inset-x-[-25%] top-[-18%] h-[55svh] opacity-80" />
+      <div className="identity-aurora absolute inset-x-[-18%] top-[-12%] h-[46svh]" />
       <motion.div
         aria-hidden
-        className="absolute left-1/2 top-[37%] h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:h-[460px] md:w-[460px]"
-        style={{ background: theme.atmosphere }}
+        className="glow-layer absolute left-1/2 top-[37%] h-[300px] w-[300px] rounded-full opacity-80 blur-xl md:h-[420px] md:w-[420px]"
+        style={{ background: theme.atmosphere, x: "-50%", y: "-50%" }}
         animate={
           reduceMotion
             ? undefined
-            : { opacity: [0.62, 0.95, 0.62], scale: [0.96, 1.04, 0.96] }
+            : { scale: [0.98, 1.035, 0.98] }
         }
         transition={{ duration: 6.8, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -336,14 +336,14 @@ export function IdentityHero({
           <motion.span
             key={`${particle.left}-${particle.top}`}
             aria-hidden
-            className="absolute rounded-full bg-[var(--identity-accent)] shadow-[0_0_18px_rgba(var(--identity-accent-rgb),0.7)]"
+            className="absolute rounded-full bg-[var(--identity-accent)] opacity-40 shadow-[0_0_12px_rgba(var(--identity-accent-rgb),0.46)]"
             style={{
               left: particle.left,
               top: particle.top,
               width: particle.size,
               height: particle.size,
             }}
-            animate={{ y: [0, -22, 0], opacity: [0.08, 0.48, 0.08] }}
+            animate={{ y: [0, -18, 0] }}
             transition={{
               duration: particle.duration,
               delay: particle.delay,
@@ -355,7 +355,7 @@ export function IdentityHero({
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-[760px] flex-col justify-center py-6">
         <Reveal className="mx-auto mb-7">
-          <div className="identity-reflective inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-velora-text-secondary backdrop-blur-2xl">
+          <div className="identity-reflective inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-velora-text-secondary backdrop-blur-md">
             <Sparkles size={12} className="text-[var(--identity-accent)]" />
             VELORA.IDENTITY
           </div>
@@ -364,23 +364,21 @@ export function IdentityHero({
         <motion.div
           className="relative mx-auto mb-7"
           style={{ y: reduceMotion ? undefined : avatarY }}
-          animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
-          transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }}
         >
           <motion.div
             aria-hidden
-            className="absolute -inset-8 rounded-full bg-[rgba(var(--identity-accent-rgb),0.28)] blur-3xl"
+            className="glow-layer absolute -inset-5 rounded-full bg-[rgba(var(--identity-accent-rgb),0.2)] opacity-70 blur-xl"
             animate={
               reduceMotion
                 ? undefined
-                : { opacity: [0.45, 0.95, 0.45], scale: [0.9, 1.08, 0.9] }
+                : { scale: [0.94, 1.06, 0.94] }
             }
             transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
             aria-hidden
-            className="absolute -inset-4 rounded-full border border-[rgba(var(--identity-accent-rgb),0.3)]"
-            animate={reduceMotion ? undefined : { scale: [0.95, 1.08, 0.95], opacity: [0.42, 0.12, 0.42] }}
+            className="absolute -inset-4 rounded-full border border-[rgba(var(--identity-accent-rgb),0.22)] opacity-35"
+            animate={reduceMotion ? undefined : { scale: [0.96, 1.08, 0.96] }}
             transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
           />
           <div
@@ -410,7 +408,7 @@ export function IdentityHero({
           </div>
           {profile.isVerified && (
             <motion.div
-              className="absolute bottom-2 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(var(--identity-accent-rgb),0.35)] bg-black/70 text-[var(--identity-accent)] shadow-[0_0_34px_rgba(var(--identity-accent-rgb),0.22)] backdrop-blur-xl"
+              className="absolute bottom-2 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(var(--identity-accent-rgb),0.35)] bg-black/70 text-[var(--identity-accent)] shadow-[0_0_24px_rgba(var(--identity-accent-rgb),0.16)] backdrop-blur-md"
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.45, delay: 0.42, ease: LUXURY_EASE }}
@@ -421,10 +419,10 @@ export function IdentityHero({
         </motion.div>
 
         <motion.div
-          className="identity-hero-panel relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-6 text-center shadow-[0_30px_120px_rgba(0,0,0,0.58)] backdrop-blur-3xl md:px-8 md:py-8"
+          className="identity-hero-panel relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-6 text-center shadow-[0_24px_76px_rgba(0,0,0,0.48)] backdrop-blur-md md:px-8 md:py-8"
           style={{ y: reduceMotion ? undefined : panelY }}
         >
-          <div className="pointer-events-none absolute inset-x-8 -top-24 h-48 rounded-full bg-[rgba(var(--identity-accent-rgb),0.16)] blur-3xl" />
+          <div className="glow-layer pointer-events-none absolute inset-x-8 -top-16 h-36 rounded-full bg-[rgba(var(--identity-accent-rgb),0.13)] blur-xl" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_18%,rgba(255,255,255,0.08)_48%,transparent_68%)] opacity-45" />
 
           <Reveal delay={0.08}>
@@ -483,7 +481,7 @@ export function IdentityHero({
           <Reveal delay={0.42}>
             <a
               href={profileUrl}
-              className="mx-auto mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-black/22 px-3 py-2 text-[11px] font-medium text-velora-text-muted backdrop-blur-xl transition-colors duration-300 hover:border-[rgba(var(--identity-accent-rgb),0.35)] hover:text-velora-text"
+              className="mx-auto mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-black/22 px-3 py-2 text-[11px] font-medium text-velora-text-muted backdrop-blur-md transition-colors duration-300 hover:border-[rgba(var(--identity-accent-rgb),0.35)] hover:text-velora-text"
             >
               <Link2 size={12} className="text-[var(--identity-accent)]" />
               <span className="truncate font-mono">{shortUrl}</span>
@@ -581,9 +579,9 @@ export function SkillMatrix({ skills }: { skills: string[] }) {
         {skills.map((skill, index) => (
           <motion.span
             key={skill}
-            className="identity-reflective rounded-full border border-[rgba(var(--identity-accent-rgb),0.2)] bg-white/[0.055] px-4 py-2 text-xs font-medium text-velora-text-secondary backdrop-blur-xl"
-            initial={{ opacity: 0, y: 12, filter: "blur(8px)" }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            className="identity-reflective rounded-full border border-[rgba(var(--identity-accent-rgb),0.2)] bg-white/[0.055] px-4 py-2 text-xs font-medium text-velora-text-secondary backdrop-blur-md"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.45, delay: index * 0.035, ease: LUXURY_EASE }}
           >
@@ -660,7 +658,7 @@ export function PortfolioShowcase({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-black/16 to-transparent" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_12%,rgba(var(--identity-accent-rgb),0.18),transparent_28%)] opacity-80" />
                 {isVideoAsset(project.imageUrl) && (
-                  <span className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/42 text-[var(--identity-accent)] backdrop-blur-xl">
+                  <span className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/42 text-[var(--identity-accent)] backdrop-blur-md">
                     <Play size={15} fill="currentColor" />
                   </span>
                 )}
@@ -670,7 +668,7 @@ export function PortfolioShowcase({
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--identity-accent)]">
                     {project.category || "Project"}
                   </span>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.07] text-velora-text backdrop-blur-xl">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.07] text-velora-text backdrop-blur-md">
                     <Eye size={13} />
                   </span>
                 </div>
@@ -721,7 +719,7 @@ function PortfolioModal({
 }) {
   return (
     <motion.div
-      className="fixed inset-0 z-[260] bg-black/92 backdrop-blur-2xl"
+      className="fixed inset-0 z-[260] bg-black/92 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -730,7 +728,7 @@ function PortfolioModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+          className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
           aria-label="Close portfolio preview"
         >
           <X size={18} />
@@ -741,7 +739,7 @@ function PortfolioModal({
             <button
               type="button"
               onClick={() => onMove(-1)}
-              className="absolute left-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+              className="absolute left-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
               aria-label="Previous project"
             >
               <ChevronLeft size={20} />
@@ -749,7 +747,7 @@ function PortfolioModal({
             <button
               type="button"
               onClick={() => onMove(1)}
-              className="absolute right-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-xl"
+              className="absolute right-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
               aria-label="Next project"
             >
               <ChevronRight size={20} />
@@ -767,7 +765,7 @@ function PortfolioModal({
           <ProjectMedia project={project} index={index} priority modal />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18)_0%,rgba(0,0,0,0.18)_45%,#000_100%)]" />
           <div
-            className="absolute inset-x-0 top-0 h-1/2 opacity-70 blur-3xl"
+            className="glow-layer absolute inset-x-0 top-0 h-1/2 opacity-60 blur-xl"
             style={{ background: `radial-gradient(circle at 50% 0%, rgba(${theme.accentRgb},0.22), transparent 48%)` }}
           />
         </motion.div>
@@ -801,7 +799,7 @@ function PortfolioModal({
                 href={normalizeExternalHref(project.link)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="identity-reflective mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(var(--identity-accent-rgb),0.28)] bg-[rgba(var(--identity-accent-rgb),0.1)] px-4 py-2.5 text-xs font-semibold text-[var(--identity-accent)] backdrop-blur-xl"
+                className="identity-reflective mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(var(--identity-accent-rgb),0.28)] bg-[rgba(var(--identity-accent-rgb),0.1)] px-4 py-2.5 text-xs font-semibold text-[var(--identity-accent)] backdrop-blur-md"
               >
                 View project
                 <ExternalLink size={13} />
@@ -922,14 +920,14 @@ export function LuxuryQrSection({
           <div className="relative mx-auto mt-7 flex h-[292px] w-[292px] items-center justify-center">
             <motion.div
               aria-hidden
-              className="absolute inset-0 rounded-[38px] border border-[rgba(var(--identity-accent-rgb),0.28)]"
-              animate={{ opacity: [0.35, 0.9, 0.35], scale: [0.98, 1.025, 0.98] }}
+              className="absolute inset-0 rounded-[38px] border border-[rgba(var(--identity-accent-rgb),0.28)] opacity-60"
+              animate={{ scale: [0.99, 1.025, 0.99] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
               aria-hidden
-              className="absolute -inset-5 rounded-[46px] bg-[rgba(var(--identity-accent-rgb),0.16)] blur-3xl"
-              animate={{ opacity: [0.3, 0.72, 0.3] }}
+              className="glow-layer absolute -inset-3 rounded-[42px] bg-[rgba(var(--identity-accent-rgb),0.13)] opacity-60 blur-xl"
+              animate={{ scale: [1, 1.035, 1] }}
               transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
             />
             <div className="identity-qr-frame relative rounded-[34px] p-4">
@@ -1008,7 +1006,7 @@ function LuxuryActionButtons({ actions }: { actions: ContactAction[] }) {
             href={action.href}
             target={action.href.startsWith("http") ? "_blank" : undefined}
             rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
-            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold backdrop-blur-xl ${
+            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold backdrop-blur-md ${
               primary
                 ? "border-[rgba(var(--identity-accent-rgb),0.42)] bg-[rgba(var(--identity-accent-rgb),0.16)] text-[var(--identity-accent)]"
                 : "border-white/10 bg-white/[0.045] text-velora-text-secondary"
@@ -1073,7 +1071,7 @@ function StatCounter({
   return (
     <div
       ref={ref}
-      className="rounded-[18px] border border-white/10 bg-black/22 px-3 py-3 backdrop-blur-xl"
+      className="rounded-[18px] border border-white/10 bg-black/22 px-3 py-3 backdrop-blur-md"
     >
       <div className="font-mono text-xl font-semibold text-velora-text">
         {visibleValue}
@@ -1098,8 +1096,8 @@ export function Reveal({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 22, filter: "blur(12px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.22 }}
       transition={{ duration: 0.68, delay, ease: LUXURY_EASE }}
     >

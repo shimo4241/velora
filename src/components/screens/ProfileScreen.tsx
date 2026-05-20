@@ -653,7 +653,7 @@ function LuxuryEmptyState({
           whileHover={{ y: -2, scale: 1.01 }}
           whileTap={{ scale: 0.97 }}
           transition={{ duration: 0.24, ease: LUXURY_EASE }}
-          className="identity-reflective mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(var(--identity-accent-rgb),0.3)] bg-[rgba(var(--identity-accent-rgb),0.1)] px-4 py-2.5 text-xs font-semibold text-[var(--identity-accent)] backdrop-blur-xl"
+          className="identity-reflective mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(var(--identity-accent-rgb),0.3)] bg-[rgba(var(--identity-accent-rgb),0.1)] px-4 py-2.5 text-xs font-semibold text-[var(--identity-accent)] backdrop-blur-md"
         >
           <Pencil size={13} />
           {actionLabel}

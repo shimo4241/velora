@@ -83,9 +83,6 @@ export function RadarDiscovery({ count = 0 }: { count?: number }) {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              style={{
-                boxShadow: "0 0 20px rgba(201,168,76,0.5)",
-              }}
             />
           </div>
 
@@ -106,7 +103,6 @@ export function RadarDiscovery({ count = 0 }: { count?: number }) {
                 style={{
                   left: `${dot.x}%`,
                   top: `${dot.y}%`,
-                  boxShadow: "0 0 8px rgba(201,168,76,0.3)",
                 }}
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{
