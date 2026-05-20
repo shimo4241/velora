@@ -423,24 +423,15 @@ function sanitizePathSegment(segment: string): string {
   return segment.replace(/[^a-zA-Z0-9\-_/]/g, "_");
 }
 
-/** Helper to generate random string for unique filenames */
-function randomUploadId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
-}
-
 /** Performs raw direct upload to Cloudinary using XMLHttpRequest for progress and timeout protection */
 function performCloudinaryUpload(
   blob: Blob,
   folder: string,
-  publicId: string,
   options?: UploadOptions
 ): Promise<{ secure_url: string; delete_token?: string }> {
   return new Promise((resolve, reject) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "velora_unsigned";
 
     if (!cloudName || !uploadPreset) {
       reject(
@@ -533,11 +524,11 @@ function performCloudinaryUpload(
     };
 
     const formData = new FormData();
-    formData.append("file", blob, `${publicId}.jpg`);
+    formData.append("file", blob, "image.jpg");
     formData.append("upload_preset", uploadPreset);
-    formData.append("folder", folder);
-    formData.append("public_id", publicId);
-    formData.append("return_delete_token", "true");
+    if (folder) {
+      formData.append("folder", folder);
+    }
 
     xhr.send(formData);
   });
@@ -571,7 +562,6 @@ export async function uploadImageToCloudinary(
   // 4. Sanitize path/folder parameters
   const sanitizedUid = sanitizePathSegment(uid);
   const folder = `velora/${config.folder}/${sanitizedUid}`;
-  const publicId = sanitizePathSegment(`${kind}-${Date.now()}-${randomUploadId()}`);
 
   // 5. Upload with retry resilience
   const maxRetries = options?.maxRetries ?? 2; // 3 total attempts
@@ -579,7 +569,7 @@ export async function uploadImageToCloudinary(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const result = await performCloudinaryUpload(compressedBlob, folder, publicId, options);
+      const result = await performCloudinaryUpload(compressedBlob, folder, options);
       
       // Cache delete token if returned
       if (result.secure_url && result.delete_token) {
