@@ -21,7 +21,8 @@ import { FadeUp, ScaleIn, SlideIn, StaggerChildren, StaggerItem } from "../motio
 import { useTranslation } from "@/lib/i18n";
 import { useProfile } from "@/hooks/useProfile";
 import { useSharing } from "@/hooks/useSharing";
-import type { ExperienceEntry, PortfolioItem } from "@/types";
+import { getProfileThemeGradient } from "@/components/profile/ProfileEditor";
+import type { ExperienceEntry, PortfolioItem, ProfileTheme } from "@/types";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Profile Components
@@ -41,6 +42,8 @@ interface ProfileHeroProps {
   mode?: string;
   connectionsCount?: number;
   portfolioCount?: number;
+  profileTheme?: ProfileTheme;
+  showBio?: boolean;
 }
 
 export function ProfileHero({
@@ -55,6 +58,8 @@ export function ProfileHero({
   mode = "Entrepreneur",
   connectionsCount = 0,
   portfolioCount = 0,
+  profileTheme,
+  showBio = true,
 }: ProfileHeroProps) {
   const { profile, isProfileReady } = useProfile();
   const { t } = useTranslation(profile?.locale || "fr");
@@ -69,8 +74,7 @@ export function ProfileHero({
         <motion.div
           className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(160deg, var(--color-velora-black) 0%, #1a1510 30%, #12100b 60%, var(--color-velora-black) 100%)",
+            background: getProfileThemeGradient(profileTheme),
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -200,11 +204,13 @@ export function ProfileHero({
         </FadeUp>
 
         {/* Bio */}
-        <FadeUp delay={0.65}>
-          <p className="text-velora-text-secondary text-sm leading-relaxed mt-4 max-w-[280px] mx-auto">
-            {bio}
-          </p>
-        </FadeUp>
+        {showBio && (
+          <FadeUp delay={0.65}>
+            <p className="text-velora-text-secondary text-sm leading-relaxed mt-4 max-w-[280px] mx-auto">
+              {bio}
+            </p>
+          </FadeUp>
+        )}
 
         {/* Stats row — real Firestore data */}
         <FadeUp delay={0.7}>

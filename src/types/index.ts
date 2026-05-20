@@ -14,6 +14,31 @@ export type ProfessionalMode =
 /* ── User Roles ── */
 export type VeloraRole = "free" | "premium" | "verified" | "business";
 
+export type AvailabilityStatus = "available" | "busy" | "offline";
+
+export type ProfileThemePalette = "noir" | "gold" | "emerald" | "violet";
+
+export interface ProfileTheme {
+  palette: ProfileThemePalette;
+  accentLabel?: string;
+}
+
+export interface ProfileService {
+  id: string;
+  title: string;
+  description?: string;
+  price?: string;
+}
+
+export interface ContactActionSettings {
+  whatsapp: boolean;
+  email: boolean;
+  phone: boolean;
+  website: boolean;
+  bookingUrl?: string;
+  primary: "whatsapp" | "email" | "phone" | "website" | "booking";
+}
+
 /* -- Onboarding State -- */
 export interface VeloraOnboardingState {
   profileSetupComplete: boolean;
@@ -43,6 +68,11 @@ export interface VeloraProfile {
   coverUrl?: string;
   createdAt?: string;
   updatedAt?: string;
+  skills: string[];
+  services: ProfileService[];
+  availabilityStatus: AvailabilityStatus;
+  profileTheme: ProfileTheme;
+  contactActions: ContactActionSettings;
   socialLinks: SocialLink[];
   professionalMode: ProfessionalMode;
   role?: VeloraRole;
@@ -69,6 +99,7 @@ export interface PortfolioItem {
   description?: string;
   imageUrl?: string;
   link?: string;
+  order?: number;
 }
 
 /* ── Experience Entry ── */
@@ -80,6 +111,7 @@ export interface ExperienceEntry {
   startYear: number;
   endYear?: number;
   isCurrent: boolean;
+  order?: number;
 }
 
 /* ── Connection (Scan Memory) ── */

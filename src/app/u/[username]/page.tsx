@@ -9,8 +9,7 @@ import { getProfileUrl } from "@/lib/profileUrls";
 import { normalizeUsernameInput, validateUsername } from "@/lib/usernames";
 import PublicProfileClient from "./PublicProfileClient";
 
-// Revalidate every 60 seconds (ISR)
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

@@ -39,6 +39,7 @@ import {
 import type {
   VeloraProfile,
   PortfolioItem,
+  ProfileService,
   ExperienceEntry,
   VeloraConnection,
   ConnectionMethod,
@@ -48,6 +49,16 @@ import type {
 
 const DEFAULT_LOCALE: VeloraProfile["locale"] = "fr";
 const DEFAULT_MODE: VeloraProfile["professionalMode"] = "entrepreneur";
+const DEFAULT_AVAILABILITY: VeloraProfile["availabilityStatus"] = "available";
+const DEFAULT_PROFILE_THEME: VeloraProfile["profileTheme"] = { palette: "gold" };
+const DEFAULT_CONTACT_ACTIONS: VeloraProfile["contactActions"] = {
+  whatsapp: true,
+  email: true,
+  phone: true,
+  website: true,
+  bookingUrl: "",
+  primary: "whatsapp",
+};
 
 function asString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
@@ -59,6 +70,10 @@ function asBoolean(value: unknown): boolean {
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function asNumber(value: unknown, fallback?: number): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function normalizeLocale(value: unknown): VeloraProfile["locale"] {
@@ -87,6 +102,70 @@ function normalizeOnboarding(value: unknown): VeloraProfile["onboarding"] {
   };
 }
 
+function normalizeAvailabilityStatus(value: unknown): VeloraProfile["availabilityStatus"] {
+  return value === "available" || value === "busy" || value === "offline"
+    ? value
+    : DEFAULT_AVAILABILITY;
+}
+
+function normalizeProfileTheme(value: unknown): VeloraProfile["profileTheme"] {
+  if (typeof value !== "object" || value === null) return DEFAULT_PROFILE_THEME;
+  const theme = value as Record<string, unknown>;
+  const palette = theme.palette;
+
+  return {
+    palette:
+      palette === "noir" || palette === "gold" || palette === "emerald" || palette === "violet"
+        ? palette
+        : DEFAULT_PROFILE_THEME.palette,
+    accentLabel: asString(theme.accentLabel),
+  };
+}
+
+function normalizeServices(value: unknown): ProfileService[] {
+  if (!Array.isArray(value)) return [];
+
+  const services: ProfileService[] = [];
+
+  value.forEach((service, index) => {
+    if (typeof service !== "object" || service === null) return;
+    const data = service as Record<string, unknown>;
+    const title = asString(data.title).trim();
+    if (!title) return;
+
+    services.push({
+      id: asString(data.id, `service-${index}`),
+      title,
+      description: asString(data.description),
+      price: asString(data.price),
+    });
+  });
+
+  return services;
+}
+
+function normalizeContactActions(value: unknown): VeloraProfile["contactActions"] {
+  if (typeof value !== "object" || value === null) return DEFAULT_CONTACT_ACTIONS;
+  const actions = value as Record<string, unknown>;
+  const primary = actions.primary;
+
+  return {
+    whatsapp: actions.whatsapp !== false,
+    email: actions.email !== false,
+    phone: actions.phone !== false,
+    website: actions.website !== false,
+    bookingUrl: asString(actions.bookingUrl),
+    primary:
+      primary === "whatsapp" ||
+      primary === "email" ||
+      primary === "phone" ||
+      primary === "website" ||
+      primary === "booking"
+        ? primary
+        : DEFAULT_CONTACT_ACTIONS.primary,
+  };
+}
+
 function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile>): VeloraProfile {
   return {
     id,
@@ -105,6 +184,11 @@ function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile
     coverUrl: asString(data.coverUrl),
     createdAt: data.createdAt ? dateValueToIso(data.createdAt) : "",
     updatedAt: data.updatedAt ? dateValueToIso(data.updatedAt) : "",
+    skills: asArray<string>(data.skills).filter((skill) => typeof skill === "string" && skill.trim()),
+    services: normalizeServices(data.services),
+    availabilityStatus: normalizeAvailabilityStatus(data.availabilityStatus),
+    profileTheme: normalizeProfileTheme(data.profileTheme),
+    contactActions: normalizeContactActions(data.contactActions),
     socialLinks: asArray(data.socialLinks),
     professionalMode: normalizeProfessionalMode(data.professionalMode),
     role: data.role as VeloraProfile["role"],
@@ -161,6 +245,7 @@ function normalizePortfolioItem(id: string, data: DocumentData): PortfolioItem {
     description: asString(data.description),
     imageUrl: asString(data.imageUrl),
     link: asString(data.link),
+    order: asNumber(data.order),
   };
 }
 
@@ -173,6 +258,7 @@ function normalizeExperienceEntry(id: string, data: DocumentData): ExperienceEnt
     startYear: typeof data.startYear === "number" ? data.startYear : new Date().getFullYear(),
     endYear: typeof data.endYear === "number" ? data.endYear : undefined,
     isCurrent: asBoolean(data.isCurrent),
+    order: asNumber(data.order),
   };
 }
 
@@ -358,6 +444,11 @@ export async function ensureGoogleUserProfile(user: GoogleProfileUser): Promise<
         isPremium: false,
         isNoir: false,
         locale: DEFAULT_LOCALE,
+        skills: [],
+        services: [],
+        availabilityStatus: DEFAULT_AVAILABILITY,
+        profileTheme: DEFAULT_PROFILE_THEME,
+        contactActions: DEFAULT_CONTACT_ACTIONS,
         socialLinks: [],
         onboarding: {
           profileSetupComplete: false,
@@ -512,9 +603,26 @@ export function onPortfolioChange(
 export async function addPortfolioItem(uid: string, item: Omit<PortfolioItem, "id">): Promise<string> {
   const docRef = await addDoc(collection(db, "users", uid, "portfolio"), {
     ...item,
+    order: item.order ?? Date.now(),
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
   return docRef.id;
+}
+
+export async function updatePortfolioItem(
+  uid: string,
+  itemId: string,
+  item: Partial<Omit<PortfolioItem, "id">>
+): Promise<void> {
+  await setDoc(
+    doc(db, "users", uid, "portfolio", itemId),
+    {
+      ...item,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 export async function deletePortfolioItem(uid: string, itemId: string): Promise<void> {
@@ -543,6 +651,38 @@ export function onExperienceChange(
     console.error(`[Firestore Error] Experience listener failed for UID: ${uid}`, error);
     onError?.(error);
   });
+}
+
+export async function addExperienceEntry(
+  uid: string,
+  entry: Omit<ExperienceEntry, "id">
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "users", uid, "experience"), {
+    ...entry,
+    order: entry.order ?? Date.now(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function updateExperienceEntry(
+  uid: string,
+  entryId: string,
+  entry: Partial<Omit<ExperienceEntry, "id">>
+): Promise<void> {
+  await setDoc(
+    doc(db, "users", uid, "experience", entryId),
+    {
+      ...entry,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+export async function deleteExperienceEntry(uid: string, entryId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "experience", entryId));
 }
 
 /* ═══════════════════════════════════════════
