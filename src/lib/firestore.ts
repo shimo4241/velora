@@ -13,6 +13,7 @@ import {
   addDoc,
   deleteDoc,
   runTransaction,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -530,6 +531,31 @@ function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
     isFavorite: asBoolean(data.favorite || data.isFavorite),
     lastInteractionAt: data.lastInteractionAt ? dateValueToIso(data.lastInteractionAt) : undefined,
     connectionStrength: asNumber(data.connectionStrength, 50),
+  };
+}
+
+function normalizeNetworkDoc(id: string, data: DocumentData): VeloraConnection {
+  return {
+    id,
+    profile: normalizeProfile(data.id || id, data),
+    method: (data.method || "link") as ConnectionMethod,
+    userId: "",
+    connectedUserId: data.id || id,
+    connectionType: undefined,
+    contextLabel: "",
+    introducedBy: "",
+    personalNote: asString(data.personalNote || data.notes),
+    notes: asString(data.notes || data.personalNote),
+    metAt: dateValueToIso(data.metAt || data.createdAt),
+    eventName: "",
+    locationName: "",
+    followUpSent: asBoolean(data.followUpSent),
+    tags: Array.isArray(data.tags) ? data.tags.map(t => String(t)) : [],
+    event: "",
+    favorite: asBoolean(data.favorite || data.isFavorite),
+    isFavorite: asBoolean(data.favorite || data.isFavorite),
+    lastInteractionAt: data.lastInteractionAt ? dateValueToIso(data.lastInteractionAt) : undefined,
+    connectionStrength: asNumber(data.connectionStrength, 72),
   };
 }
 
@@ -1056,18 +1082,90 @@ export function onConnectionsChange(
   callback: (connections: VeloraConnection[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  const q = query(
+  const qSub = query(
+    collection(db, "users", uid, "network"),
+    orderBy("metAt", "desc"),
+    limit(50)
+  );
+
+  const qLegacy = query(
     collection(db, "connections"),
     where("userId", "==", uid),
     orderBy("metAt", "desc"),
     limit(50)
   );
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => normalizeConnection(d.id, d.data())));
+
+  let subConnections: VeloraConnection[] = [];
+  let legacyConnections: VeloraConnection[] = [];
+
+  const triggerCallback = () => {
+    const seen = new Set<string>();
+    const merged: VeloraConnection[] = [];
+
+    for (const conn of subConnections) {
+      if (conn.profile.id && !seen.has(conn.profile.id)) {
+        seen.add(conn.profile.id);
+        merged.push(conn);
+      }
+    }
+    for (const conn of legacyConnections) {
+      if (conn.profile.id && !seen.has(conn.profile.id)) {
+        seen.add(conn.profile.id);
+        merged.push(conn);
+      }
+    }
+    callback(merged);
+  };
+
+  const unsubSub = onSnapshot(qSub, (snap) => {
+    subConnections = snap.docs.map((d) => normalizeNetworkDoc(d.id, d.data()));
+    triggerCallback();
   }, (error) => {
-    console.error(`[Firestore Error] Connections listener failed for UID: ${uid}`, error);
+    console.error(`[Firestore Error] Sub-connections listener failed for UID: ${uid}`, error);
     onError?.(error);
   });
+
+  const unsubLegacy = onSnapshot(qLegacy, (snap) => {
+    legacyConnections = snap.docs.map((d) => normalizeConnection(d.id, d.data()));
+    triggerCallback();
+  }, (error) => {
+    console.error(`[Firestore Error] Legacy connections listener failed for UID: ${uid}`, error);
+  });
+
+  return () => {
+    unsubSub();
+    unsubLegacy();
+  };
+}
+
+export async function addConnectionToNetwork(
+  currentUserId: string,
+  viewedProfile: VeloraProfile
+): Promise<void> {
+  if (currentUserId === viewedProfile.id) {
+    throw new Error("Cannot connect to yourself");
+  }
+
+  const batch = writeBatch(db);
+
+  // 1. Add connection in current user's sub-collection
+  const currentUserDocRef = doc(db, "users", currentUserId, "network", viewedProfile.id);
+  batch.set(currentUserDocRef, {
+    id: viewedProfile.id,
+    fullName: viewedProfile.fullName,
+    title: viewedProfile.title || "",
+    avatarUrl: viewedProfile.avatarUrl || "",
+    skills: viewedProfile.skills || [],
+    professionalMode: viewedProfile.professionalMode || "entrepreneur",
+    isVerified: !!viewedProfile.isVerified,
+    isPremium: !!viewedProfile.isPremium,
+    username: viewedProfile.username || "",
+    status: "connected",
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+  await batch.commit();
 }
 
 export async function createConnection(data: {
@@ -1523,6 +1621,10 @@ export async function removeConnection(currentUserId: string, targetUserId: stri
   deletePromises.push(deleteDoc(req1Ref));
   deletePromises.push(deleteDoc(req2Ref));
 
+  // Also delete from sub-collections
+  deletePromises.push(deleteDoc(doc(db, "users", currentUserId, "network", targetUserId)));
+  deletePromises.push(deleteDoc(doc(db, "users", targetUserId, "network", currentUserId)));
+
   await Promise.all(deletePromises);
 }
 
@@ -1545,6 +1647,16 @@ export async function updateConnectionNotesAndTags(
       tags: tags,
     });
   }
+
+  // Also update the sub-collection document if it exists
+  const subDocRef = doc(db, "users", currentUserId, "network", targetUserId);
+  const subDocSnap = await getDoc(subDocRef);
+  if (subDocSnap.exists()) {
+    await updateDoc(subDocRef, {
+      personalNote: notes,
+      tags: tags,
+    });
+  }
 }
 
 export async function updateConnectionFavorite(
@@ -1561,6 +1673,17 @@ export async function updateConnectionFavorite(
   const snap = await getDocs(q);
   if (!snap.empty) {
     await updateDoc(snap.docs[0].ref, {
+      favorite,
+      isFavorite: favorite,
+      lastInteractionAt: serverTimestamp(),
+    });
+  }
+
+  // Also update the sub-collection document if it exists
+  const subDocRef = doc(db, "users", currentUserId, "network", targetUserId);
+  const subDocSnap = await getDoc(subDocRef);
+  if (subDocSnap.exists()) {
+    await updateDoc(subDocRef, {
       favorite,
       isFavorite: favorite,
       lastInteractionAt: serverTimestamp(),

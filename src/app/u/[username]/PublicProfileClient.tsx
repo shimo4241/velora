@@ -64,6 +64,7 @@ import {
   removeConnection,
   updateConnectionNotesAndTags,
   blockUser,
+  addConnectionToNetwork,
 } from "@/lib/firestore";
 import type {
   ExperienceEntry,
@@ -304,13 +305,21 @@ export default function PublicProfileClient({
       where("connectedUserId", "==", profile.id),
       limit(1)
     );
+    const subDocRef = doc(db, "users", user.uid, "network", profile.id);
 
     let statusReqSent: RelationshipSnapshot = null;
     let statusReqRecv: RelationshipSnapshot = null;
     let statusConn: RelationshipSnapshot = null;
+    let statusSubDoc: any = null;
 
     function updateState() {
-      if (statusConn) {
+      if (statusSubDoc && statusSubDoc.status === "connected") {
+        setRelationship({ status: "connected", connectionId: profile.id });
+        setNotes(statusSubDoc.personalNote || "");
+        setSelectedTags(statusSubDoc.tags || []);
+        setLocationName(statusSubDoc.locationName || "");
+        setEventName(statusSubDoc.event || "");
+      } else if (statusConn) {
         setRelationship({ status: "connected", connectionId: statusConn.id });
         setNotes(statusConn.personalNote || "");
         setSelectedTags(statusConn.tags || []);
@@ -340,10 +349,16 @@ export default function PublicProfileClient({
       updateState();
     });
 
+    const unsubSubDoc = onSnapshot(subDocRef, (snap) => {
+      statusSubDoc = snap.exists() ? snap.data() : null;
+      updateState();
+    });
+
     return () => {
       unsubReqSent();
       unsubReqRecv();
       unsubConn();
+      unsubSubDoc();
     };
   }, [user?.uid, profile.id, isAuthReady]);
 
@@ -413,6 +428,19 @@ export default function PublicProfileClient({
     setLoading(true);
     try {
       await declineContactRequest(profile.id, user.uid);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToNetwork = async () => {
+    if (!user?.uid) return;
+    setLoading(true);
+    try {
+      await addConnectionToNetwork(user.uid, profile);
+      navigator.vibrate?.(24);
     } catch (err) {
       console.error(err);
     } finally {
@@ -500,7 +528,7 @@ export default function PublicProfileClient({
         isAuthReady={isAuthReady}
         relationship={relationship}
         loading={loading}
-        onAdd={() => setShowAddModal(true)}
+        onAdd={handleAddToNetwork}
         onEdit={() => setShowEditModal(true)}
         onCancel={handleCancelRequest}
         onAccept={handleAcceptRequest}
@@ -1282,7 +1310,7 @@ export function IdentityHero({
                     className="w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.2)] hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
                   >
                     <Sparkles size={14} />
-                    {t("add_to_network")}
+                    Ajouter à mon réseau
                   </button>
                 ) : relationship?.status === "none" ? (
                   <button
@@ -1294,7 +1322,7 @@ export function IdentityHero({
                     className="w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(var(--identity-accent-rgb),0.2)] hover:opacity-95 transition-all flex items-center justify-center gap-1.5"
                   >
                     {loading ? <span className="animate-spin text-velora-black">●</span> : <Sparkles size={14} />}
-                    {t("add_to_network")}
+                    Ajouter à mon réseau
                   </button>
                 ) : relationship?.status === "pending_sent" ? (
                   <button

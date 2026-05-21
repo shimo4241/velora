@@ -17,6 +17,7 @@ import {
   FileText,
   Star,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
@@ -53,6 +54,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     email: profile?.email || "",
     website: profile?.website || "",
     professionalMode: profile?.professionalMode || "entrepreneur",
+    skills: profile?.skills || [],
     
     // Dentist fields
     specialty: profile?.specialty || "",
@@ -66,6 +68,61 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     workHours: profile?.workHours || "",
     emergencyContact: profile?.emergencyContact || "",
   });
+
+  // AI Profile Helper state
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<{ title: string; bio: string; skills: string[] } | null>(null);
+
+  // New skill addition state
+  const [newSkillInput, setNewSkillInput] = useState("");
+  const handleAddSkill = () => {
+    const val = newSkillInput.trim();
+    if (val && !form.skills.includes(val)) {
+      setForm((prev) => ({ ...prev, skills: [...prev.skills, val] }));
+    }
+    setNewSkillInput("");
+  };
+
+  const handleGenerateProfile = async () => {
+    if (!aiPrompt.trim()) return;
+    setGenerating(true);
+    try {
+      const response = await fetch("/api/ai/generate-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      setAiResult(data);
+      showToast({ tone: "success", title: "Profil généré", message: "Le profil IA a été généré avec succès." });
+    } catch (err) {
+      console.error(err);
+      showToast({ tone: "error", title: "Erreur de génération", message: "Impossible de générer le profil IA." });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleApplyAiProfile = () => {
+    if (!aiResult) return;
+    setForm((prev) => ({
+      ...prev,
+      title: aiResult.title,
+      bio: aiResult.bio,
+      skills: aiResult.skills,
+    }));
+    setAiResult(null);
+    setAiPrompt("");
+    showToast({ tone: "success", title: "Profil appliqué", message: "Le titre, la bio et les compétences ont été mis à jour." });
+  };
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -166,7 +223,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     ];
     for (const f of urlFields) {
       const val = form[f.key as keyof typeof form];
-      if (val) {
+      if (typeof val === "string" && val) {
         let isValid = false;
         try {
           const testUrl = val.startsWith("http://") || val.startsWith("https://") ? val : "https://" + val;
@@ -196,7 +253,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     const phonePattern = /^\+?[0-9\s\-()]{8,20}$/;
     for (const f of phoneFields) {
       const val = form[f.key as keyof typeof form];
-      if (val && !phonePattern.test(val)) {
+      if (typeof val === "string" && val && !phonePattern.test(val)) {
         showToast({
           tone: "error",
           title: "Téléphone invalide",
@@ -404,6 +461,92 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       {/* Form fields */}
       <div className="px-5 pb-32">
         <StaggerChildren staggerDelay={0.04} delay={0.15} className="space-y-3">
+          {/* AI Assistant Section */}
+          <StaggerItem>
+            <GlassCard className="p-4 border border-velora-gold/20 bg-gradient-to-br from-velora-black via-white/[0.02] to-velora-black" hover={false}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-5 h-5 rounded-full bg-velora-gold/10 flex items-center justify-center">
+                  <Sparkles size={12} className="text-velora-gold" />
+                </div>
+                <label className="text-xs font-semibold text-velora-gold tracking-wide">
+                  Assistant Profil IA
+                </label>
+              </div>
+              <p className="text-[11px] text-velora-text-muted mb-3 leading-relaxed">
+                Décrivez votre activité, vos spécialités et vos objectifs. Notre intelligence artificielle rédigera pour vous un titre percutant, une bio haut de gamme et des compétences adaptées.
+              </p>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ex: Je suis un chirurgien-dentiste à Casablanca spécialisé en implantologie digitale avec 10 ans d'expérience. Je veux attirer des patients haut de gamme et collaborer avec d'autres cliniques."
+                rows={3}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg p-2.5 text-xs text-velora-text placeholder:text-velora-text-muted/30 outline-none resize-none leading-relaxed focus:border-velora-gold/30 transition-colors"
+              />
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={handleGenerateProfile}
+                  disabled={generating || !aiPrompt.trim()}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-velora-black bg-velora-gold hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 shadow-md shadow-velora-gold/10"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={12} />
+                      Générer mon profil
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Suggestion / Review area */}
+              {aiResult && (
+                <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                  <div className="text-[11px] font-semibold text-velora-gold">
+                    Suggestion générée :
+                  </div>
+                  <div className="space-y-2 bg-white/[0.01] p-3 rounded-lg border border-white/[0.05]">
+                    <div>
+                      <div className="text-[10px] text-velora-text-muted uppercase tracking-wider">Titre</div>
+                      <div className="text-xs text-velora-text font-medium mt-0.5">{aiResult.title}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-velora-text-muted uppercase tracking-wider">Bio</div>
+                      <div className="text-xs text-velora-text-muted leading-relaxed mt-0.5">{aiResult.bio}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-velora-text-muted uppercase tracking-wider">Compétences</div>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {aiResult.skills.map((skill, idx) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-md bg-velora-gold/10 border border-velora-gold/20 text-[10px] text-velora-gold">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => setAiResult(null)}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-medium text-velora-text-muted hover:text-velora-text transition-colors"
+                    >
+                      Ignorer
+                    </button>
+                    <button
+                      onClick={handleApplyAiProfile}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-semibold text-velora-black bg-velora-gold hover:opacity-90 transition-all"
+                    >
+                      Appliquer au formulaire
+                    </button>
+                  </div>
+                </div>
+              )}
+            </GlassCard>
+          </StaggerItem>
+
           {/* Professional Mode Selector */}
           <StaggerItem>
             <GlassCard className="p-3" hover={false}>
@@ -462,6 +605,60 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
               </StaggerItem>
             );
           })}
+
+          {/* Skills / Tags Section */}
+          <StaggerItem>
+            <GlassCard className="p-3" hover={false}>
+              <div className="flex items-center gap-2 mb-2">
+                <Star size={12} className="text-velora-gold/60" />
+                <label className="text-[10px] text-velora-text-muted uppercase tracking-wider">
+                  Compétences / Tags
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {form.skills.length === 0 ? (
+                  <span className="text-xs text-velora-text-muted/40 italic">Aucune compétence ajoutée.</span>
+                ) : (
+                  form.skills.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-velora-text hover:border-red-500/30 hover:bg-red-500/5 hover:text-red-400 transition-colors cursor-pointer group"
+                      onClick={() => {
+                        setForm(prev => ({
+                          ...prev,
+                          skills: prev.skills.filter((_, i) => i !== idx)
+                        }));
+                      }}
+                    >
+                      {tag}
+                      <span className="text-[10px] text-velora-text-muted group-hover:text-red-400 transition-colors">×</span>
+                    </span>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ajouter une compétence..."
+                  value={newSkillInput}
+                  onChange={(e) => setNewSkillInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSkill();
+                    }
+                  }}
+                  className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-xs text-velora-text placeholder:text-velora-text-muted/30 outline-none focus:border-velora-gold/20"
+                />
+                <button
+                  onClick={handleAddSkill}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-velora-black bg-velora-gold hover:opacity-90"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </GlassCard>
+          </StaggerItem>
 
           {profileMode === "dentist" && (
             <DentistFields form={form} onChange={handleChange} />
