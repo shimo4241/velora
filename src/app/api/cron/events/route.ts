@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, isFirebaseConfigured } from "@/lib/firebase";
 
 const MOROCCO_EVENTS = [
   {
@@ -58,6 +58,19 @@ export async function GET(req: Request) {
     }
 
     const results = [];
+    if (!isFirebaseConfigured) {
+      console.warn("Firebase config is missing or dummy. Simulating event aggregation in database.");
+      for (const event of MOROCCO_EVENTS) {
+        results.push(event.id);
+      }
+      return NextResponse.json({
+        success: true,
+        message: `Morocco events aggregated successfully (SIMULATED - config missing).`,
+        count: results.length,
+        events: results,
+      });
+    }
+
     for (const event of MOROCCO_EVENTS) {
       const docRef = doc(db, "events", event.id);
       await setDoc(

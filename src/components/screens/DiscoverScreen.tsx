@@ -16,6 +16,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { RadarVisualization } from "@/components/discover/RadarVisualization";
 import { IcebreakersCarousel } from "@/components/discover/IcebreakersCarousel";
 import { LiveEventInsights } from "@/components/discover/LiveEventInsights";
+import MesReseaux from "@/components/MesReseaux";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Enhanced Découvrir Screen
@@ -190,6 +191,11 @@ export function DiscoverScreen() {
 
       {/* ── Live Event Insights ── */}
       <LiveEventInsights />
+
+      {/* ── Mon Réseau List ── */}
+      <section className="relative z-10 mt-4 border-t border-white/5 pt-4">
+        <MesReseaux />
+      </section>
     </div>
   );
 }
