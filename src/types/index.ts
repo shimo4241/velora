@@ -52,8 +52,23 @@ export interface VeloraOnboardingState {
   updatedAt?: string;
 }
 
+/* ── Geolocation ── */
+export interface UserLocation {
+  lat: number;
+  lng: number;
+  lastActive: string;
+  accuracy?: number;
+}
+
+export interface PublicCoarseLocation {
+  lat: number;
+  lng: number;
+  lastActive: string;
+}
+
 /* ── Connection Methods ── */
 export type ConnectionMethod = "nfc" | "qr" | "whatsapp" | "link" | "nearby";
+export type ConnectionType = "Business" | "Dentist" | "Client" | "VIP" | "Friend" | "Partner";
 
 /* ── User Profile ── */
 export interface VeloraProfile {
@@ -98,6 +113,16 @@ export interface VeloraProfile {
   clinicAddress?: string;
   workHours?: string;
   emergencyContact?: string;
+  emergencyAvailable?: boolean;
+  yearsOfExperience?: number;
+  languagesSpoken?: string[];
+  clinicGallery?: string[];
+  beforeAfterGallery?: string[];
+
+  // Geolocation
+  location_geo?: UserLocation;
+  location_geo_coarse?: PublicCoarseLocation | null;
+  locationSharing?: boolean;
 
   // App Settings
   settings?: {
@@ -110,6 +135,7 @@ export interface VeloraProfile {
       isPrivate?: boolean;
       allowIndexing?: boolean;
       showEmail?: boolean;
+      shareLocation?: boolean;
     };
   };
 }
@@ -149,14 +175,25 @@ export interface VeloraConnection {
   id: string;
   profile: VeloraProfile;
   method: ConnectionMethod;
+  userId?: string;
+  connectedUserId?: string;
+  connectionType?: ConnectionType;
   contextLabel?: string;
   introducedBy?: string;
   personalNote?: string;
+  notes?: string;
   metAt: string;
+  eventName?: string;
   locationName?: string;
   followUpSent: boolean;
   tags?: string[];
   event?: string;
+  isFavorite?: boolean;
+  favorite?: boolean;
+  lastInteractionAt?: string;
+  connectionStrength?: number;
+  mutualConnections?: number;
+  distance?: number; // computed at runtime, not persisted
 }
 
 /* ── Contact Request ── */

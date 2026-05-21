@@ -1,20 +1,34 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const config: CapacitorConfig = {
-  appId: "app.velora.mobile",
-  appName: "VELORA",
-  webDir: "out",  // Next.js static export output
+const nativeServerUrl =
+  process.env.CAPACITOR_SERVER_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "https://velora-navy.vercel.app";
 
-  /* ── Server ── */
+const config: CapacitorConfig = {
+  appId: "com.velora.app",
+  appName: "Velora",
+  webDir: "native-shell",
+
   server: {
+    url: nativeServerUrl,
     androidScheme: "https",
     iosScheme: "https",
+    cleartext: false,
+    allowNavigation: [
+      "velora-navy.vercel.app",
+      "*.vercel.app",
+      "*.firebaseapp.com",
+      "*.googleapis.com",
+      "*.gstatic.com",
+      "*.google.com",
+      "res.cloudinary.com",
+    ],
   },
 
-  /* ── Plugins ── */
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2800,
+      launchShowDuration: 1800,
       launchAutoHide: true,
       backgroundColor: "#070705",
       androidSplashResourceName: "splash",
@@ -34,12 +48,10 @@ const config: CapacitorConfig = {
     },
     Haptics: {},
     App: {
-      // Deep links — Phase 2
-      // url: "velora.app",
+      url: "velora.app",
     },
   },
 
-  /* ── Android ── */
   android: {
     backgroundColor: "#070705",
     allowMixedContent: false,
@@ -50,14 +62,13 @@ const config: CapacitorConfig = {
     },
   },
 
-  /* ── iOS ── */
   ios: {
     backgroundColor: "#070705",
     contentInset: "always",
     allowsLinkPreview: false,
     scrollEnabled: true,
     preferredContentMode: "mobile",
-    scheme: "VELORA",
+    scheme: "Velora",
   },
 };
 

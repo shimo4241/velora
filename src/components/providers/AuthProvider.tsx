@@ -12,6 +12,7 @@ import {
 import { type User } from "firebase/auth";
 import {
   ensureLocalAuthPersistence,
+  consumeAuthRedirectResult,
   getAuthErrorCode,
   getAuthErrorMessage,
   onAuthChange,
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function initializeAuth() {
       try {
         await ensureLocalAuthPersistence();
+        await consumeAuthRedirectResult();
       } catch (authError) {
         if (!active) return;
         setErrorCode(getAuthErrorCode(authError));

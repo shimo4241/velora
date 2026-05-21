@@ -46,11 +46,11 @@ import type {
   ProfileService,
   ExperienceEntry,
   VeloraConnection,
+  ConnectionType,
   ConnectionMethod,
   DailyStats,
   ActivityItem,
   ContactRequest,
-  BlockedUser,
 } from "@/types";
 
 const DEFAULT_LOCALE: VeloraProfile["locale"] = "fr";
@@ -331,6 +331,19 @@ function asNumber(value: unknown, fallback?: number): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
+function normalizeCoarseLocation(value: unknown): VeloraProfile["location_geo_coarse"] {
+  if (typeof value !== "object" || value === null) return null;
+  const location = value as Record<string, unknown>;
+  const lat = asNumber(location.lat);
+  const lng = asNumber(location.lng);
+  if (lat === undefined || lng === undefined) return null;
+  return {
+    lat,
+    lng,
+    lastActive: location.lastActive ? dateValueToIso(location.lastActive) : new Date().toISOString(),
+  };
+}
+
 function normalizeLocale(value: unknown): VeloraProfile["locale"] {
   return value === "en" || value === "ar" || value === "fr" ? value : DEFAULT_LOCALE;
 }
@@ -452,6 +465,23 @@ function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile
     isNoir: asBoolean(data.isNoir),
     locale: normalizeLocale(data.locale),
     onboarding: normalizeOnboarding(data.onboarding),
+    specialty: asString(data.specialty),
+    clinicName: asString(data.clinicName),
+    orderNumber: asString(data.orderNumber),
+    fixedPhone: asString(data.fixedPhone),
+    googleMapsLink: asString(data.googleMapsLink),
+    googleReviewsLink: asString(data.googleReviewsLink),
+    appointmentLink: asString(data.appointmentLink),
+    clinicAddress: asString(data.clinicAddress),
+    workHours: asString(data.workHours),
+    emergencyContact: asString(data.emergencyContact),
+    emergencyAvailable: asBoolean(data.emergencyAvailable),
+    yearsOfExperience: asNumber(data.yearsOfExperience),
+    languagesSpoken: asArray<string>(data.languagesSpoken).filter((item) => typeof item === "string" && item.trim()),
+    clinicGallery: asArray<string>(data.clinicGallery).filter((item) => typeof item === "string" && item.trim()),
+    beforeAfterGallery: asArray<string>(data.beforeAfterGallery).filter((item) => typeof item === "string" && item.trim()),
+    location_geo_coarse: normalizeCoarseLocation(data.location_geo_coarse),
+    locationSharing: asBoolean(data.locationSharing),
   };
 }
 
@@ -483,14 +513,23 @@ function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
     id,
     profile: normalizeProfile(asString(data.connectedUserId, id), rawProfile as DocumentData),
     method: (data.method || "link") as ConnectionMethod,
+    userId: asString(data.userId),
+    connectedUserId: asString(data.connectedUserId),
+    connectionType: data.connectionType as ConnectionType | undefined,
     contextLabel: asString(data.contextLabel, asString(data.locationName)),
     introducedBy: asString(data.introducedBy),
     personalNote: asString(data.personalNote || data.notes),
+    notes: asString(data.notes || data.personalNote),
     metAt: dateValueToIso(data.metAt || data.createdAt),
+    eventName: asString(data.eventName || data.event),
     locationName: asString(data.locationName),
     followUpSent: asBoolean(data.followUpSent),
     tags: Array.isArray(data.tags) ? data.tags.map(t => String(t)) : [],
     event: asString(data.event),
+    favorite: asBoolean(data.favorite || data.isFavorite),
+    isFavorite: asBoolean(data.favorite || data.isFavorite),
+    lastInteractionAt: data.lastInteractionAt ? dateValueToIso(data.lastInteractionAt) : undefined,
+    connectionStrength: asNumber(data.connectionStrength, 50),
   };
 }
 
@@ -1041,13 +1080,21 @@ export async function createConnection(data: {
   introducedBy?: string;
   personalNote?: string;
 }): Promise<string> {
-  const docRef = await addDoc(collection(db, "connections"), {
+  if (data.userId === data.connectedUserId) {
+    throw new Error("Cannot connect to yourself");
+  }
+  const connectionId = `${data.userId}_${data.connectedUserId}`;
+  await setDoc(doc(db, "connections", connectionId), {
     ...data,
+    connectionType: data.connectedProfile.professionalMode === "dentist" ? "Dentist" : "Business",
     followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
-  });
-  return docRef.id;
+    lastInteractionAt: serverTimestamp(),
+    connectionStrength: 68,
+    favorite: false,
+  }, { merge: false });
+  return connectionId;
 }
 
 export async function updateConnectionFollowUp(
@@ -1384,7 +1431,7 @@ export async function acceptContactRequest(
 
   await setDoc(requestRef, { status: "accepted", updatedAt: serverTimestamp() }, { merge: true });
 
-  await addDoc(collection(db, "connections"), {
+  await setDoc(doc(db, "connections", `${senderId}_${receiverId}`), {
     userId: senderId,
     connectedUserId: receiverId,
     connectedProfile: {
@@ -1404,9 +1451,13 @@ export async function acceptContactRequest(
     followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionType: receiverProfile.professionalMode === "dentist" ? "Dentist" : "Business",
+    connectionStrength: 72,
+    favorite: false,
   });
 
-  await addDoc(collection(db, "connections"), {
+  await setDoc(doc(db, "connections", `${receiverId}_${senderId}`), {
     userId: receiverId,
     connectedUserId: senderId,
     connectedProfile: {
@@ -1426,6 +1477,10 @@ export async function acceptContactRequest(
     followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionType: senderProfile.professionalMode === "dentist" ? "Dentist" : "Business",
+    connectionStrength: 72,
+    favorite: false,
   });
 
   await addDoc(collection(db, "notifications"), {
@@ -1492,6 +1547,27 @@ export async function updateConnectionNotesAndTags(
   }
 }
 
+export async function updateConnectionFavorite(
+  currentUserId: string,
+  targetUserId: string,
+  favorite: boolean
+): Promise<void> {
+  const q = query(
+    collection(db, "connections"),
+    where("userId", "==", currentUserId),
+    where("connectedUserId", "==", targetUserId),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    await updateDoc(snap.docs[0].ref, {
+      favorite,
+      isFavorite: favorite,
+      lastInteractionAt: serverTimestamp(),
+    });
+  }
+}
+
 export async function blockUser(userId: string, blockedUserId: string): Promise<void> {
   const blockRef = doc(db, "blocked_users", `${userId}_${blockedUserId}`);
   await setDoc(blockRef, {
@@ -1510,7 +1586,7 @@ export async function unblockUser(userId: string, blockedUserId: string): Promis
 
 export function onNotificationsChange(
   userId: string,
-  callback: (notifications: any[]) => void,
+  callback: (notifications: Array<{ id: string } & DocumentData>) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
   const q = query(

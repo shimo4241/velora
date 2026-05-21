@@ -92,6 +92,41 @@
       ]
     },
     {
+      "collectionGroup": "connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "favorite", "order": "ASCENDING" },
+        { "fieldPath": "lastInteractionAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "connectionType", "order": "ASCENDING" },
+        { "fieldPath": "lastInteractionAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "locationSharing", "order": "ASCENDING" },
+        { "fieldPath": "location_geo_coarse.lastActive", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "professionalMode", "order": "ASCENDING" },
+        { "fieldPath": "isVerified", "order": "DESCENDING" },
+        { "fieldPath": "fullName", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "analytics_events",
       "queryScope": "COLLECTION",
       "fields": [

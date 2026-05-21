@@ -3,9 +3,11 @@ import {
   browserSessionPersistence,
   inMemoryPersistence,
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   setPersistence,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type AuthError,
   type User,
@@ -126,9 +128,40 @@ function createGoogleProvider(): GoogleAuthProvider {
   return provider;
 }
 
+function isNativeWebView(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean((window as Window & { Capacitor?: unknown }).Capacitor);
+}
+
+export async function consumeAuthRedirectResult(): Promise<User | null> {
+  if (!persistenceReady) {
+    await ensureLocalAuthPersistence();
+  }
+
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user ?? auth.currentUser ?? null;
+  } catch (error) {
+    logAuthDebug("redirect result:error", {
+      code: getAuthErrorCode(error),
+      currentUserUid: auth.currentUser?.uid ?? null,
+    });
+    throw error;
+  }
+}
+
 export async function signInWithGoogle(): Promise<void> {
   if (!persistenceReady) {
     await ensureLocalAuthPersistence();
+  }
+
+  if (isNativeWebView()) {
+    logAuthDebug("redirect sign-in:start", {
+      persistenceReady,
+      currentUserUid: auth.currentUser?.uid ?? null,
+    });
+    await signInWithRedirect(auth, createGoogleProvider());
+    return;
   }
 
   try {
@@ -147,6 +180,10 @@ export async function signInWithGoogle(): Promise<void> {
       code: getAuthErrorCode(error),
       currentUserUid: auth.currentUser?.uid ?? null,
     });
+    if (isPopupBlockedErrorCode(getAuthErrorCode(error))) {
+      await signInWithRedirect(auth, createGoogleProvider());
+      return;
+    }
     throw error;
   }
 }

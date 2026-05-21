@@ -911,6 +911,13 @@ body {
   outline: none;
 }
 
+/* ── Discover Screen ── */
+.discover-screen {
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(196, 162, 101, 0.03), transparent 60%),
+    var(--color-velora-black);
+}
+
 /* ───────────────────────────────────────────────────────────────
    SAHARA PEARL — Luxury Light Theme
    Override tokens dynamically based on data-theme attribute

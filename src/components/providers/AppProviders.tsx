@@ -4,8 +4,11 @@ import { useEffect, type ReactNode } from "react";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ProfileProvider } from "@/components/providers/ProfileProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { useNativeRuntime } from "@/lib/nativeRuntime";
 
 export function AppProviders({ children }: { children: ReactNode }) {
+  useNativeRuntime();
+
   useEffect(() => {
     try {
       // Initialize language from localStorage

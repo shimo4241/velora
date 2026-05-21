@@ -54,9 +54,9 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, query, collection, where, limit } from "firebase/firestore";
+import { doc, onSnapshot, query, collection, where, limit, type DocumentData } from "firebase/firestore";
+import { createVCardFile } from "@/lib/nfc";
 import {
-  getRelationshipStatus,
   sendContactRequest,
   cancelContactRequest,
   acceptContactRequest,
@@ -64,7 +64,6 @@ import {
   removeConnection,
   updateConnectionNotesAndTags,
   blockUser,
-  unblockUser,
 } from "@/lib/firestore";
 import type {
   ExperienceEntry,
@@ -102,6 +101,14 @@ type ContactAction = {
   icon: LucideIcon;
   priority: number;
 };
+
+type RelationshipStatus = {
+  status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
+  connectionId?: string;
+  requestId?: string;
+};
+
+type RelationshipSnapshot = ({ id: string } & DocumentData) | null;
 
 export const LUXURY_EASE: Easing = [0.16, 1, 0.3, 1];
 
@@ -271,11 +278,7 @@ export default function PublicProfileClient({
   const searchParams = useSearchParams();
   const source = searchParams?.get("src") || null;
 
-  const [relationship, setRelationship] = useState<{
-    status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
-    connectionId?: string;
-    requestId?: string;
-  }>({ status: "none" });
+  const [relationship, setRelationship] = useState<RelationshipStatus>({ status: "none" });
 
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -290,7 +293,6 @@ export default function PublicProfileClient({
   // Real-time listener for the relationship
   useEffect(() => {
     if (!isAuthReady || !user?.uid || !profile.id || user.uid === profile.id) {
-      setRelationship({ status: "none" });
       return;
     }
 
@@ -303,9 +305,9 @@ export default function PublicProfileClient({
       limit(1)
     );
 
-    let statusReqSent: any = null;
-    let statusReqRecv: any = null;
-    let statusConn: any = null;
+    let statusReqSent: RelationshipSnapshot = null;
+    let statusReqRecv: RelationshipSnapshot = null;
+    let statusConn: RelationshipSnapshot = null;
 
     function updateState() {
       if (statusConn) {
@@ -373,11 +375,7 @@ export default function PublicProfileClient({
         tags: selectedTags,
       });
       setShowAddModal(false);
-      if (typeof window !== "undefined" && (window as any).Capacitor) {
-        try {
-          await (window as any).Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
-        } catch (e) {}
-      }
+      navigator.vibrate?.(24);
     } catch (err) {
       console.error(err);
     } finally {
@@ -402,11 +400,7 @@ export default function PublicProfileClient({
     setLoading(true);
     try {
       await acceptContactRequest(profile.id, user.uid, profile, currentUserProfile);
-      if (typeof window !== "undefined" && (window as any).Capacitor) {
-        try {
-          await (window as any).Capacitor.Plugins.Haptics.notification({ type: "SUCCESS" });
-        } catch (e) {}
-      }
+      navigator.vibrate?.(24);
     } catch (err) {
       console.error(err);
     } finally {
@@ -467,47 +461,8 @@ export default function PublicProfileClient({
     }
   };
 
-  const handleUnblockUser = async () => {
-    if (!user?.uid) return;
-    setLoading(true);
-    try {
-      await unblockUser(user.uid, profile.id);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDownloadVCard = () => {
-    const escapeVCard = (val?: string) =>
-      (val || "")
-        .replace(/\\/g, "\\\\")
-        .replace(/\n/g, "\\n")
-        .replace(/,/g, "\\,")
-        .replace(/;/g, "\\;");
-
-    const name = profile.fullName || "VELORA Contact";
-    const vcard = [
-      "BEGIN:VCARD",
-      "VERSION:3.0",
-      `FN:${escapeVCard(name)}`,
-      `ORG:${escapeVCard(profile.company || "VELORA")}`,
-      `TITLE:${escapeVCard(profile.title)}`,
-      profile.email ? `EMAIL:${escapeVCard(profile.email)}` : "",
-      profile.phone || profile.whatsapp ? `TEL:${escapeVCard(profile.phone || profile.whatsapp)}` : "",
-      profile.website ? `URL:${escapeVCard(profile.website)}` : "",
-      `NOTE:${escapeVCard(`VELORA profile: ${profileUrl}`)}`,
-      "END:VCARD",
-    ].filter(Boolean).join("\n");
-
-    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
-    const href = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = href;
-    link.download = `${name.replace(/[^\w-]+/g, "-").toLowerCase()}.vcf`;
-    link.click();
-    URL.revokeObjectURL(href);
+    createVCardFile(profile, profileUrl);
   };
 
   const theme = getIdentityTheme(profile.professionalMode);

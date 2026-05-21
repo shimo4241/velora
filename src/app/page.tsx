@@ -28,8 +28,8 @@ const ShareScreen = dynamic(
   { loading: () => <LoadingScreen message="Loading share hub..." /> }
 );
 
-const NetworkScreen = dynamic(
-  () => import("@/components/screens/NetworkScreen").then((mod) => mod.NetworkScreen),
+const DiscoverScreen = dynamic(
+  () => import("@/components/screens/DiscoverScreen").then((mod) => mod.DiscoverScreen),
   { loading: () => <LoadingScreen message="Loading discover..." /> }
 );
 
@@ -43,7 +43,7 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
     home: () => <HomeScreen onTabChange={onTabChange} />,
     identity: () => <ProfileScreen />,
     share: () => <ShareScreen />,
-    discover: () => <NetworkScreen />,
+    discover: () => <DiscoverScreen />,
     insights: () => <AnalyticsScreen />,
   };
 }

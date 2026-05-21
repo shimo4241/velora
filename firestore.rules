@@ -10,6 +10,10 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function connectionIdMatchesOwnerPair(connectionId) {
+      return connectionId == request.resource.data.userId + "_" + request.resource.data.connectedUserId;
+    }
+
     function reservedUsernames() {
       return [
         "admin",
@@ -80,8 +84,10 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isOwner(userId)
         && validUsername(request.resource.data.username)
-        && hasUsernameReservationAfter(userId, request.resource.data.username);
+        && hasUsernameReservationAfter(userId, request.resource.data.username)
+        && !("location_geo" in request.resource.data);
       allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["location_geo"])
         && (
           (
             resource.data.username == request.resource.data.username
@@ -94,6 +100,11 @@ service cloud.firestore {
           )
         );
       allow delete: if false;
+
+      // Exact GPS is owner-only. Public docs may only expose location_geo_coarse.
+      match /private_data/{privateId} {
+        allow read, write: if isOwner(userId);
+      }
 
       // Portfolio subcollection - owner only
       match /portfolio/{itemId} {
@@ -113,9 +124,60 @@ service cloud.firestore {
       allow read: if signedIn()
                   && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.userId != request.resource.data.connectedUserId
+                    && connectionIdMatchesOwnerPair(connectionId);
       allow update, delete: if signedIn()
                             && resource.data.userId == request.auth.uid;
+    }
+
+    // Optional owner-only private notes collection for future scaling.
+    match /connection_notes/{noteId} {
+      allow read, write: if signedIn()
+        && (
+          (resource.data.userId == request.auth.uid)
+          || (request.resource.data.userId == request.auth.uid)
+        );
+    }
+
+    // Contact Requests — sender and receiver can read; sender creates; both can update/delete
+    match /contact_requests/{requestId} {
+      allow read: if signedIn()
+                  && (resource.data.senderId == request.auth.uid
+                      || resource.data.receiverId == request.auth.uid);
+      allow create: if signedIn()
+                    && request.resource.data.senderId == request.auth.uid
+                    && request.resource.data.senderId != request.resource.data.receiverId;
+      allow update: if signedIn()
+                    && (resource.data.senderId == request.auth.uid
+                        || resource.data.receiverId == request.auth.uid);
+      allow delete: if signedIn()
+                    && (resource.data.senderId == request.auth.uid
+                        || resource.data.receiverId == request.auth.uid);
+    }
+
+    // Blocked Users — only the blocker can read/write
+    match /blocked_users/{blockId} {
+      allow read: if signedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.userId != request.resource.data.blockedUserId;
+      allow delete: if signedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // Notifications — recipient reads/updates; any authenticated user creates
+    match /notifications/{notifId} {
+      allow read: if signedIn()
+                  && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+                    && request.resource.data.userId != request.auth.uid
+                    && request.resource.data.senderId == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.userId == request.auth.uid;
+      allow delete: if signedIn()
+                    && resource.data.userId == request.auth.uid;
     }
 
     // Shares

@@ -12,8 +12,6 @@ out/
 .env.development.local
 
 # ── Capacitor ──
-android/
-ios/
 
 # ── IDE ──
 .vscode/
