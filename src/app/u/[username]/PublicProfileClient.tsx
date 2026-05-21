@@ -313,7 +313,7 @@ export default function PublicProfileClient({
     let statusSubDoc: any = null;
 
     function updateState() {
-      if (statusSubDoc && statusSubDoc.status === "connected") {
+      if (statusSubDoc && (statusSubDoc.status === "connected" || statusSubDoc.status === "accepted")) {
         setRelationship({ status: "connected", connectionId: profile.id });
         setNotes(statusSubDoc.personalNote || "");
         setSelectedTags(statusSubDoc.tags || []);
@@ -439,7 +439,7 @@ export default function PublicProfileClient({
     if (!user?.uid) return;
     setLoading(true);
     try {
-      await addConnectionToNetwork(user.uid, profile);
+      await addConnectionToNetwork(user.uid, profile, currentUserProfile || undefined);
       navigator.vibrate?.(24);
     } catch (err) {
       console.error(err);
@@ -1293,12 +1293,10 @@ export function IdentityHero({
           </Reveal>
 
           {/* Network Relationship Button */}
-          {currentUserId !== profile.id && (
+          {isAuthReady && currentUserId !== profile.id && (
             <Reveal delay={0.33}>
               <div className="mt-5 mb-2 flex justify-center">
-                {!isAuthReady ? (
-                  <div className="w-full max-w-[280px] h-[46px] rounded-full bg-white/5 animate-pulse border border-white/5" />
-                ) : !currentUserId ? (
+                {!currentUserId ? (
                   <button
                     onClick={() => {
                       alert(t("login_required_network"));

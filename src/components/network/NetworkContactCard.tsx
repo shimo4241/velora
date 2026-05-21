@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Briefcase, MapPin, Shield, Sparkles, Star, StickyNote, Users } from "lucide-react";
 import { getDistanceLabel } from "@/lib/geolocation";
@@ -45,7 +46,8 @@ export const NetworkContactCard = memo(function NetworkContactCard({
   connection: VeloraConnection;
   onToggleFavorite: (connection: VeloraConnection) => void;
   onEdit: (connection: VeloraConnection) => void;
-}) {
+  }) {
+  const router = useRouter();
   const profile = connection.profile;
   const distanceLabel =
     typeof connection.distance === "number" ? getDistanceLabel(connection.distance, profile.locale || "fr") : "pres de vous";
@@ -61,51 +63,64 @@ export const NetworkContactCard = memo(function NetworkContactCard({
     >
       <div className="pointer-events-none absolute inset-x-8 -top-20 h-32 rounded-full bg-velora-gold/10 blur-2xl" />
       <div className="relative flex items-start gap-3.5">
-        <div className="relative shrink-0">
-          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.28),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))]">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-gold">
-                {initials(profile.fullName)}
+        <div
+          onClick={() => {
+            const username = connection.username || profile.username;
+            const uid = connection.uid || profile.id;
+            if (username) {
+              router.push(`/u/${username}`);
+            } else {
+              router.push(`/p/${uid}`);
+            }
+          }}
+          className="flex flex-1 items-start gap-3.5 cursor-pointer min-w-0 group"
+        >
+          <div className="relative shrink-0">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.28),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))] group-hover:border-velora-gold/50 transition-colors">
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              ) : (
+                <span className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-gold">
+                  {initials(profile.fullName)}
+                </span>
+              )}
+            </div>
+            {profile.isVerified && (
+              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-velora-gold/35 bg-black text-velora-gold">
+                <Shield size={10} fill="currentColor" />
               </span>
             )}
           </div>
-          {profile.isVerified && (
-            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-velora-gold/35 bg-black text-velora-gold">
-              <Shield size={10} fill="currentColor" />
-            </span>
-          )}
-        </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate font-[family-name:var(--font-display)] text-base font-semibold text-velora-text">
-              {profile.fullName || "Contact Velora"}
-            </h3>
-            {profile.isPremium && <Star size={13} className="shrink-0 text-velora-gold" fill="currentColor" />}
-          </div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-velora-text-secondary">
-            <Briefcase size={12} className="text-velora-gold/70" />
-            <span className="truncate">
-              {profile.title || "Professional"}{profile.company ? ` · ${profile.company}` : ""}
-            </span>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em]">
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
-              <MapPin size={10} className="text-velora-gold" />
-              {distanceLabel}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
-              <Sparkles size={10} className="text-velora-gold" />
-              {relativeMeeting(connection.lastInteractionAt || connection.metAt)}
-            </span>
-            {typeof connection.mutualConnections === "number" && connection.mutualConnections > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
-                <Users size={10} className="text-velora-gold" />
-                {connection.mutualConnections} mutuels
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="truncate font-[family-name:var(--font-display)] text-base font-semibold text-velora-text group-hover:text-velora-gold transition-colors">
+                {profile.fullName || "Contact Velora"}
+              </h3>
+              {profile.isPremium && <Star size={13} className="shrink-0 text-velora-gold" fill="currentColor" />}
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-velora-text-secondary">
+              <Briefcase size={12} className="text-velora-gold/70" />
+              <span className="truncate">
+                {profile.title || "Professional"}{profile.company ? ` · ${profile.company}` : ""}
               </span>
-            )}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
+                <MapPin size={10} className="text-velora-gold" />
+                {distanceLabel}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
+                <Sparkles size={10} className="text-velora-gold" />
+                {relativeMeeting(connection.lastInteractionAt || connection.metAt)}
+              </span>
+              {typeof connection.mutualConnections === "number" && connection.mutualConnections > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
+                  <Users size={10} className="text-velora-gold" />
+                  {connection.mutualConnections} mutuels
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

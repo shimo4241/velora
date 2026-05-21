@@ -1,37 +1,28 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MOTION } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 import { PREMIUM_EASE } from "@/components/motion/animations";
+import type { VeloraProfile } from "@/types";
 
 /* ═══════════════════════════════════════════════════
-   VELORA — Interactive Radar Visualization
+   VELORA — Dynamic Interactive Radar Visualization
    
-   Enhanced radar with:
-   - Glowing center ring labeled "You (Visible)"
-   - Profile avatars positioned along radar sweeps
-   - Color-coded distance indicators
-   - Animated radar sweep with glow trail
+   Renders discovered users from Firestore in real-time,
+   positioning them deterministically on concentric rings,
+   and displaying their live avatars with profile navigation.
    ═══════════════════════════════════════════════════ */
 
 interface DiscoveredPerson {
   id: string;
   name: string;
+  username?: string;
   initials: string;
   avatar?: string;
   distance: "close" | "medium" | "far";
   angle: number;     // degrees from top (0-360)
   radius: number;    // 0.2 to 0.9 from center
 }
-
-const DEMO_PEOPLE: DiscoveredPerson[] = [
-  { id: "1", name: "Sarah J.", initials: "SJ", distance: "close", angle: 35, radius: 0.32 },
-  { id: "2", name: "David C.", initials: "DC", distance: "medium", angle: 120, radius: 0.52 },
-  { id: "3", name: "Amina K.", initials: "AK", distance: "close", angle: 200, radius: 0.38 },
-  { id: "4", name: "Youssef B.", initials: "YB", distance: "far", angle: 280, radius: 0.72 },
-  { id: "5", name: "Léa M.", initials: "LM", distance: "medium", angle: 340, radius: 0.55 },
-  { id: "6", name: "Marc D.", initials: "MD", distance: "far", angle: 75, radius: 0.8 },
-];
 
 const DISTANCE_COLORS = {
   close: { ring: "rgba(107, 191, 138, 0.8)", bg: "rgba(107, 191, 138, 0.15)", label: "< 50m" },
@@ -49,20 +40,56 @@ function polarToCartesian(angleDeg: number, radiusFraction: number, containerSiz
   };
 }
 
+function getDeterministicCoords(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const angle = Math.abs(hash % 360);
+  const radius = 0.35 + (Math.abs((hash >> 4) % 45) / 100); // 0.35 to 0.80
+
+  let distance: "close" | "medium" | "far" = "medium";
+  if (radius < 0.5) distance = "close";
+  else if (radius > 0.68) distance = "far";
+
+  return { angle, radius, distance };
+}
+
 interface RadarProps {
-  discoveredCount?: number;
+  discoveredUsers?: VeloraProfile[];
   isVisible?: boolean;
 }
 
-export function RadarVisualization({ discoveredCount = 0, isVisible = true }: RadarProps) {
+export function RadarVisualization({ discoveredUsers = [], isVisible = true }: RadarProps) {
+  const router = useRouter();
   const SIZE = 280;
-  const people = discoveredCount > 0 ? DEMO_PEOPLE.slice(0, Math.min(discoveredCount, DEMO_PEOPLE.length)) : DEMO_PEOPLE;
+
+  const people: DiscoveredPerson[] = discoveredUsers.map((user) => {
+    const coords = getDeterministicCoords(user.id);
+    const initials = user.fullName
+      ?.split(" ")
+      ?.map((n) => n[0])
+      ?.slice(0, 2)
+      ?.join("")
+      ?.toUpperCase() || "U";
+
+    return {
+      id: user.id,
+      name: user.fullName || "Velora Member",
+      username: user.username,
+      initials,
+      avatar: user.avatarUrl || user.photoURL || undefined,
+      angle: coords.angle,
+      radius: coords.radius,
+      distance: coords.distance,
+    };
+  });
 
   return (
     <div className="relative flex flex-col items-center">
-      {/* Blurred conference background */}
+      {/* Blurred background panel */}
       <div
-        className="absolute inset-0 -top-12 -bottom-12 overflow-hidden rounded-3xl opacity-30"
+        className="absolute inset-0 -top-12 -bottom-12 overflow-hidden rounded-3xl opacity-30 pointer-events-none"
         style={{
           backgroundImage: `
             radial-gradient(ellipse at 50% 30%, rgba(196, 162, 101, 0.08) 0%, transparent 60%),
@@ -78,7 +105,7 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
         {[0.33, 0.6, 0.88].map((scale, i) => (
           <div
             key={`ring-${i}`}
-            className="absolute rounded-full"
+            className="absolute rounded-full pointer-events-none"
             style={{
               left: `${(1 - scale) * 50}%`,
               top: `${(1 - scale) * 50}%`,
@@ -91,25 +118,25 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
 
         {/* Cross-hair lines */}
         <div
-          className="absolute top-1/2 left-[12%] right-[12%] h-px"
+          className="absolute top-1/2 left-[12%] right-[12%] h-px pointer-events-none"
           style={{ background: "rgba(196, 162, 101, 0.06)" }}
         />
         <div
-          className="absolute left-1/2 top-[12%] bottom-[12%] w-px"
+          className="absolute left-1/2 top-[12%] bottom-[12%] w-px pointer-events-none"
           style={{ background: "rgba(196, 162, 101, 0.06)" }}
         />
 
         {/* Animated pulse rings from center */}
-        {[0, 1, 2].map((i) => (
+        {isVisible && [0, 1, 2].map((i) => (
           <motion.div
             key={`pulse-${i}`}
-            className="absolute rounded-full"
+            className="absolute rounded-full pointer-events-none"
             style={{
               left: "50%",
               top: "50%",
               width: 0,
               height: 0,
-              border: "1px solid rgba(196, 162, 101, 0.2)",
+              border: "1px solid rgba(196, 162, 101, 0.15)",
               transform: "translate(-50%, -50%)",
             }}
             animate={{
@@ -127,31 +154,35 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
         ))}
 
         {/* Radar sweep — primary line */}
-        <motion.div
-          className="absolute top-1/2 left-1/2 origin-left"
-          style={{
-            width: SIZE * 0.44,
-            height: "1px",
-            background: "linear-gradient(90deg, rgba(196, 162, 101, 0.7) 0%, rgba(196, 162, 101, 0.1) 70%, transparent 100%)",
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
-        />
+        {isVisible && (
+          <motion.div
+            className="absolute top-1/2 left-1/2 origin-left pointer-events-none z-0"
+            style={{
+              width: SIZE * 0.44,
+              height: "1px",
+              background: "linear-gradient(90deg, rgba(196, 162, 101, 0.7) 0%, rgba(196, 162, 101, 0.1) 70%, transparent 100%)",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
+          />
+        )}
 
         {/* Sweep glow trail */}
-        <motion.div
-          className="absolute top-1/2 left-1/2 origin-left -translate-y-1/2"
-          style={{
-            width: SIZE * 0.44,
-            height: 24,
-            background: "linear-gradient(90deg, rgba(196, 162, 101, 0.06) 0%, transparent 80%)",
-            borderRadius: "0 12px 12px 0",
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
-        />
+        {isVisible && (
+          <motion.div
+            className="absolute top-1/2 left-1/2 origin-left -translate-y-1/2 pointer-events-none z-0"
+            style={{
+              width: SIZE * 0.44,
+              height: 24,
+              background: "linear-gradient(90deg, rgba(196, 162, 101, 0.06) 0%, transparent 80%)",
+              borderRadius: "0 12px 12px 0",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
+          />
+        )}
 
-        {/* Center: Glowing ring — "You (Visible)" */}
+        {/* Center: Glowing ring — "You" */}
         <div
           className="absolute z-20"
           style={{
@@ -175,7 +206,7 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
           />
           {/* Gold ring */}
           <div
-            className="relative rounded-full flex items-center justify-center"
+            className="relative rounded-full flex items-center justify-center pointer-events-none"
             style={{
               width: 36,
               height: 36,
@@ -198,7 +229,7 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
 
         {/* Label below center */}
         <motion.div
-          className="absolute z-20 text-center"
+          className="absolute z-20 text-center pointer-events-none"
           style={{
             left: "50%",
             top: "50%",
@@ -212,19 +243,19 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
             className="text-[9px] font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--color-velora-gold)" }}
           >
-            You {isVisible ? "(Visible)" : "(Hidden)"}
+            Moi {isVisible ? "(Visible)" : "(Invisible)"}
           </span>
         </motion.div>
 
         {/* Discovered people — avatar dots on radar */}
-        {people.map((person, i) => {
+        {isVisible && people.map((person, i) => {
           const pos = polarToCartesian(person.angle, person.radius, SIZE);
           const color = DISTANCE_COLORS[person.distance];
 
           return (
             <motion.div
               key={person.id}
-              className="absolute z-10"
+              className="absolute z-30"
               style={{
                 left: pos.x,
                 top: pos.y,
@@ -234,22 +265,22 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
               animate={{ opacity: 1, scale: 1 }}
               transition={{
                 duration: 0.5,
-                delay: 0.8 + i * 0.25,
+                delay: 0.2 + i * 0.1,
                 ease: PREMIUM_EASE,
               }}
             >
               {/* Distance indicator ring */}
               <motion.div
-                className="absolute rounded-full"
+                className="absolute rounded-full pointer-events-none"
                 style={{
-                  width: 38,
-                  height: 38,
-                  left: -19,
-                  top: -19,
+                  width: 42,
+                  height: 42,
+                  left: -21,
+                  top: -21,
                   border: `1.5px solid ${color.ring}`,
                   background: color.bg,
                 }}
-                animate={{ scale: [1, 1.12, 1] }}
+                animate={{ scale: [1, 1.1, 1] }}
                 transition={{
                   duration: 2.5,
                   repeat: Infinity,
@@ -259,22 +290,31 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
               />
               {/* Avatar circle */}
               <div
-                className="relative w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold"
+                className="relative w-8 h-8 rounded-full flex items-center justify-center overflow-hidden text-[9px] font-bold cursor-pointer border hover:scale-110 active:scale-95 transition-all bg-black"
                 style={{
-                  background: "linear-gradient(135deg, rgba(196, 162, 101, 0.25), rgba(28, 26, 20, 0.9))",
-                  border: `1.5px solid ${color.ring}`,
+                  borderColor: color.ring,
                   color: "var(--color-velora-text)",
-                  letterSpacing: "0.02em",
+                }}
+                onClick={() => {
+                  if (person.username) {
+                    router.push(`/u/${person.username}`);
+                  } else {
+                    router.push(`/p/${person.id}`);
+                  }
                 }}
               >
-                {person.initials}
+                {person.avatar ? (
+                  <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{person.initials}</span>
+                )}
               </div>
               {/* Name label */}
               <div
-                className="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-center"
+                className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-center pointer-events-none"
               >
                 <span
-                  className="text-[8px] font-medium"
+                  className="text-[8px] font-medium px-1 py-0.5 rounded bg-black/60 border border-white/5 backdrop-blur-sm"
                   style={{ color: "var(--color-velora-text-secondary)" }}
                 >
                   {person.name}
@@ -290,7 +330,7 @@ export function RadarVisualization({ discoveredCount = 0, isVisible = true }: Ra
         className="flex items-center gap-4 mt-5"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
       >
         {(Object.entries(DISTANCE_COLORS) as [string, typeof DISTANCE_COLORS.close][]).map(([key, val]) => (
           <div key={key} className="flex items-center gap-1.5">

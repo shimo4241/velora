@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Eye,
@@ -15,16 +15,16 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useProfile } from "@/hooks/useProfile";
 import { RadarVisualization } from "@/components/discover/RadarVisualization";
 import { IcebreakersCarousel } from "@/components/discover/IcebreakersCarousel";
-import { LiveEventInsights } from "@/components/discover/LiveEventInsights";
+import { onDiscoverUsersChange } from "@/lib/firestore";
+import type { VeloraProfile } from "@/types";
 import MesReseaux from "@/components/MesReseaux";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Enhanced Découvrir Screen
    
    The premium discover experience featuring:
-   - Interactive radar with profile avatars
-   - AI-powered icebreaker carousel
-   - Live event insights panel
+   - Interactive radar with profile avatars (from live database)
+   - AI-powered icebreaker carousel (from live database)
    - Seamless gold + dark luxury aesthetic
    ═══════════════════════════════════════════════════ */
 
@@ -32,8 +32,36 @@ export function DiscoverScreen() {
   const { profile, isProfileReady } = useProfile();
   const geo = useGeolocation();
   const [query, setQuery] = useState("");
+  const [discoveredUsers, setDiscoveredUsers] = useState<VeloraProfile[]>([]);
+  const [loadingDiscover, setLoadingDiscover] = useState(true);
+
+  useEffect(() => {
+    if (!isProfileReady || !profile) return;
+    const unsub = onDiscoverUsersChange(
+      profile.id,
+      12,
+      (users) => {
+        setDiscoveredUsers(users);
+        setLoadingDiscover(false);
+      },
+      (err) => {
+        console.error("[DiscoverScreen:onDiscoverUsersChange] failed:", err);
+        setLoadingDiscover(false);
+      }
+    );
+    return () => unsub();
+  }, [profile, isProfileReady]);
 
   if (!isProfileReady || !profile) return null;
+
+  // Filter discovered users if search query is entered
+  const filteredUsers = discoveredUsers.filter((u) => {
+    const search = query.toLowerCase().trim();
+    if (!search) return true;
+    const name = u.fullName || "";
+    const title = u.title || "";
+    return name.toLowerCase().includes(search) || title.toLowerCase().includes(search);
+  });
 
   return (
     <div className="discover-screen min-h-screen overflow-hidden pb-28 text-velora-text">
@@ -181,16 +209,13 @@ export function DiscoverScreen() {
       {/* ── Interactive Radar ── */}
       <section className="relative pt-6 pb-2 z-10">
         <RadarVisualization
-          discoveredCount={6}
+          discoveredUsers={filteredUsers}
           isVisible={geo.isSharing}
         />
       </section>
 
       {/* ── AI-Powered Icebreakers ── */}
-      <IcebreakersCarousel />
-
-      {/* ── Live Event Insights ── */}
-      <LiveEventInsights />
+      <IcebreakersCarousel users={filteredUsers} loading={loadingDiscover} />
 
       {/* ── Mon Réseau List ── */}
       <section className="relative z-10 mt-4 border-t border-white/5 pt-4">

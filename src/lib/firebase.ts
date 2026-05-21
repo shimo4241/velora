@@ -4,7 +4,14 @@
    ═══════════════════════════════════════════════════ */
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import { 
+  getAuth, 
+  initializeAuth, 
+  browserLocalPersistence, 
+  browserSessionPersistence, 
+  inMemoryPersistence, 
+  type Auth 
+} from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 const requiredFirebaseEnv = [
@@ -34,7 +41,33 @@ function getFirebaseApp(): FirebaseApp {
 
 /* ── Exports ── */
 export const app: FirebaseApp = getFirebaseApp();
-export const auth: Auth = getAuth(app);
+
+function getFirebaseAuth(app: FirebaseApp): Auth {
+  if (typeof window === "undefined") {
+    try {
+      return getAuth(app);
+    } catch {
+      return initializeAuth(app, {
+        persistence: inMemoryPersistence
+      });
+    }
+  }
+
+  try {
+    return getAuth(app);
+  } catch (e) {
+    try {
+      return initializeAuth(app, {
+        persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
+      });
+    } catch (err) {
+      console.error("initializeAuth failed, falling back to getAuth", err);
+      return getAuth(app);
+    }
+  }
+}
+
+export const auth: Auth = getFirebaseAuth(app);
 export const db: Firestore = getFirestore(app);
 
 /* ── Analytics (browser-only, lazy) ── */

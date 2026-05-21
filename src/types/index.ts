@@ -85,6 +85,8 @@ export interface VeloraProfile {
   email?: string;
   website?: string;
   avatarUrl: string;
+  photoURL?: string; // Firebase Auth fallback avatar
+  industry?: string; // User's industry sector
   coverUrl?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -194,6 +196,11 @@ export interface VeloraConnection {
   connectionStrength?: number;
   mutualConnections?: number;
   distance?: number; // computed at runtime, not persisted
+  uid?: string;
+  username?: string;
+  displayName?: string;
+  photoURL?: string;
+  status?: string;
 }
 
 /* ── Contact Request ── */

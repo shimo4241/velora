@@ -31,7 +31,7 @@ import {
   deleteImageFromCloudinary,
   validateImageFile,
 } from "./cloudinary";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import {
   USERNAME_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
@@ -510,9 +510,11 @@ function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
         ? data.profile
         : {};
 
+  const profile = normalizeProfile(asString(data.connectedUserId, id), rawProfile as DocumentData);
+
   return {
     id,
-    profile: normalizeProfile(asString(data.connectedUserId, id), rawProfile as DocumentData),
+    profile,
     method: (data.method || "link") as ConnectionMethod,
     userId: asString(data.userId),
     connectedUserId: asString(data.connectedUserId),
@@ -531,16 +533,23 @@ function normalizeConnection(id: string, data: DocumentData): VeloraConnection {
     isFavorite: asBoolean(data.favorite || data.isFavorite),
     lastInteractionAt: data.lastInteractionAt ? dateValueToIso(data.lastInteractionAt) : undefined,
     connectionStrength: asNumber(data.connectionStrength, 50),
+    uid: profile.id,
+    username: profile.username || "",
+    displayName: profile.fullName || "Membre Velora",
+    photoURL: profile.avatarUrl || "",
+    status: data.status || "accepted",
   };
 }
 
 function normalizeNetworkDoc(id: string, data: DocumentData): VeloraConnection {
+  const profile = normalizeProfile(data.id || id, data);
+
   return {
     id,
-    profile: normalizeProfile(data.id || id, data),
+    profile,
     method: (data.method || "link") as ConnectionMethod,
-    userId: "",
-    connectedUserId: data.id || id,
+    userId: asString(data.userId),
+    connectedUserId: asString(data.connectedUserId || data.id || id),
     connectionType: undefined,
     contextLabel: "",
     introducedBy: "",
@@ -556,6 +565,11 @@ function normalizeNetworkDoc(id: string, data: DocumentData): VeloraConnection {
     isFavorite: asBoolean(data.favorite || data.isFavorite),
     lastInteractionAt: data.lastInteractionAt ? dateValueToIso(data.lastInteractionAt) : undefined,
     connectionStrength: asNumber(data.connectionStrength, 72),
+    uid: profile.id,
+    username: profile.username || "",
+    displayName: profile.fullName || "Membre Velora",
+    photoURL: profile.avatarUrl || "",
+    status: data.status || "accepted",
   };
 }
 
@@ -1097,6 +1111,9 @@ export function onConnectionsChange(
 
   let subConnections: VeloraConnection[] = [];
   let legacyConnections: VeloraConnection[] = [];
+  // Track which queries have fired at least once so we don't block on a failing query
+  let subFired = false;
+  let legacyFired = false;
 
   const triggerCallback = () => {
     const seen = new Set<string>();
@@ -1114,23 +1131,45 @@ export function onConnectionsChange(
         merged.push(conn);
       }
     }
+
+    console.info(
+      `[Network] uid=${uid} subDocs=${subConnections.length} legacyDocs=${legacyConnections.length} merged=${merged.length}`
+    );
+    console.info(
+      `[Network:merged] uid=${uid} mergedDocs:`,
+      merged.map(c => ({ id: c.id, userId: c.userId, connectedUserId: c.connectedUserId, profileId: c.profile.id }))
+    );
     callback(merged);
   };
 
   const unsubSub = onSnapshot(qSub, (snap) => {
+    subFired = true;
     subConnections = snap.docs.map((d) => normalizeNetworkDoc(d.id, d.data()));
+    console.info(`[Network:sub] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
     triggerCallback();
   }, (error) => {
-    console.error(`[Firestore Error] Sub-connections listener failed for UID: ${uid}`, error);
+    subFired = true; // treat error as "fired" so we don't block forever
+    console.error(`[Network:sub] Listener failed uid=${uid}`, error);
+    // Still call triggerCallback so legacy results render if available
+    triggerCallback();
     onError?.(error);
   });
 
   const unsubLegacy = onSnapshot(qLegacy, (snap) => {
+    legacyFired = true;
     legacyConnections = snap.docs.map((d) => normalizeConnection(d.id, d.data()));
+    console.info(`[Network:legacy] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
     triggerCallback();
   }, (error) => {
-    console.error(`[Firestore Error] Legacy connections listener failed for UID: ${uid}`, error);
+    legacyFired = true; // treat error as "fired"
+    console.error(`[Network:legacy] Listener failed uid=${uid}`, error);
+    // Still surface sub-collection results even if legacy query fails
+    triggerCallback();
   });
+
+  // Suppress unused-variable lint warning
+  void subFired;
+  void legacyFired;
 
   return () => {
     unsubSub();
@@ -1140,32 +1179,126 @@ export function onConnectionsChange(
 
 export async function addConnectionToNetwork(
   currentUserId: string,
-  viewedProfile: VeloraProfile
+  viewedProfile: VeloraProfile,
+  currentUserProfile?: VeloraProfile
 ): Promise<void> {
   if (currentUserId === viewedProfile.id) {
     throw new Error("Cannot connect to yourself");
   }
 
+  let userProfile = currentUserProfile;
+  if (!userProfile) {
+    const fetchedProfile = await getProfile(currentUserId);
+    if (!fetchedProfile) {
+      throw new Error("Current user profile not found");
+    }
+    userProfile = fetchedProfile;
+  }
+
   const batch = writeBatch(db);
 
-  // 1. Add connection in current user's sub-collection
-  const currentUserDocRef = doc(db, "users", currentUserId, "network", viewedProfile.id);
-  batch.set(currentUserDocRef, {
+  // Shared profile snapshots (only fields needed for display)
+  const receiverSnap = {
     id: viewedProfile.id,
     fullName: viewedProfile.fullName,
-    title: viewedProfile.title || "",
-    avatarUrl: viewedProfile.avatarUrl || "",
-    skills: viewedProfile.skills || [],
+    avatarUrl: viewedProfile.avatarUrl || null,
+    title: viewedProfile.title || null,
+    company: viewedProfile.company || null,
     professionalMode: viewedProfile.professionalMode || "entrepreneur",
-    isVerified: !!viewedProfile.isVerified,
-    isPremium: !!viewedProfile.isPremium,
     username: viewedProfile.username || "",
-    status: "connected",
+  };
+
+  const senderSnap = {
+    id: userProfile.id,
+    fullName: userProfile.fullName,
+    avatarUrl: userProfile.avatarUrl || null,
+    title: userProfile.title || null,
+    company: userProfile.company || null,
+    professionalMode: userProfile.professionalMode || "entrepreneur",
+    username: userProfile.username || "",
+  };
+
+  // 1. Write bidirectional documents to the top-level `connections` collection
+  batch.set(doc(db, "connections", `${currentUserId}_${viewedProfile.id}`), {
+    userId: currentUserId,
+    connectedUserId: viewedProfile.id,
+    status: "accepted",
+    connectedProfile: receiverSnap,
+    method: "link",
+    personalNote: "",
+    tags: [],
+    event: "",
+    locationName: "",
+    followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionType: viewedProfile.professionalMode === "dentist" ? "Dentist" : "Business",
+    connectionStrength: 72,
+    favorite: false,
+  });
+
+  batch.set(doc(db, "connections", `${viewedProfile.id}_${currentUserId}`), {
+    userId: viewedProfile.id,
+    connectedUserId: currentUserId,
+    status: "accepted",
+    connectedProfile: senderSnap,
+    method: "link",
+    personalNote: "",
+    tags: [],
+    event: "",
+    locationName: "",
+    followUpSent: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionType: userProfile.professionalMode === "dentist" ? "Dentist" : "Business",
+    connectionStrength: 72,
+    favorite: false,
+  });
+
+  // 2. Write bidirectional documents to the subcollection `network`
+  batch.set(doc(db, "users", currentUserId, "network", viewedProfile.id), {
+    ...receiverSnap,
+    userId: currentUserId,
+    connectedUserId: viewedProfile.id,
+    status: "accepted",
+    method: "link",
+    personalNote: "",
+    tags: [],
+    event: "",
+    locationName: "",
+    followUpSent: false,
+    favorite: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionStrength: 72,
+  });
+
+  batch.set(doc(db, "users", viewedProfile.id, "network", currentUserId), {
+    ...senderSnap,
+    userId: viewedProfile.id,
+    connectedUserId: currentUserId,
+    status: "accepted",
+    method: "link",
+    personalNote: "",
+    tags: [],
+    event: "",
+    locationName: "",
+    followUpSent: false,
+    favorite: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionStrength: 72,
   });
 
   await batch.commit();
+
+  console.info(
+    `[Network:add] ✓ Committed bidirectional connections & network subcollections for currentUserId=${currentUserId} viewedProfileId=${viewedProfile.id}`
+  );
 }
 
 export async function createConnection(data: {
@@ -1459,6 +1592,13 @@ export async function sendContactRequest(params: {
     tags = [],
   } = params;
 
+  if (!auth.currentUser) {
+    throw new Error("Authentication required");
+  }
+  if (auth.currentUser.uid !== senderId) {
+    throw new Error("Unauthorized sender ID");
+  }
+
   if (senderId === receiverId) {
     throw new Error("Cannot connect to yourself");
   }
@@ -1466,6 +1606,18 @@ export async function sendContactRequest(params: {
   const statusCheck = await getRelationshipStatus(senderId, receiverId);
   if (statusCheck.status === "blocked" || statusCheck.status === "blocked_by") {
     throw new Error("Unable to connect due to block status");
+  }
+  if (statusCheck.status === "connected") {
+    throw new Error("Already connected with this user");
+  }
+  if (statusCheck.status === "pending_sent") {
+    throw new Error("Contact request already pending");
+  }
+  if (statusCheck.status === "pending_received") {
+    throw new Error("You have an incoming contact request from this user");
+  }
+  if (statusCheck.status !== "none") {
+    throw new Error(`Cannot send contact request (status: ${statusCheck.status})`);
   }
 
   const requestRef = doc(db, "contact_requests", `${senderId}_${receiverId}`);
@@ -1527,25 +1679,53 @@ export async function acceptContactRequest(
   const requestSnap = await getDoc(requestRef);
   const requestData = requestSnap.exists() ? requestSnap.data() : {};
 
+  const method = (requestData.method as string) || "link";
+  const personalNote = (requestData.personalNote as string) || "";
+  const tags = Array.isArray(requestData.tags) ? requestData.tags : [];
+  const event = (requestData.event as string) || "";
+  const locationName = (requestData.locationName as string) || "";
+
+  console.info(
+    `[Network:accept] senderId=${senderId} receiverId=${receiverId} method=${method}`
+  );
+
+  // 1. Mark the contact request as accepted
   await setDoc(requestRef, { status: "accepted", updatedAt: serverTimestamp() }, { merge: true });
 
-  await setDoc(doc(db, "connections", `${senderId}_${receiverId}`), {
+  // Shared profile snapshots (only fields needed for display)
+  const receiverSnap = {
+    id: receiverProfile.id,
+    fullName: receiverProfile.fullName,
+    avatarUrl: receiverProfile.avatarUrl || null,
+    title: receiverProfile.title || null,
+    company: receiverProfile.company || null,
+    professionalMode: receiverProfile.professionalMode || "entrepreneur",
+    username: receiverProfile.username,
+  };
+  const senderSnap = {
+    id: senderProfile.id,
+    fullName: senderProfile.fullName,
+    avatarUrl: senderProfile.avatarUrl || null,
+    title: senderProfile.title || null,
+    company: senderProfile.company || null,
+    professionalMode: senderProfile.professionalMode || "entrepreneur",
+    username: senderProfile.username,
+  };
+
+  // 2. Write bidirectional documents to the top-level `connections` collection
+  //    (used by getRelationshipStatus and the legacy listener in onConnectionsChange)
+  const batch = writeBatch(db);
+
+  batch.set(doc(db, "connections", `${senderId}_${receiverId}`), {
     userId: senderId,
     connectedUserId: receiverId,
-    connectedProfile: {
-      id: receiverProfile.id,
-      fullName: receiverProfile.fullName,
-      avatarUrl: receiverProfile.avatarUrl || null,
-      title: receiverProfile.title || null,
-      company: receiverProfile.company || null,
-      professionalMode: receiverProfile.professionalMode || "entrepreneur",
-      username: receiverProfile.username,
-    },
-    method: requestData.method || "link",
-    personalNote: requestData.personalNote || "",
-    tags: requestData.tags || [],
-    event: requestData.event || "",
-    locationName: requestData.locationName || "",
+    status: "accepted",
+    connectedProfile: receiverSnap,
+    method,
+    personalNote,
+    tags,
+    event,
+    locationName,
     followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
@@ -1555,23 +1735,16 @@ export async function acceptContactRequest(
     favorite: false,
   });
 
-  await setDoc(doc(db, "connections", `${receiverId}_${senderId}`), {
+  batch.set(doc(db, "connections", `${receiverId}_${senderId}`), {
     userId: receiverId,
     connectedUserId: senderId,
-    connectedProfile: {
-      id: senderProfile.id,
-      fullName: senderProfile.fullName,
-      avatarUrl: senderProfile.avatarUrl || null,
-      title: senderProfile.title || null,
-      company: senderProfile.company || null,
-      professionalMode: senderProfile.professionalMode || "entrepreneur",
-      username: senderProfile.username,
-    },
-    method: requestData.method || "link",
-    personalNote: requestData.personalNote || "",
-    tags: requestData.tags || [],
-    event: requestData.event || "",
-    locationName: requestData.locationName || "",
+    status: "accepted",
+    connectedProfile: senderSnap,
+    method,
+    personalNote,
+    tags,
+    event,
+    locationName,
     followUpSent: false,
     metAt: serverTimestamp(),
     createdAt: serverTimestamp(),
@@ -1581,6 +1754,54 @@ export async function acceptContactRequest(
     favorite: false,
   });
 
+  // 3. *** THE CRITICAL FIX ***
+  //    Write into each user's `network` subcollection so onConnectionsChange
+  //    (which prioritises users/{uid}/network) returns the connection immediately.
+  //    Without this, the sub-collection listener fires with 0 docs while the legacy
+  //    query may still be loading — resulting in "0 membres" in Mon Réseau.
+  batch.set(doc(db, "users", senderId, "network", receiverId), {
+    ...receiverSnap,
+    userId: senderId,
+    connectedUserId: receiverId,
+    status: "accepted",
+    method,
+    personalNote,
+    tags,
+    event,
+    locationName,
+    followUpSent: false,
+    favorite: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionStrength: 72,
+  });
+
+  batch.set(doc(db, "users", receiverId, "network", senderId), {
+    ...senderSnap,
+    userId: receiverId,
+    connectedUserId: senderId,
+    status: "accepted",
+    method,
+    personalNote,
+    tags,
+    event,
+    locationName,
+    followUpSent: false,
+    favorite: false,
+    metAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    lastInteractionAt: serverTimestamp(),
+    connectionStrength: 72,
+  });
+
+  await batch.commit();
+
+  console.info(
+    `[Network:accept] ✓ Committed connections & network subcollections for senderId=${senderId} receiverId=${receiverId}`
+  );
+
+  // 4. Notification for the original sender (person whose request was accepted)
   await addDoc(collection(db, "notifications"), {
     userId: senderId,
     senderId: receiverId,

@@ -106,9 +106,10 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
-      // Network subcollection - owner only
+      // Network subcollection - owner or the contact being added/removed
       match /network/{contactId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) || isOwner(contactId);
       }
 
       // Portfolio subcollection - owner only
@@ -129,11 +130,15 @@ service cloud.firestore {
       allow read: if signedIn()
                   && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
-                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.userId == request.auth.uid || request.resource.data.connectedUserId == request.auth.uid)
                     && request.resource.data.userId != request.resource.data.connectedUserId
                     && connectionIdMatchesOwnerPair(connectionId);
-      allow update, delete: if signedIn()
-                            && resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId
+                    && request.resource.data.connectedUserId == resource.data.connectedUserId;
+      allow delete: if signedIn()
+                    && (resource.data.userId == request.auth.uid || resource.data.connectedUserId == request.auth.uid);
     }
 
     // Optional owner-only private notes collection for future scaling.
@@ -152,10 +157,22 @@ service cloud.firestore {
                       || resource.data.receiverId == request.auth.uid);
       allow create: if signedIn()
                     && request.resource.data.senderId == request.auth.uid
-                    && request.resource.data.senderId != request.resource.data.receiverId;
+                    && request.resource.data.senderId != request.resource.data.receiverId
+                    && requestId == request.resource.data.senderId + "_" + request.resource.data.receiverId;
       allow update: if signedIn()
-                    && (resource.data.senderId == request.auth.uid
-                        || resource.data.receiverId == request.auth.uid);
+                    && (
+                      // Receiver can only accept/decline (updates status and updatedAt only)
+                      (resource.data.receiverId == request.auth.uid
+                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+                      )
+                      ||
+                      // Sender can modify their request details, but cannot accept it themselves
+                      (resource.data.senderId == request.auth.uid
+                       && request.resource.data.senderId == resource.data.senderId
+                       && request.resource.data.receiverId == resource.data.receiverId
+                       && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"]) || request.resource.data.status != "accepted")
+                      )
+                    );
       allow delete: if signedIn()
                     && (resource.data.senderId == request.auth.uid
                         || resource.data.receiverId == request.auth.uid);
@@ -167,7 +184,8 @@ service cloud.firestore {
                   && resource.data.userId == request.auth.uid;
       allow create: if signedIn()
                     && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.userId != request.resource.data.blockedUserId;
+                    && request.resource.data.userId != request.resource.data.blockedUserId
+                    && blockId == request.resource.data.userId + "_" + request.resource.data.blockedUserId;
       allow delete: if signedIn()
                     && resource.data.userId == request.auth.uid;
     }
@@ -180,7 +198,8 @@ service cloud.firestore {
                     && request.resource.data.userId != request.auth.uid
                     && request.resource.data.senderId == request.auth.uid;
       allow update: if signedIn()
-                    && resource.data.userId == request.auth.uid;
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
       allow delete: if signedIn()
                     && resource.data.userId == request.auth.uid;
     }

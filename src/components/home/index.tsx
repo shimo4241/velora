@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { GlassCard, ProgressRing } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
@@ -87,6 +88,7 @@ const quickActions = [
 
 /* ── Networking Pulse Card ── */
 function NetworkingPulse() {
+  const router = useRouter();
   const { profile, isProfileReady } = useProfile();
   const { connections } = useConnections();
   const { t } = useTranslation(profile?.locale || "fr");
@@ -132,23 +134,42 @@ function NetworkingPulse() {
 
         {/* Latest connection */}
         {recentConnection && (
-          <div className="flex items-center gap-3 p-2.5 rounded-[var(--radius-sm)] bg-velora-surface/30 border border-velora-border/50">
-            <div className="w-9 h-9 rounded-full bg-velora-gold-dim flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-semibold text-velora-gold">
-                {recentConnection.profile?.fullName
-                  ?.split(" ")
-                  ?.map((n) => n[0])
-                  ?.join("") || "U"}
-              </span>
+          <div
+            onClick={() => {
+              const username = recentConnection.username || recentConnection.profile?.username;
+              const uid = recentConnection.uid || recentConnection.profile?.id;
+              if (username) {
+                router.push(`/u/${username}`);
+              } else if (uid) {
+                router.push(`/p/${uid}`);
+              }
+            }}
+            className="flex items-center gap-3 p-2.5 rounded-[var(--radius-sm)] bg-velora-surface/30 border border-velora-border/50 cursor-pointer hover:border-velora-gold/30 hover:bg-white/[0.04] transition-all group"
+          >
+            <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 bg-velora-gold-dim flex items-center justify-center flex-shrink-0 bg-black/40">
+              {recentConnection.profile?.avatarUrl || recentConnection.photoURL ? (
+                <img
+                  src={recentConnection.profile?.avatarUrl || recentConnection.photoURL}
+                  alt=""
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <span className="text-xs font-semibold text-velora-gold">
+                  {recentConnection.profile?.fullName
+                    ?.split(" ")
+                    ?.map((n) => n[0])
+                    ?.join("") || "U"}
+                </span>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-velora-text truncate">
+              <div className="text-xs font-medium text-velora-text truncate group-hover:text-velora-gold transition-colors">
                 {recentConnection.profile?.fullName || "Unknown User"}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <MapPin size={9} className="text-velora-text-muted flex-shrink-0" />
                 <span className="text-[10px] text-velora-text-muted truncate">
-                  {recentConnection.contextLabel}
+                  {recentConnection.contextLabel || "Rencontré récemment"}
                 </span>
               </div>
             </div>
