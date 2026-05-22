@@ -310,7 +310,7 @@ export default function PublicProfileClient({
     let statusReqSent: RelationshipSnapshot = null;
     let statusReqRecv: RelationshipSnapshot = null;
     let statusConn: RelationshipSnapshot = null;
-    let statusSubDoc: any = null;
+    let statusSubDoc: DocumentData | null = null;
 
     function updateState() {
       if (statusSubDoc && (statusSubDoc.status === "connected" || statusSubDoc.status === "accepted")) {
@@ -1178,40 +1178,27 @@ export function IdentityHero({
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-[760px] flex-col justify-center py-6">
         <Reveal className="mx-auto mb-7">
-          <div className="identity-reflective inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-velora-text-secondary backdrop-blur-md">
-            <Sparkles size={12} className="text-[var(--identity-accent)]" />
+          <div className="identity-reflective inline-flex items-center gap-2 rounded-full border border-velora-gold/20 bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-velora-gold backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+            <Sparkles size={12} className="text-velora-gold" />
             VELORA.IDENTITY
           </div>
         </Reveal>
 
         <motion.div
-          className="relative mx-auto mb-7"
+          className="relative mx-auto mb-9 flex items-center justify-center h-[160px] w-[160px]"
           style={{ y: reduceMotion ? undefined : avatarY }}
         >
-          <motion.div
-            aria-hidden
-            className="glow-layer absolute -inset-5 rounded-full bg-[rgba(var(--identity-accent-rgb),0.2)] opacity-70 blur-xl"
-            animate={
-              reduceMotion
-                ? undefined
-                : { scale: [0.94, 1.06, 0.94] }
-            }
-            transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            aria-hidden
-            className="absolute -inset-4 rounded-full border border-[rgba(var(--identity-accent-rgb),0.22)] opacity-35"
-            animate={reduceMotion ? undefined : { scale: [0.96, 1.08, 0.96] }}
-            transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div
-            className="relative h-[132px] w-[132px] rounded-full p-[2px] shadow-[0_28px_100px_rgba(0,0,0,0.72)]"
-            style={{
-              background: `conic-gradient(from 170deg, transparent 0deg, ${theme.accent} 86deg, ${theme.secondary} 162deg, transparent 300deg)`,
-            }}
-          >
-            <div className="h-full w-full rounded-full bg-black p-[5px]">
-              <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10 bg-velora-surface">
+          {/* Animated gold ambient halo */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-velora-gold/20 via-velora-gold-dim/10 to-transparent blur-2xl opacity-75 animate-pulse" />
+          
+          {/* Double pulsing luxury halo rings */}
+          <div className="pulsing-ring animate-breathe" />
+          <div className="pulsing-ring-2" />
+          
+          {/* Conic gold metallic border */}
+          <div className="avatar-gold-border h-[132px] w-[132px] relative z-10">
+            <div className="h-full w-full rounded-full bg-black p-[4px]">
+              <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10 bg-velora-surface shadow-inner">
                 {profile.avatarUrl ? (
                   <OptimizedImage
                     src={profile.avatarUrl}
@@ -1220,7 +1207,7 @@ export function IdentityHero({
                     alt={profile.fullName}
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(var(--identity-accent-rgb),0.22),transparent_48%),#111] font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--identity-accent)]">
+                  <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(196,162,101,0.22),transparent_48%),#111] font-[family-name:var(--font-display)] text-3xl font-semibold text-velora-gold">
                     {getInitials(profile.fullName)}
                   </div>
                 )}
@@ -1230,7 +1217,7 @@ export function IdentityHero({
           </div>
           {profile.isVerified && (
             <motion.div
-              className="absolute bottom-2 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(var(--identity-accent-rgb),0.35)] bg-black/70 text-[var(--identity-accent)] shadow-[0_0_24px_rgba(var(--identity-accent-rgb),0.16)] backdrop-blur-md"
+              className="absolute bottom-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-velora-gold/45 bg-black/85 text-velora-gold shadow-[0_0_24px_rgba(196,162,101,0.35)] backdrop-blur-md"
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.45, delay: 0.42, ease: LUXURY_EASE }}
@@ -1445,28 +1432,48 @@ export function ContactSection({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {contactActions.map((action, index) => {
             const Icon = action.icon;
+            const isWhatsApp = action.key === "whatsapp";
+            const isPrimary = index === 0 || action.key === "phone" || action.key === "call_clinic";
+
+            let cardBgClass = "btn-3d-glass";
+            let iconWrapperClass = "bg-white/5 text-velora-text";
+            let labelClass = "text-velora-text-secondary/70";
+            let valueClass = "text-velora-text";
+
+            if (isWhatsApp) {
+              cardBgClass = "btn-3d-whatsapp text-white";
+              iconWrapperClass = "bg-black/20 text-white";
+              labelClass = "text-white/70";
+              valueClass = "text-white";
+            } else if (isPrimary) {
+              cardBgClass = "btn-3d-identity text-velora-black";
+              iconWrapperClass = "bg-black/10 text-velora-black";
+              labelClass = "text-velora-black/60";
+              valueClass = "text-velora-black font-extrabold";
+            }
+
             return (
               <motion.a
                 key={action.key}
                 href={action.href}
                 target={action.href.startsWith("http") ? "_blank" : undefined}
                 rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="identity-glass-card identity-reflective group flex min-h-[96px] items-center justify-between rounded-[22px] px-4 py-4 text-left"
+                className={`identity-reflective group flex min-h-[96px] items-center justify-between rounded-[22px] px-4 py-4 text-left ${cardBgClass}`}
                 whileHover={{ y: -4, scale: 1.01 }}
                 whileTap={{ scale: 0.985 }}
                 transition={{ duration: 0.28, ease: LUXURY_EASE }}
               >
                 <span>
-                  <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
+                  <span className={`block text-[10px] font-semibold uppercase tracking-[0.16em] ${labelClass}`}>
                     {index === 0 ? t("Primary") || "Primary" : t("Access") || "Access"}
                   </span>
-                  <span className="mt-2 block font-[family-name:var(--font-display)] text-base font-semibold text-velora-text">
+                  <span className={`mt-2 block font-[family-name:var(--font-display)] text-base font-semibold ${valueClass}`}>
                     {t(getTranslationKey(action.key)) || action.label}
                   </span>
                 </span>
                 <span
-                  className="flex h-11 w-11 items-center justify-center rounded-full border bg-black/20 text-[var(--identity-accent)] transition-transform duration-300 group-hover:scale-105"
-                  style={{ borderColor: `rgba(${theme.accentRgb}, 0.24)` }}
+                  className={`flex h-11 w-11 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-105 ${iconWrapperClass}`}
+                  style={{ borderColor: isPrimary ? "rgba(0, 0, 0, 0.15)" : `rgba(${theme.accentRgb}, 0.24)` }}
                 >
                   <Icon size={18} />
                 </span>
@@ -1999,17 +2006,21 @@ function LuxuryActionButtons({ actions, t }: { actions: ContactAction[]; t: (key
       {visible.map((action, index) => {
         const Icon = action.icon;
         const primary = index === 0;
+
+        let buttonClass = "btn-3d-glass";
+        if (action.key === "whatsapp") {
+          buttonClass = "btn-3d-whatsapp";
+        } else if (primary || action.key === "phone" || action.key === "call_clinic") {
+          buttonClass = "btn-3d-identity";
+        }
+
         return (
           <motion.a
             key={action.key}
             href={action.href}
             target={action.href.startsWith("http") ? "_blank" : undefined}
             rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
-            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full border px-4 text-xs sm:text-sm font-semibold backdrop-blur-md ${
-              primary
-                ? "border-[rgba(var(--identity-accent-rgb),0.42)] bg-[rgba(var(--identity-accent-rgb),0.16)] text-[var(--identity-accent)]"
-                : "border-white/10 bg-white/[0.045] text-velora-text-secondary"
-            }`}
+            className={`identity-reflective flex h-12 items-center justify-center gap-2 rounded-full px-4 text-xs sm:text-sm font-semibold transition-all duration-200 ${buttonClass}`}
             whileHover={{ y: -2, scale: 1.01 }}
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.25, ease: LUXURY_EASE }}
@@ -2031,8 +2042,8 @@ function LuxuryBadge({
   icon?: LucideIcon;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(var(--identity-accent-rgb),0.24)] bg-[rgba(var(--identity-accent-rgb),0.08)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--identity-accent)]">
-      {Icon && <Icon size={11} />}
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-velora-gold/30 bg-gradient-to-r from-velora-card to-velora-elevated px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-velora-gold shadow-[0_2px_8px_rgba(0,0,0,0.4)] backdrop-blur-md">
+      {Icon && <Icon size={11} className="text-velora-gold" />}
       {children}
     </span>
   );

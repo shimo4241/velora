@@ -282,7 +282,7 @@ export function LiveEventInsights() {
             className="text-[10px]"
             style={{ color: "var(--color-velora-text-muted)" }}
           >
-            You're checked in at VeloraTech Summit 2025
+            You&apos;re checked in at VeloraTech Summit 2025
           </div>
         </div>
       </motion.div>

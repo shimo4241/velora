@@ -6,16 +6,11 @@ import {
   User,
   Share2,
   Radio,
-  TrendingUp,
+  Calendar,
 } from "lucide-react";
 import type { AppTab } from "@/types";
 
-/* ═══════════════════════════════════════════════════
-   VELORA — Bottom Navigation
-   
-   Glassmorphic tab bar with animated active indicator.
-   Uses layoutId for fluid tab switching.
-   ═══════════════════════════════════════════════════ */
+/* ─── VELORA — Bottom Navigation ─── */
 
 interface BottomNavProps {
   activeTab: AppTab;
@@ -27,7 +22,7 @@ const tabs: { id: AppTab; icon: typeof Home; label: string }[] = [
   { id: "identity", icon: User, label: "Identité" },
   { id: "share", icon: Share2, label: "Partager" },
   { id: "discover", icon: Radio, label: "Découvrir" },
-  { id: "insights", icon: TrendingUp, label: "Insights" },
+  { id: "agenda", icon: Calendar, label: "Agenda" },
 ];
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
@@ -42,8 +37,9 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             <motion.button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[56px]"
-              whileTap={{ scale: 0.92 }}
+              className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl min-w-[56px]"
+              whileTap={{ scale: 0.94 }}
+              whileHover={{ scale: isActive ? 1 : 1.05 }}
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
             >
@@ -51,27 +47,27 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               {isActive && (
                 <motion.div
                   layoutId="nav-active"
-                  className="absolute inset-0 bg-velora-gold-dim rounded-xl border border-velora-gold/20"
+                  className="absolute inset-0 bg-gradient-to-b from-[rgba(196,162,101,0.15)] to-[rgba(196,162,101,0.02)] rounded-xl border border-velora-gold/30 shadow-[0_0_15px_rgba(196,162,101,0.15)]"
                   transition={{
-                    type: "tween",
-                    duration: 0.3,
-                    ease: [0.16, 1, 0.3, 1],
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 30,
                   }}
                 />
               )}
 
               <Icon
                 size={20}
-                className={`relative z-10 transition-colors duration-300 ${
+                className={`relative z-10 transition-all duration-300 ${
                   isActive
-                    ? "text-velora-gold"
-                    : "text-velora-text-muted"
+                    ? "text-velora-gold scale-110 drop-shadow-[0_0_10px_rgba(196,162,101,0.6)]"
+                    : "text-velora-text-muted hover:text-velora-text"
                 }`}
               />
               <span
-                className={`relative z-10 text-[9px] font-medium transition-colors duration-300 ${
+                className={`relative z-10 text-[9px] font-bold tracking-wide transition-all duration-300 ${
                   isActive
-                    ? "text-velora-gold"
+                    ? "text-velora-gold font-bold scale-105"
                     : "text-velora-text-muted"
                 }`}
               >

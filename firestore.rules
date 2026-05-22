@@ -218,5 +218,40 @@ service cloud.firestore {
                   && resource.data.userId == request.auth.uid;
       allow create: if signedIn();
     }
+
+    // Events — public read, admin/backend write only
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // Event Attendees — public read, owner write
+    match /event_attendees/{attendeeId} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && attendeeId == request.resource.data.eventId + "_" + request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.userId == request.auth.uid;
+      allow delete: if signedIn()
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // Event Check-ins
+    match /event_checkins/{checkinId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Event Interests (lightweight)
+    match /event_interests/{interestId} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn()
+                    && request.resource.data.userId == request.auth.uid;
+    }
   }
 }

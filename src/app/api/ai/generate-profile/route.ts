@@ -92,10 +92,11 @@ Réponds obligatoirement sous la forme d'un objet JSON valide contenant uniqueme
     const parsedJson = JSON.parse(responseText.trim());
     return NextResponse.json(parsedJson);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("[AI Profile Generation Error]", error);
+    const message = error instanceof Error ? error.message : "Failed to generate profile";
     return NextResponse.json(
-      { error: error.message || "Failed to generate profile" },
+      { error: message },
       { status: 500 }
     );
   }

@@ -49,7 +49,7 @@ interface GoldButtonProps {
   onClick?: () => void;
   fullWidth?: boolean;
   size?: "sm" | "md" | "lg";
-  variant?: "solid" | "outline";
+  variant?: "solid" | "outline" | "glass" | "whatsapp" | "identity";
   className?: string;
   disabled?: boolean;
 }
@@ -69,15 +69,18 @@ export function GoldButton({
     lg: "px-8 py-4 text-sm gap-2",
   };
 
-  const variantStyles =
-    variant === "solid"
-      ? "gold-gradient text-velora-black font-semibold"
-      : "border border-velora-gold/30 text-velora-gold bg-transparent";
+  const variantStyles = {
+    solid: "btn-3d-primary text-velora-black",
+    outline: "btn-3d-outline text-velora-gold",
+    glass: "btn-3d-glass text-velora-text",
+    whatsapp: "btn-3d-whatsapp text-white",
+    identity: "btn-3d-identity text-velora-black",
+  }[variant] || "btn-3d-primary text-velora-black";
 
   return (
     <motion.button
       onClick={disabled ? undefined : onClick}
-      whileTap={disabled ? undefined : { scale: 0.97 }}
+      whileTap={disabled ? undefined : { scale: 0.96 }}
       disabled={disabled}
       className={`
         inline-flex items-center justify-center
@@ -149,14 +152,29 @@ export function ProgressRing({
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+      <svg width={size} height={size} className="-rotate-90 overflow-visible">
+        <defs>
+          <linearGradient id="goldGradientRing" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#cfac62" />
+            <stop offset="30%" stopColor="#edd69b" />
+            <stop offset="70%" stopColor="#b88c3a" />
+            <stop offset="100%" stopColor="#edd69b" />
+          </linearGradient>
+          <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         {/* Track */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--color-velora-border)"
+          stroke="rgba(255, 255, 255, 0.08)"
           strokeWidth={strokeWidth}
         />
         {/* Progress */}
@@ -165,7 +183,8 @@ export function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--color-velora-gold)"
+          stroke="url(#goldGradientRing)"
+          filter="url(#goldGlow)"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -180,7 +199,7 @@ export function ProgressRing({
       </svg>
       {/* Center text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-data text-xs text-velora-gold">{progress}%</span>
+        <span className="text-gold-gradient text-xs font-bold text-data block">{progress}%</span>
       </div>
     </div>
   );

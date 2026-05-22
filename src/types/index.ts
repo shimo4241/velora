@@ -101,6 +101,7 @@ export interface VeloraProfile {
   isVerified: boolean;
   isPremium: boolean;
   isNoir: boolean;
+  isDemo?: boolean;
   locale: "fr" | "en" | "ar" | "es";
   onboarding?: VeloraOnboardingState;
 
@@ -256,7 +257,7 @@ export interface DailyStats {
 
 /* ── App State ── */
 export type AppPhase = "splash" | "onboarding" | "app";
-export type AppTab = "home" | "identity" | "share" | "discover" | "insights";
+export type AppTab = "home" | "identity" | "share" | "discover" | "agenda";
 
 /* ── Motion Variants ── */
 export interface MotionConfig {
@@ -273,3 +274,95 @@ export interface OnboardingSlide {
   descriptionKey: string;
   gradient: string;
 }
+
+/* ═══════════════════════════════════════════════════
+   VELORA — Events / Agenda System
+   ═══════════════════════════════════════════════════ */
+
+/* ── Event Categories ── */
+export type EventCategory =
+  | "festival"
+  | "congress"
+  | "exposition"
+  | "networking"
+  | "startup"
+  | "portes-ouvertes"
+  | "concert"
+  | "business-summit"
+  | "tech-conference"
+  | "art-fashion"
+  | "medical-dental"
+  | "nightlife-vip";
+
+/* ── Event Status ── */
+export type EventStatus = "upcoming" | "live" | "starting-soon" | "sold-out" | "ended";
+
+/* ── Event Speaker ── */
+export interface EventSpeaker {
+  name: string;
+  title: string;
+  avatarUrl?: string;
+}
+
+/* ── Event ── */
+export interface VeloraEvent {
+  id: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  imageUrl: string;
+  galleryUrls: string[];
+  date: string;
+  endDate?: string;
+  city: string;
+  venue: string;
+  lat: number;
+  lng: number;
+  organizer: string;
+  organizerAvatarUrl?: string;
+  speakers: EventSpeaker[];
+  status: EventStatus;
+  capacity?: number;
+  attendeesCount: number;
+  interestedCount: number;
+  isFeatured: boolean;
+  isSponsored: boolean;
+  tags: string[];
+  ticketUrl?: string;
+  price?: string;
+  mapsUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  isApproved: boolean;
+  moderationNote?: string;
+  /** Computed at runtime — not stored in Firestore */
+  distance?: number;
+}
+
+/* ── Event Attendee ── */
+export interface EventAttendee {
+  id: string;
+  eventId: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  userTitle: string;
+  professionalMode: ProfessionalMode;
+  status: "going" | "interested";
+  checkedIn: boolean;
+  checkedInAt?: string;
+  createdAt: string;
+  userUsername?: string;
+}
+
+/* ── Event Check-in ── */
+export interface EventCheckin {
+  id: string;
+  eventId: string;
+  userId: string;
+  method: "qr" | "nfc" | "manual";
+  timestamp: string;
+}
+
+/* ── Agenda Filter Tabs ── */
+export type AgendaFilter = "today" | "this-week" | "this-month" | "nearby" | "trending";

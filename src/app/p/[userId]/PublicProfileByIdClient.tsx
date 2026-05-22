@@ -7,8 +7,8 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
-import { motion } from "framer-motion";
-import { Shield, Sparkles, UserCheck, MapPin, Briefcase, Globe, ArrowLeft, Star } from "lucide-react";
+
+import { Shield, Sparkles, UserCheck, MapPin, Briefcase, ArrowLeft, Star } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 
 interface PublicProfileByIdClientProps {
@@ -30,12 +30,15 @@ export default function PublicProfileByIdClient({
   const [loadingConnection, setLoadingConnection] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
+  const [lastUid, setLastUid] = useState<string | undefined>(user?.uid);
+  if (user?.uid !== lastUid) {
+    setLastUid(user?.uid);
+    setLoadingConnection(true);
+    setIsConnected(false);
+  }
+
   useEffect(() => {
-    if (!isAuthReady) return;
-    if (!user) {
-      setLoadingConnection(false);
-      return;
-    }
+    if (!isAuthReady || !user) return;
 
     const docRef = doc(db, "users", user.uid, "network", profile.id);
     const unsub = onSnapshot(
@@ -100,13 +103,15 @@ export default function PublicProfileByIdClient({
     }
   };
 
+  const showLoading = !isAuthReady || (user ? loadingConnection : false);
   const isSelf = user?.uid === profile.id;
 
   return (
-    <div className="min-h-screen bg-velora-black text-velora-text pb-24 relative overflow-x-hidden safe-bottom">
-      {/* Background Glowing Orbs */}
-      <div className="absolute top-[-10%] left-[-20%] w-[80vw] h-[80vw] rounded-full bg-[rgba(var(--identity-accent-rgb),0.03)] blur-[120px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[-20%] w-[70vw] h-[70vw] rounded-full bg-[rgba(var(--identity-secondary-rgb),0.02)] blur-[100px] pointer-events-none" />
+    <div className="min-h-screen luxury-background text-velora-text pb-24 relative overflow-x-hidden safe-bottom">
+      {/* Background System */}
+      <div className="gold-ambient animate-breathe" />
+      <div className="cinematic-overlay" />
+      <div className="premium-vignette" />
 
       {/* Header Bar */}
       <header className="relative z-10 px-4 py-4 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md">
@@ -126,28 +131,41 @@ export default function PublicProfileByIdClient({
       {/* Profile Details Container */}
       <main className="max-w-xl mx-auto px-4 mt-8 relative z-10">
         {/* Profile Card */}
-        <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03] p-6 text-center shadow-[0_24px_76px_rgba(0,0,0,0.5)] backdrop-blur-md">
+        <div className="relative overflow-hidden rounded-[28px] glass-strong p-6 text-center">
           {/* Accent glow line */}
-          <div className="absolute inset-x-8 -top-16 h-32 rounded-full bg-[rgba(var(--identity-accent-rgb),0.1)] blur-xl pointer-events-none" />
+          <div className="absolute inset-x-8 -top-16 h-32 rounded-full bg-velora-gold/10 blur-xl pointer-events-none" />
 
           {/* Avatar Area */}
-          <div className="relative mx-auto w-24 h-24 mb-4">
-            <div className="w-full h-full rounded-full overflow-hidden border-2 border-velora-gold/30 p-1 bg-black/40">
-              {profile.avatarUrl ? (
-                <OptimizedImage
-                  src={profile.avatarUrl}
-                  type="avatar"
-                  alt={profile.fullName}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-velora-gold text-2xl font-bold uppercase">
-                  {profile.fullName?.charAt(0) || "V"}
+          <div className="relative mx-auto mb-6 flex items-center justify-center h-[120px] w-[120px]">
+            {/* Animated gold ambient halo */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-velora-gold/20 via-velora-gold-dim/10 to-transparent blur-xl opacity-75 animate-pulse" />
+            
+            {/* Double pulsing luxury halo rings */}
+            <div className="pulsing-ring animate-breathe" />
+            <div className="pulsing-ring-2" />
+            
+            {/* Conic gold metallic border */}
+            <div className="avatar-gold-border h-[100px] w-[100px] relative z-10">
+              <div className="h-full w-full rounded-full bg-black p-[3px]">
+                <div className="relative h-full w-full overflow-hidden rounded-full border border-white/10 bg-velora-surface shadow-inner">
+                  {profile.avatarUrl ? (
+                    <OptimizedImage
+                      src={profile.avatarUrl}
+                      type="avatar"
+                      className="h-full w-full"
+                      alt={profile.fullName}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(196,162,101,0.22),transparent_48%),#111] font-[family-name:var(--font-display)] text-2xl font-semibold text-velora-gold uppercase">
+                      {profile.fullName?.charAt(0) || "V"}
+                    </div>
+                  )}
+                  <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(135deg,rgba(255,255,255,0.18),transparent_42%)]" />
                 </div>
-              )}
+              </div>
             </div>
             {profile.isVerified && (
-              <div className="absolute bottom-0 right-0 w-7 h-7 bg-black rounded-full border border-velora-gold/40 flex items-center justify-center text-velora-gold shadow-md">
+              <div className="absolute bottom-1 right-1 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-velora-gold/45 bg-black/85 text-velora-gold shadow-[0_0_12px_rgba(196,162,101,0.35)] backdrop-blur-md">
                 <Shield size={12} fill="currentColor" />
               </div>
             )}
@@ -155,10 +173,10 @@ export default function PublicProfileByIdClient({
 
           {/* User Info */}
           <div className="space-y-1 mb-4">
-            <h1 className="text-2xl font-bold text-velora-text tracking-tight flex items-center justify-center gap-1.5">
-              {profile.fullName}
+            <h1 className="text-2xl font-bold tracking-tight flex items-center justify-center gap-1.5">
+              <span className="text-gold-gradient">{profile.fullName}</span>
               {profile.isPremium && (
-                <Star size={16} className="text-velora-gold fill-velora-gold" />
+                <Star size={16} className="text-velora-gold fill-velora-gold filter drop-shadow-[0_0_8px_rgba(196,162,101,0.5)]" />
               )}
             </h1>
             <p className="text-xs uppercase tracking-widest text-velora-gold font-semibold">
@@ -183,16 +201,14 @@ export default function PublicProfileByIdClient({
 
           {/* Connection CTA Button */}
           <div className="mt-6 flex justify-center">
-            {!isAuthReady ? (
+            {showLoading ? (
               <div className="w-full max-w-[280px] h-[46px] rounded-full bg-white/5 animate-pulse border border-white/5" />
             ) : isSelf ? (
               <div className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-velora-text-muted">
                 Votre profil public
               </div>
-            ) : loadingConnection ? (
-              <div className="w-full max-w-[280px] h-[46px] rounded-full bg-white/5 animate-pulse border border-white/5" />
             ) : isConnected ? (
-              <div className="w-full max-w-[280px] rounded-full border border-velora-gold/30 bg-velora-gold/10 py-3 text-xs font-semibold text-velora-gold flex items-center justify-center gap-1.5">
+              <div className="btn-3d-glass w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-gold flex items-center justify-center gap-1.5">
                 <UserCheck size={14} />
                 Connecté
               </div>
@@ -200,10 +216,7 @@ export default function PublicProfileByIdClient({
               <button
                 onClick={handleConnect}
                 disabled={actionLoading}
-                style={{
-                  background: "linear-gradient(135deg, #DFBA6B, #C29B47)"
-                }}
-                className="w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black shadow-lg shadow-[rgba(223,186,107,0.2)] hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-1.5"
+                className="btn-3d-primary w-full max-w-[280px] rounded-full py-3 text-xs font-semibold text-velora-black flex items-center justify-center gap-1.5"
               >
                 {actionLoading ? (
                   <span className="animate-spin text-velora-black">●</span>
@@ -218,9 +231,9 @@ export default function PublicProfileByIdClient({
 
         {/* Bio Section */}
         {profile.bio && (
-          <div className="mt-6 overflow-hidden rounded-[20px] border border-white/5 bg-white/[0.02] p-5 backdrop-blur-md">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-velora-gold mb-2.5">
-              Biographie
+          <div className="mt-6 overflow-hidden rounded-[20px] glass-strong p-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-2.5">
+              <span className="text-gold-gradient">Biographie</span>
             </h3>
             <p className="text-sm leading-relaxed text-velora-text-secondary whitespace-pre-line">
               {profile.bio}
@@ -230,9 +243,9 @@ export default function PublicProfileByIdClient({
 
         {/* Skills Section */}
         {profile.skills && profile.skills.length > 0 && (
-          <div className="mt-6 overflow-hidden rounded-[20px] border border-white/5 bg-white/[0.02] p-5 backdrop-blur-md">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-velora-gold mb-3.5">
-              Compétences
+          <div className="mt-6 overflow-hidden rounded-[20px] glass-strong p-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-3.5">
+              <span className="text-gold-gradient">Compétences</span>
             </h3>
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill) => (
@@ -249,9 +262,9 @@ export default function PublicProfileByIdClient({
 
         {/* Experience Section */}
         {experience && experience.length > 0 && (
-          <div className="mt-6 overflow-hidden rounded-[20px] border border-white/5 bg-white/[0.02] p-5 backdrop-blur-md">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-velora-gold mb-4">
-              Expérience
+          <div className="mt-6 overflow-hidden rounded-[20px] glass-strong p-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-4">
+              <span className="text-gold-gradient">Expérience</span>
             </h3>
             <div className="space-y-4">
               {experience.map((exp) => (
@@ -274,13 +287,13 @@ export default function PublicProfileByIdClient({
 
         {/* Portfolio Section */}
         {portfolio && portfolio.length > 0 && (
-          <div className="mt-6 overflow-hidden rounded-[20px] border border-white/5 bg-white/[0.02] p-5 backdrop-blur-md">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-velora-gold mb-4">
-              Réalisations
+          <div className="mt-6 overflow-hidden rounded-[20px] glass-strong p-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-4">
+              <span className="text-gold-gradient">Réalisations</span>
             </h3>
             <div className="grid grid-cols-1 gap-4">
               {portfolio.map((item) => (
-                <div key={item.id} className="group relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-velora-gold/30 transition-all">
+                <div key={item.id} className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-velora-gold/30 transition-all shadow-md">
                   {item.imageUrl && (
                     <div className="aspect-video w-full rounded-lg overflow-hidden mb-3 bg-black/40 relative">
                       <OptimizedImage

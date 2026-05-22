@@ -33,9 +33,9 @@ const DiscoverScreen = dynamic(
   { loading: () => <LoadingScreen message="Loading discover..." /> }
 );
 
-const AnalyticsScreen = dynamic(
-  () => import("@/components/screens/AnalyticsScreen").then((mod) => mod.AnalyticsScreen),
-  { loading: () => <LoadingScreen message="Loading insights..." /> }
+const AgendaScreen = dynamic(
+  () => import("@/components/screens/AgendaScreen").then((mod) => mod.AgendaScreen),
+  { loading: () => <LoadingScreen message="Loading agenda..." /> }
 );
 
 function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => React.JSX.Element> {
@@ -44,7 +44,7 @@ function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => Re
     identity: () => <ProfileScreen />,
     share: () => <ShareScreen />,
     discover: () => <DiscoverScreen />,
-    insights: () => <AnalyticsScreen />,
+    agenda: () => <AgendaScreen />,
   };
 }
 

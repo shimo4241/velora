@@ -19,19 +19,15 @@ export function useConnections() {
     loading: boolean;
   }>({ uid: null, connections: [], loading: false });
 
+  // Update state during render when uid changes
+  if (state.uid !== uid) {
+    setState({ uid, connections: [], loading: !!uid });
+  }
+
   useEffect(() => {
+    if (!uid) return;
     let active = true;
 
-    if (!uid) {
-      setState({ uid: null, connections: [], loading: false });
-      return () => {
-        active = false;
-      };
-    }
-
-    // Immediately mark as loading so the UI shows skeletons instead of "0 contacts"
-    // while we wait for the first Firestore snapshot.
-    setState({ uid, connections: [], loading: true });
     console.info(`[useConnections] Subscribing uid=${uid}`);
 
     const unsubscribe = onConnectionsChange(

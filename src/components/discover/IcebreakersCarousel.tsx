@@ -154,7 +154,7 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
             className="w-full flex flex-col items-center justify-center py-6 text-center text-velora-text-muted border border-white/5 bg-white/[0.02] rounded-2xl mx-5"
           >
             <Users size={20} className="text-white/20 mb-2" />
-            <p className="text-xs">Aucun utilisateur à proximité pour générer d'icebreaker.</p>
+            <p className="text-xs">Aucun utilisateur à proximité pour générer d&apos;icebreaker.</p>
           </div>
         ) : (
           cards.map((card, i) => (

@@ -90,10 +90,11 @@ export async function GET(req: Request) {
       count: results.length,
       events: results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[Cron Events Error]", error);
+    const message = error instanceof Error ? error.message : "Failed to update events";
     return NextResponse.json(
-      { error: error.message || "Failed to update events" },
+      { error: message },
       { status: 500 }
     );
   }

@@ -73,7 +73,7 @@ export default function MesReseaux() {
         </div>
       ) : filteredConnections.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-sm text-velora-text-muted">Aucun résultat trouvé pour "{searchQuery}".</p>
+          <p className="text-sm text-velora-text-muted">Aucun résultat trouvé pour &quot;{searchQuery}&quot;.</p>
         </div>
       ) : (
         <motion.div

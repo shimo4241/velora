@@ -241,7 +241,7 @@ export function ProfileScreen() {
             onClick={() => setShowFullEdit(true)}
             whileHover={{ y: -2, scale: 1.04 }}
             whileTap={{ scale: 0.92 }}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-velora-gold/30 bg-black/45 text-velora-gold shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-velora-gold/60"
+            className="btn-3d-primary flex h-10 w-10 items-center justify-center rounded-full"
           >
             <Pencil size={15} />
           </motion.button>
@@ -253,7 +253,7 @@ export function ProfileScreen() {
             onClick={() => setShowSettings(true)}
             whileHover={{ y: -2, scale: 1.04 }}
             whileTap={{ scale: 0.92 }}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/45 text-velora-text-secondary shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-white/20 hover:text-white"
+            className="btn-3d-glass flex h-10 w-10 items-center justify-center rounded-full"
           >
             <SettingsIcon size={16} />
           </motion.button>
