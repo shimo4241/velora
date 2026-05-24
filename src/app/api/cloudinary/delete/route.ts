@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
     const apiSecret = rawApiSecret.replace(/['"]/g, "").trim();
 
     if (!cloudName || !apiKey || !apiSecret) {
-      console.warn("[Cloudinary Server Delete] Cloudinary credentials not configured in environment. Skipping asset deletion.");
+      logger.warn("[Cloudinary Server Delete] Cloudinary credentials not configured in environment. Skipping asset deletion.");
       return NextResponse.json({ message: "Cloudinary credentials not configured. Skipped deletion." }, { status: 200 });
     }
 
@@ -43,14 +45,14 @@ export async function POST(request: Request) {
     const result = await response.json();
 
     if (!response.ok || result.result !== "ok") {
-      console.error("[Cloudinary Server Delete] Failed to destroy image:", result.error || result);
+      logger.error("[Cloudinary Server Delete] Failed to destroy image:", result.error || result);
       return NextResponse.json({ error: result.error?.message || "Failed to destroy image" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
-    console.error("[Cloudinary Server Delete] Unexpected error:", error);
+    logger.error("[Cloudinary Server Delete] Unexpected error:", error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

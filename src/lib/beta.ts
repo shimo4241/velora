@@ -1,6 +1,9 @@
 "use client";
-
+import { logger } from "@/lib/logger";
 import { useCallback, useState, useSyncExternalStore } from "react";
+import { analytics } from "./firebase";
+import { logEvent } from "firebase/analytics";
+import * as Sentry from "@sentry/nextjs";
 
 export function useOnlineStatus() {
   return useSyncExternalStore(
@@ -24,20 +27,23 @@ export function useOnlineStatus() {
 
 export function useAnalytics() {
   const track = useCallback((event: string, properties?: Record<string, unknown>) => {
+    if (analytics) {
+      logEvent(analytics, event, properties);
+    }
     if (process.env.NODE_ENV === "development") {
-      console.log(`[VELORA Analytics] ${event}`, properties);
+      logger.debug(`[VELORA Analytics] ${event}`, properties);
     }
   }, []);
 
-  const identify = useCallback((userId: string, traits?: Record<string, unknown>) => {
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[VELORA Identify] ${userId}`, traits);
+  const identify = useCallback((userId: string) => {
+    if (analytics) {
+      logEvent(analytics, "login", { userId });
     }
   }, []);
 
   const page = useCallback((name: string) => {
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[VELORA Page] ${name}`);
+    if (analytics) {
+      logEvent(analytics, "page_view", { page_title: name });
     }
   }, []);
 
@@ -53,8 +59,6 @@ export function useInviteAccess() {
       return () => window.removeEventListener("storage", onStoreChange);
     },
     () => {
-      const bypass = true;
-      if (bypass) return true;
       return Boolean(localStorage.getItem("velora_invite_code"));
     },
     () => true
@@ -77,7 +81,8 @@ export function useInviteAccess() {
 }
 
 export function reportError(error: Error, context?: Record<string, unknown>) {
+  Sentry.captureException(error, { extra: context });
   if (process.env.NODE_ENV === "development") {
-    console.error("[VELORA Error]", error, context);
+    logger.error("[VELORA Error]", error, context);
   }
 }

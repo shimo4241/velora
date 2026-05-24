@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import {
   createContext,
@@ -77,11 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubscribe = onAuthChange(async (firebaseUser) => {
         if (!active) return;
 
-        console.debug("[Auth] auth hydration", {
+        logger.debug("[Auth] auth hydration", {
           uid: firebaseUser?.uid ?? null,
           isAnonymous: firebaseUser?.isAnonymous ?? false,
         });
-        console.debug("[Auth] current user uid", {
+        logger.debug("[Auth] current user uid", {
           uid: firebaseUser?.uid ?? null,
         });
 

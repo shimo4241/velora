@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { isNfcSupported, startNfcScan, writeNfcProfile, type NfcScanResult } from "@/lib/nfc";
@@ -53,7 +55,7 @@ export function useNfc() {
             const now = Date.now();
             // Anti-Spam protection: Ignore same URL scanned within 5 seconds
             if (result.url === lastScanUrlRef.current && now - lastScanTimeRef.current < 5000) {
-              console.debug("[NFC] Duplicate scan ignored (anti-spam cooldown).");
+              logger.debug("[NFC] Duplicate scan ignored (anti-spam cooldown).");
               return;
             }
 
@@ -71,7 +73,7 @@ export function useNfc() {
             }, 2500);
           },
           (err: unknown) => {
-            console.error("[NFC Hook] Scan failed:", err);
+            logger.error("[NFC Hook] Scan failed:", err);
             setStatus("error");
             setError(err instanceof Error ? err.message : "Une erreur est survenue lors de la numerisation NFC.");
             setTimeout(() => {
@@ -109,7 +111,7 @@ export function useNfc() {
           setStatus("ready");
         }, 2000);
       } catch (err: unknown) {
-        console.error("[NFC Hook] Write failed:", err);
+        logger.error("[NFC Hook] Write failed:", err);
         setStatus("error");
         setError(err instanceof Error ? err.message : "Impossible d'ecrire sur le badge NFC. Rapprochez le badge.");
         setTimeout(() => {

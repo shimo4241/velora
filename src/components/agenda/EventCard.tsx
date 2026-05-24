@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import React, { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -91,7 +93,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onTap, className = 
     try {
       await toggleEventInterest(event.id, user.uid, profile, !isInterested);
     } catch (err) {
-      console.error("[EventCard] Error toggling interest:", err);
+      logger.error("[EventCard] Error toggling interest:", err);
     } finally {
       setToggleLoading(false);
     }

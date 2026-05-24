@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
@@ -66,7 +68,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     const file = e.target.files?.[0];
     e.currentTarget.value = "";
     if (!file) {
-      console.warn("[Upload:avatar] image-picker:no file selected");
+      logger.warn("[Upload:avatar] image-picker:no file selected");
       return;
     }
 
@@ -79,7 +81,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       setAvatarFile(file);
       setAvatarPreview(previewUrl);
     } catch (error) {
-      console.error("[Upload:avatar] setup image-picker failed", error);
+      logger.error("[Upload:avatar] setup image-picker failed", error);
       setAvatarFile(null);
       showToast({ tone: "error", title: t("setup_error_upload"), message: getUploadErrorMessage(error, "avatar") });
     }
@@ -88,13 +90,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const handleSubmit = async () => {
 
     if (!user) {
-      console.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
+      logger.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
       setSetupError(t("setup_error_auth"));
       showToast({ tone: "error", title: t("setup_error_auth"), message: t("setup_error_auth") });
       return;
     }
     if (!form.fullName || !form.title || !form.whatsapp) {
-      console.warn("[ProfileSetup Warning] Submission aborted: Missing required fields.", {
+      logger.warn("[ProfileSetup Warning] Submission aborted: Missing required fields.", {
         fullName: !!form.fullName,
         title: !!form.title,
         whatsapp: !!form.whatsapp
@@ -155,7 +157,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
       onComplete();
     } catch (err) {
-      console.error("[ProfileSetup Error] Critical failure during setup:", err);
+      logger.error("[ProfileSetup Error] Critical failure during setup:", err);
       const message = avatarFile ? getUploadErrorMessage(err, "avatar") : err instanceof Error ? err.message : t("setup_error_general");
       setSetupError(message);
       showToast({ tone: "error", title: t("setup_error_general"), message });

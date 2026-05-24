@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -73,7 +75,7 @@ export function useEventDetail(eventId: string) {
         }
       },
       (err) => {
-        console.error(`[useEventDetail] Failed to subscribe to attendees for ${eventId}`, err);
+        logger.error(`[useEventDetail] Failed to subscribe to attendees for ${eventId}`, err);
       }
     );
 
@@ -98,7 +100,7 @@ export function useEventDetail(eventId: string) {
           setNetworkingSuggestions(suggestions);
         }
       } catch (err) {
-        console.error("[useEventDetail] Error fetching networking suggestions:", err);
+        logger.error("[useEventDetail] Error fetching networking suggestions:", err);
       }
     };
 
@@ -115,7 +117,7 @@ export function useEventDetail(eventId: string) {
     try {
       await toggleEventInterest(eventId, user.uid, profile, !isInterested);
     } catch (err) {
-      console.error("[useEventDetail] Failed to toggle interest:", err);
+      logger.error("[useEventDetail] Failed to toggle interest:", err);
     } finally {
       setActionLoading(false);
     }
@@ -127,7 +129,7 @@ export function useEventDetail(eventId: string) {
     try {
       await checkInToEvent(eventId, user.uid, profile, method);
     } catch (err) {
-      console.error("[useEventDetail] Failed to check in:", err);
+      logger.error("[useEventDetail] Failed to check in:", err);
       throw err;
     } finally {
       setActionLoading(false);

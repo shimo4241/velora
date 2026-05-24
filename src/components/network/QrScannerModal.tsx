@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -64,7 +66,7 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess }: QrSca
           impact("light");
         })
         .catch((err) => {
-          console.error("[QR Scanner] Initialization failed:", err);
+          logger.error("[QR Scanner] Initialization failed:", err);
           setIsInitializing(false);
           if (err?.toString().includes("NotAllowedError") || err?.toString().includes("Permission denied")) {
             setHasPermission(false);
@@ -83,10 +85,10 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess }: QrSca
           scanner
             .stop()
             .then(() => {
-              console.debug("[QR Scanner] Camera stopped successfully.");
+              logger.debug("[QR Scanner] Camera stopped successfully.");
             })
             .catch((err) => {
-              console.error("[QR Scanner] Error stopping camera:", err);
+              logger.error("[QR Scanner] Error stopping camera:", err);
             });
         }
       }

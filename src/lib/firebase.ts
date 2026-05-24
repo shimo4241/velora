@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 /* ═══════════════════════════════════════════════════
    VELORA — Firebase Client SDK
    Modular initialization. Singleton pattern.
@@ -13,6 +15,7 @@ import {
   type Auth 
 } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAnalytics, type Analytics } from "firebase/analytics";
 
 const requiredFirebaseEnv = [
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -61,7 +64,7 @@ function getFirebaseAuth(app: FirebaseApp): Auth {
         persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
       });
     } catch (err) {
-      console.error("initializeAuth failed, falling back to getAuth", err);
+      logger.error("initializeAuth failed, falling back to getAuth", err);
       return getAuth(app);
     }
   }
@@ -69,6 +72,11 @@ function getFirebaseAuth(app: FirebaseApp): Auth {
 
 export const auth: Auth = getFirebaseAuth(app);
 export const db: Firestore = getFirestore(app);
+
+export let analytics: Analytics | null = null;
+if (typeof window !== "undefined" && isFirebaseConfigured) {
+  analytics = getAnalytics(app);
+}
 
 /* ── Analytics (browser-only, lazy) ── */
 export async function getAnalyticsInstance() {

@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 /* ═══════════════════════════════════════════════════
    VELORA — Web NFC Library
    ═══════════════════════════════════════════════════ */
@@ -89,11 +91,11 @@ export async function startNfcScan(
       try {
         abortController.abort();
       } catch (err) {
-        console.warn("[NFC] Error aborting scan:", err);
+        logger.warn("[NFC] Error aborting scan:", err);
       }
     };
   } catch (err) {
-    console.error("[NFC] Start scan error:", err);
+    logger.error("[NFC] Start scan error:", err);
     onError(err);
     return () => {};
   }

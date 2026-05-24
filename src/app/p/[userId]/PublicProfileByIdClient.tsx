@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -62,7 +64,7 @@ export default function PublicProfileByIdClient({
         setLoadingConnection(false);
       },
       (err) => {
-        console.error("Error reading connection snapshot:", err);
+        logger.error("Error reading connection snapshot:", err);
         setLoadingConnection(false);
       }
     );
@@ -106,7 +108,7 @@ export default function PublicProfileByIdClient({
         message: `${profile.fullName} ${t("toast_network_updated_msg")}`
       });
     } catch (err) {
-      console.error("[Network:add] Failed to add to network:", err);
+      logger.error("[Network:add] Failed to add to network:", err);
       showToast({
         tone: "error",
         title: t("toast_network_error_title"),

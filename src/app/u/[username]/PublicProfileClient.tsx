@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import {
   useEffect,
@@ -271,7 +273,7 @@ export default function PublicProfileClient({
     if (!profile.id) return;
     getDailyStats(profile.id)
       .then((s) => setStats(s))
-      .catch((err) => console.error("Failed to load daily stats:", err));
+      .catch((err) => logger.error("Failed to load daily stats:", err));
   }, [profile.id]);
 
   const [loading, setLoading] = useState(false);
@@ -406,7 +408,7 @@ export default function PublicProfileClient({
       setShowAddModal(false);
       navigator.vibrate?.(24);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     } finally {
       setLoading(false);
     }
@@ -419,7 +421,7 @@ export default function PublicProfileClient({
       await updateConnectionNotesAndTags(user.uid, profile.id, notes, selectedTags);
       setShowEditModal(false);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     } finally {
       setLoading(false);
     }
@@ -433,7 +435,7 @@ export default function PublicProfileClient({
       await removeConnection(user.uid, profile.id);
       setShowEditModal(false);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     } finally {
       setLoading(false);
     }
@@ -447,7 +449,7 @@ export default function PublicProfileClient({
       await blockUser(user.uid, profile.id);
       setShowEditModal(false);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
@@ -59,7 +61,7 @@ export async function GET(req: Request) {
 
     const results = [];
     if (!isFirebaseConfigured) {
-      console.warn("Firebase config is missing or dummy. Simulating event aggregation in database.");
+      logger.warn("Firebase config is missing or dummy. Simulating event aggregation in database.");
       for (const event of MOROCCO_EVENTS) {
         results.push(event.id);
       }
@@ -91,7 +93,7 @@ export async function GET(req: Request) {
       events: results,
     });
   } catch (error) {
-    console.error("[Cron Events Error]", error);
+    logger.error("[Cron Events Error]", error);
     const message = error instanceof Error ? error.message : "Failed to update events";
     return NextResponse.json(
       { error: message },

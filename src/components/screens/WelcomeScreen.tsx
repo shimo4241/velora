@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { motion } from "framer-motion";
 import { AlertTriangle, Loader2, ArrowRight, LogIn } from "lucide-react";
@@ -28,7 +30,7 @@ export function WelcomeScreen({ onSuccess }: WelcomeScreenProps) {
       await signInWithGoogle();
       onSuccess();
     } catch (err: unknown) {
-      console.error("Auth error:", err);
+      logger.error("Auth error:", err);
     }
   };
 

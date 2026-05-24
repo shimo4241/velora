@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -50,7 +52,7 @@ export function DiscoverScreen() {
         setLoadingDiscover(false);
       },
       (err) => {
-        console.error("[DiscoverScreen:onDiscoverUsersChange] failed:", err);
+        logger.error("[DiscoverScreen:onDiscoverUsersChange] failed:", err);
         setLoadingDiscover(false);
       }
     );

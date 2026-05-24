@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 /* ═══════════════════════════════════════════════════
    VELORA — Firestore Service Layer
    Typed CRUD operations for all collections
@@ -185,11 +187,11 @@ function logUploadStage(stage: UploadStage, state: "start" | "success" | "failur
   };
 
   if (state === "failure") {
-    console.error(`[Upload:${context.kind}] ${stage}:failure`, payload);
+    logger.error(`[Upload:${context.kind}] ${stage}:failure`, payload);
     return;
   }
 
-  console.info(`[Upload:${context.kind}] ${stage}:${state}`, payload);
+  logger.info(`[Upload:${context.kind}] ${stage}:${state}`, payload);
 }
 
 async function runUploadStage<T>(
@@ -747,7 +749,7 @@ export async function createProfile(uid: string, data: CreateProfileData): Promi
       );
     });
   } catch (error) {
-    console.error(`[Firestore Error] Failed to create profile for UID: ${uid}`, error);
+    logger.error(`[Firestore Error] Failed to create profile for UID: ${uid}`, error);
     throw error;
   }
 }
@@ -859,7 +861,7 @@ export function onProfileChange(
     if (!snap.exists()) return callback(null);
     callback(normalizeProfile(snap.id, snap.data()));
   }, (error) => {
-    console.error(`[Firestore Error] Profile listener failed for UID: ${uid}`, error);
+    logger.error(`[Firestore Error] Profile listener failed for UID: ${uid}`, error);
     onError?.(error);
   });
 }
@@ -880,7 +882,7 @@ export async function updateProfile(
     );
 
   } catch (error) {
-    console.error(`[Firestore Error] Failed to update/create profile for UID: ${uid}`, error);
+    logger.error(`[Firestore Error] Failed to update/create profile for UID: ${uid}`, error);
     throw error;
   }
 }
@@ -921,14 +923,14 @@ export async function uploadAvatar(uid: string, file: File, options?: UploadOpti
 
     if (oldAvatarUrl) {
       deleteImageFromCloudinary(oldAvatarUrl).catch((err) =>
-        console.warn("[Cloudinary Delete] Failed to clean up old avatar:", err)
+        logger.warn("[Cloudinary Delete] Failed to clean up old avatar:", err)
       );
     }
 
     reportProgress(options, { stage: "complete", percent: 100 });
     return url;
   } catch (error) {
-    console.error("[Upload:avatar] pipeline failed", describeUploadError(error));
+    logger.error("[Upload:avatar] pipeline failed", describeUploadError(error));
     throw toUploadPipelineError(error, "firestore-profile-update", "avatar");
   }
 }
@@ -951,14 +953,14 @@ export async function uploadCover(uid: string, file: File, options?: UploadOptio
 
     if (oldCoverUrl) {
       deleteImageFromCloudinary(oldCoverUrl).catch((err) =>
-        console.warn("[Cloudinary Delete] Failed to clean up old cover:", err)
+        logger.warn("[Cloudinary Delete] Failed to clean up old cover:", err)
       );
     }
 
     reportProgress(options, { stage: "complete", percent: 100 });
     return url;
   } catch (error) {
-    console.error("[Upload:cover] pipeline failed", describeUploadError(error));
+    logger.error("[Upload:cover] pipeline failed", describeUploadError(error));
     throw toUploadPipelineError(error, "firestore-profile-update", "cover");
   }
 }
@@ -968,7 +970,7 @@ export async function uploadPortfolioImage(uid: string, file: File, options?: Up
   try {
     return await uploadImage(uid, file, "portfolio", options);
   } catch (error) {
-    console.error("[Upload:portfolio] pipeline failed", describeUploadError(error));
+    logger.error("[Upload:portfolio] pipeline failed", describeUploadError(error));
     throw toUploadPipelineError(error, "firebase-storage-upload", "portfolio");
   }
 }
@@ -992,7 +994,7 @@ export function onPortfolioChange(
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => normalizePortfolioItem(d.id, d.data())));
   }, (error) => {
-    console.error(`[Firestore Error] Portfolio listener failed for UID: ${uid}`, error);
+    logger.error(`[Firestore Error] Portfolio listener failed for UID: ${uid}`, error);
     onError?.(error);
   });
 }
@@ -1031,12 +1033,12 @@ export async function deletePortfolioItem(uid: string, itemId: string): Promise<
       const imageUrl = data?.imageUrl;
       if (imageUrl) {
         deleteImageFromCloudinary(imageUrl).catch((err) =>
-          console.warn("[Cloudinary Delete] Failed to clean up portfolio image:", err)
+          logger.warn("[Cloudinary Delete] Failed to clean up portfolio image:", err)
         );
       }
     }
   } catch (error) {
-    console.error("[Firestore] Failed to get portfolio item for deletion:", error);
+    logger.error("[Firestore] Failed to get portfolio item for deletion:", error);
   }
   await deleteDoc(doc(db, "users", uid, "portfolio", itemId));
 }
@@ -1060,7 +1062,7 @@ export function onExperienceChange(
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => normalizeExperienceEntry(d.id, d.data())));
   }, (error) => {
-    console.error(`[Firestore Error] Experience listener failed for UID: ${uid}`, error);
+    logger.error(`[Firestore Error] Experience listener failed for UID: ${uid}`, error);
     onError?.(error);
   });
 }
@@ -1142,10 +1144,10 @@ export function onConnectionsChange(
       }
     }
 
-    console.info(
+    logger.info(
       `[Network] uid=${uid} subDocs=${subConnections.length} legacyDocs=${legacyConnections.length} merged=${merged.length}`
     );
-    console.info(
+    logger.info(
       `[Network:merged] uid=${uid} mergedDocs:`,
       merged.map(c => ({ id: c.id, userId: c.userId, connectedUserId: c.connectedUserId, profileId: c.profile.id }))
     );
@@ -1155,11 +1157,11 @@ export function onConnectionsChange(
   const unsubSub = onSnapshot(qSub, (snap) => {
     subFired = true;
     subConnections = snap.docs.map((d) => normalizeNetworkDoc(d.id, d.data()));
-    console.info(`[Network:sub] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
+    logger.info(`[Network:sub] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
     triggerCallback();
   }, (error) => {
     subFired = true; // treat error as "fired" so we don't block forever
-    console.error(`[Network:sub] Listener failed uid=${uid}`, error);
+    logger.error(`[Network:sub] Listener failed uid=${uid}`, error);
     // Still call triggerCallback so legacy results render if available
     triggerCallback();
     onError?.(error);
@@ -1168,11 +1170,11 @@ export function onConnectionsChange(
   const unsubLegacy = onSnapshot(qLegacy, (snap) => {
     legacyFired = true;
     legacyConnections = snap.docs.map((d) => normalizeConnection(d.id, d.data()));
-    console.info(`[Network:legacy] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
+    logger.info(`[Network:legacy] uid=${uid} docs=${snap.docs.length} fromCache=${snap.metadata.fromCache}`);
     triggerCallback();
   }, (error) => {
     legacyFired = true; // treat error as "fired"
-    console.error(`[Network:legacy] Listener failed uid=${uid}`, error);
+    logger.error(`[Network:legacy] Listener failed uid=${uid}`, error);
     // Still surface sub-collection results even if legacy query fails
     triggerCallback();
   });
@@ -1306,7 +1308,7 @@ export async function addConnectionToNetwork(
 
   await batch.commit();
 
-  console.info(
+  logger.info(
     `[Network:add] ✓ Committed bidirectional connections & network subcollections for currentUserId=${currentUserId} viewedProfileId=${viewedProfile.id}`
   );
 }
@@ -1515,7 +1517,7 @@ export function onDiscoverUsersChange(
 
     callback(users);
   }, (error) => {
-    console.error(`[Firestore Error] Discover listener failed for UID: ${currentUserId}`, error);
+    logger.error(`[Firestore Error] Discover listener failed for UID: ${currentUserId}`, error);
     onError?.(error);
   });
 }
@@ -1586,7 +1588,7 @@ export async function getRelationshipStatus(
 
     return { status: "none" };
   } catch (error) {
-    console.error("Error in getRelationshipStatus:", error);
+    logger.error("Error in getRelationshipStatus:", error);
     return { status: "none" };
   }
 }
@@ -1707,7 +1709,7 @@ export async function acceptContactRequest(
   const event = (requestData.event as string) || "";
   const locationName = (requestData.locationName as string) || "";
 
-  console.info(
+  logger.info(
     `[Network:accept] senderId=${senderId} receiverId=${receiverId} method=${method}`
   );
 
@@ -1819,7 +1821,7 @@ export async function acceptContactRequest(
 
   await batch.commit();
 
-  console.info(
+  logger.info(
     `[Network:accept] ✓ Committed connections & network subcollections for senderId=${senderId} receiverId=${receiverId}`
   );
 
@@ -1969,7 +1971,7 @@ export function onNotificationsChange(
     }));
     callback(list);
   }, (error) => {
-    console.error(`[Firestore Error] Notifications listener failed for: ${userId}`, error);
+    logger.error(`[Firestore Error] Notifications listener failed for: ${userId}`, error);
     onError?.(error);
   });
 }
@@ -1991,7 +1993,7 @@ export function onPendingRequestsChange(
     const list = snap.docs.map((doc) => normalizeContactRequest(doc.id, doc.data()));
     callback(list);
   }, (error) => {
-    console.error(`[Firestore Error] Pending requests listener failed for: ${userId}`, error);
+    logger.error(`[Firestore Error] Pending requests listener failed for: ${userId}`, error);
     onError?.(error);
   });
 }
@@ -2008,7 +2010,7 @@ export async function getMutualConnections(userId1: string, userId2: string): Pr
 
     return Array.from(set1).filter((uid) => set2.has(uid)) as string[];
   } catch (err) {
-    console.error("Error in getMutualConnections:", err);
+    logger.error("Error in getMutualConnections:", err);
     return [];
   }
 }
@@ -2097,7 +2099,7 @@ export function subscribeToEvents(
       callback(list);
     },
     (err) => {
-      console.error("[Firestore Error] Failed subscribing to events", err);
+      logger.error("[Firestore Error] Failed subscribing to events", err);
       onError?.(err);
     }
   );
@@ -2119,7 +2121,7 @@ export function subscribeToEvent(
       }
     },
     (err) => {
-      console.error(`[Firestore Error] Failed subscribing to event ${eventId}`, err);
+      logger.error(`[Firestore Error] Failed subscribing to event ${eventId}`, err);
       onError?.(err);
     }
   );
@@ -2143,7 +2145,7 @@ export function subscribeToEventAttendees(
       callback(list);
     },
     (err) => {
-      console.error(`[Firestore Error] Failed subscribing to attendees for event ${eventId}`, err);
+      logger.error(`[Firestore Error] Failed subscribing to attendees for event ${eventId}`, err);
       onError?.(err);
     }
   );
@@ -2336,7 +2338,7 @@ export async function getNetworkingSuggestions(
 
     return suggestions.slice(0, limitCount);
   } catch (err) {
-    console.error("Error in getNetworkingSuggestions:", err);
+    logger.error("Error in getNetworkingSuggestions:", err);
     return [];
   }
 }

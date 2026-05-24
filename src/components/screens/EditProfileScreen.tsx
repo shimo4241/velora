@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
@@ -124,7 +126,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     const file = e.target.files?.[0];
     e.currentTarget.value = "";
     if (!file) {
-      console.warn("[Upload:avatar] image-picker:no file selected");
+      logger.warn("[Upload:avatar] image-picker:no file selected");
       return;
     }
 
@@ -144,7 +146,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       setAvatarPreview(url);
       showToast({ tone: "success", title: t("toast_avatar_success_title"), message: t("toast_avatar_success_msg") });
     } catch (err) {
-      console.error("[Upload:avatar] edit screen failed:", err);
+      logger.error("[Upload:avatar] edit screen failed:", err);
       setAvatarPreview(previousPreview);
       showToast({ tone: "error", title: t("toast_avatar_error_title"), message: getUploadErrorMessage(err, "avatar") });
     } finally {
@@ -157,7 +159,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
     const file = e.target.files?.[0];
     e.currentTarget.value = "";
     if (!file) {
-      console.warn("[Upload:cover] image-picker:no file selected");
+      logger.warn("[Upload:cover] image-picker:no file selected");
       return;
     }
 
@@ -177,7 +179,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       setCoverPreview(url);
       showToast({ tone: "success", title: t("toast_cover_success_title"), message: t("toast_cover_success_msg") });
     } catch (err) {
-      console.error("[Upload:cover] edit screen failed:", err);
+      logger.error("[Upload:cover] edit screen failed:", err);
       setCoverPreview(previousPreview);
       showToast({ tone: "error", title: t("toast_cover_error_title"), message: getUploadErrorMessage(err, "cover") });
     } finally {
@@ -268,7 +270,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
       setSaved(true);
       setTimeout(() => { setSaved(false); onClose(); }, 1200);
     } catch (err) {
-      console.error("Save failed:", err);
+      logger.error("Save failed:", err);
       showToast({ tone: "error", title: t("setup_error_general"), message: err instanceof Error ? err.message : t("settings_error_msg") });
     } finally {
       setSaving(false);

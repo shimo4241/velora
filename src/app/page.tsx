@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import React, { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -149,7 +151,7 @@ function VeloraAppInner() {
           updatedAt: now,
         },
       }).catch((error) => {
-        console.error("[Onboarding Error] Failed to persist onboarding state:", error);
+        logger.error("[Onboarding Error] Failed to persist onboarding state:", error);
       });
     }
   };

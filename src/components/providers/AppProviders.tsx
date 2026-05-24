@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, type ReactNode } from "react";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -36,7 +38,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {
-      console.error("Error initializing lang/theme provider:", e);
+      logger.error("Error initializing lang/theme provider:", e);
     }
   }, []);
 

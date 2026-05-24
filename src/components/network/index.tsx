@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { motion } from "framer-motion";
 import {
@@ -292,7 +294,7 @@ export function NearbyList({ onCountChange }: { onCountChange?: (count: number) 
       },
       (err) => {
         if (!active) return;
-        console.error("Error fetching discover users:", err);
+        logger.error("Error fetching discover users:", err);
         setState({ userId: currentUserId, professionals: [] });
         onCountChange?.(0);
       }

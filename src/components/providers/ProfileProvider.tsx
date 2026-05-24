@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import {
   createContext,
@@ -56,7 +58,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     if (!authReady) {
       activeUidRef.current = null;
-      console.debug("[Profile] waiting for auth hydration");
+      logger.debug("[Profile] waiting for auth hydration");
       return () => {
         active = false;
       };
@@ -65,20 +67,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!uid || !user) {
       activeUidRef.current = null;
       bootstrapUidRef.current = null;
-      console.debug("[Profile] cleared unauthenticated state");
+      logger.debug("[Profile] cleared unauthenticated state");
       return () => {
         active = false;
       };
     }
 
     activeUidRef.current = uid;
-    console.debug("[Profile] hydration:start", { uid });
+    logger.debug("[Profile] hydration:start", { uid });
 
     const unsubscribe = onProfileChange(uid, async (p) => {
       if (!active) return;
 
       if (p) {
-        console.debug("[Profile] hydration:snapshot", {
+        logger.debug("[Profile] hydration:snapshot", {
           uid,
           username: p.username || null,
           profileSetupComplete: p.onboarding?.profileSetupComplete ?? false,
@@ -88,7 +90,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      console.debug("[Profile] hydration:missing profile, bootstrapping", { uid });
+      logger.debug("[Profile] hydration:missing profile, bootstrapping", { uid });
       setProfileState({ uid, profile: null, isLoading: true, error: null });
 
       if (bootstrapUidRef.current === uid) return;
@@ -97,7 +99,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       try {
         const bootstrappedProfile = await ensureGoogleUserProfile(user);
         if (!active) return;
-        console.debug("[Profile] hydration:bootstrapped", {
+        logger.debug("[Profile] hydration:bootstrapped", {
           uid,
           username: bootstrappedProfile.username || null,
         });
@@ -109,7 +111,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           bootstrapError instanceof Error
             ? bootstrapError
             : new Error("Failed to initialize profile");
-        console.debug("[Profile] hydration:error", {
+        logger.debug("[Profile] hydration:error", {
           uid,
           message: normalizedError.message,
         });
@@ -117,7 +119,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       }
     }, (listenerError) => {
       if (!active) return;
-      console.debug("[Profile] hydration:listener error", {
+      logger.debug("[Profile] hydration:listener error", {
         uid,
         message: listenerError.message,
       });

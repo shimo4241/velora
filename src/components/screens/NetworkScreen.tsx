@@ -53,12 +53,9 @@ function matchesTab(connection: VeloraConnection, tab: NetworkTab) {
   return true;
 }
 
-function enrichConnection(connection: VeloraConnection, index: number): VeloraConnection {
+function enrichConnection(connection: VeloraConnection): VeloraConnection {
   return {
     ...connection,
-    distance: connection.distance ?? (index % 4 === 0 ? 90 : index % 3 === 0 ? 320 : index % 2 === 0 ? 2100 : undefined),
-    mutualConnections: connection.mutualConnections ?? (connection.profile.isPremium ? 3 : index % 3),
-    connectionStrength: connection.connectionStrength ?? Math.min(96, 58 + ((index + 1) * 7) % 38),
     favorite: connection.favorite ?? connection.isFavorite,
   };
 }
@@ -79,7 +76,7 @@ export function NetworkScreen() {
   const network = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return connections
-      .map(enrichConnection)
+      .map((c) => enrichConnection(c))
       .filter((connection) => matchesTab(connection, tab))
       .filter((connection) => matchesFilter(connection, filter))
       .filter((connection) => {

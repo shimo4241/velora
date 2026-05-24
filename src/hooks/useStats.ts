@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -39,7 +41,7 @@ export function useStats() {
       })
       .catch((error) => {
         if (!active) return;
-        console.error("Failed to load daily stats:", error);
+        logger.error("Failed to load daily stats:", error);
         setState({ uid, stats: EMPTY_STATS });
       });
 
@@ -87,7 +89,7 @@ export function useActivity() {
       })
       .catch((error) => {
         if (!active) return;
-        console.error("Failed to load recent activity:", error);
+        logger.error("Failed to load recent activity:", error);
         setState({ uid, activity: [] });
       });
 

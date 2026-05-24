@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -83,7 +85,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
         message: "L'ambiance visuelle a été modifiée avec succès.",
       });
     } catch (error) {
-      console.error("Theme update failed:", error);
+      logger.error("Theme update failed:", error);
       showToast({
         tone: "error",
         title: t("settings_error"),
@@ -107,7 +109,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
           : "Votre profil public conservera l'apparence par défaut.",
       });
     } catch (error) {
-      console.error("Sync toggle failed:", error);
+      logger.error("Sync toggle failed:", error);
       setSyncThemeToPublic(!checked);
       showToast({
         tone: "error",
@@ -133,7 +135,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
         message: t("settings_language_changed_msg"),
       });
     } catch (error) {
-      console.error("Language update failed:", error);
+      logger.error("Language update failed:", error);
       showToast({
         tone: "error",
         title: t("settings_error"),
@@ -176,7 +178,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
 
       await updateProfile({ settings: nextSettings });
     } catch (error) {
-      console.error("Failed to update settings field:", error);
+      logger.error("Failed to update settings field:", error);
       // Revert local state on failure
       if (category === "notifications") {
         setNotifications((prev) => ({ ...prev, [field]: !value }));
@@ -198,7 +200,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
       await signOut();
       onClose();
     } catch (error) {
-      console.error("Logout failed:", error);
+      logger.error("Logout failed:", error);
       showToast({
         tone: "error",
         title: t("settings_logout_error"),

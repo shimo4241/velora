@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
@@ -19,7 +21,7 @@ let persistenceReady = false;
 
 function logAuthDebug(message: string, details?: Record<string, unknown>): void {
   if (typeof console === "undefined") return;
-  console.debug(`[Auth] ${message}`, details ?? {});
+  logger.debug(`[Auth] ${message}`, details ?? {});
 }
 
 export function getAuthErrorCode(error: unknown): string | null {

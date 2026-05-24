@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "@/lib/i18n";
@@ -586,7 +588,7 @@ function HeaderEditor({
 
   const handleAvatar = async (file?: File) => {
     if (!file) {
-      console.warn("[Upload:avatar] image-picker:no file selected");
+      logger.warn("[Upload:avatar] image-picker:no file selected");
       return;
     }
     const previousAvatarUrl = form.avatarUrl;
@@ -602,7 +604,7 @@ function HeaderEditor({
       setForm((current) => ({ ...current, avatarUrl }));
       showToast({ tone: "success", title: t("toast_avatar_success_title"), message: t("toast_avatar_success_msg") });
     } catch (error) {
-      console.error("[Upload:avatar] UI handler failed", error);
+      logger.error("[Upload:avatar] UI handler failed", error);
       setForm((current) => ({ ...current, avatarUrl: previousAvatarUrl }));
       showToast({ tone: "error", title: t("toast_avatar_error_title"), message: getUploadErrorMessage(error, "avatar") });
     } finally {
@@ -613,7 +615,7 @@ function HeaderEditor({
 
   const handleCover = async (file?: File) => {
     if (!file) {
-      console.warn("[Upload:cover] image-picker:no file selected");
+      logger.warn("[Upload:cover] image-picker:no file selected");
       return;
     }
     const previousCoverUrl = form.coverUrl;
@@ -629,7 +631,7 @@ function HeaderEditor({
       setForm((current) => ({ ...current, coverUrl }));
       showToast({ tone: "success", title: t("toast_banner_success_title"), message: t("toast_banner_success_msg") });
     } catch (error) {
-      console.error("[Upload:cover] UI handler failed", error);
+      logger.error("[Upload:cover] UI handler failed", error);
       setForm((current) => ({ ...current, coverUrl: previousCoverUrl }));
       showToast({ tone: "error", title: t("toast_banner_error_title"), message: getUploadErrorMessage(error, "cover") });
     } finally {
@@ -958,7 +960,7 @@ function PortfolioEditor({
 
   const handleImage = async (id: string, file?: File) => {
     if (!file) {
-      console.warn("[Upload:portfolio] image-picker:no file selected", { id });
+      logger.warn("[Upload:portfolio] image-picker:no file selected", { id });
       return;
     }
     const previousImageUrl = drafts.find((item) => item.id === id)?.imageUrl || "";
@@ -978,7 +980,7 @@ function PortfolioEditor({
       previewUrlsRef.current = [];
       showToast({ tone: "success", title: t("toast_portfolio_success_title"), message: t("toast_portfolio_success_msg") });
     } catch (error) {
-      console.error("[Upload:portfolio] UI handler failed", error);
+      logger.error("[Upload:portfolio] UI handler failed", error);
       updateItem(id, { imageUrl: previousImageUrl });
       showToast({ tone: "error", title: t("toast_portfolio_error_title"), message: getUploadErrorMessage(error, "portfolio") });
     } finally {

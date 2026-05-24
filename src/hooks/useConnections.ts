@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -28,18 +30,18 @@ export function useConnections() {
     if (!uid) return;
     let active = true;
 
-    console.info(`[useConnections] Subscribing uid=${uid}`);
+    logger.info(`[useConnections] Subscribing uid=${uid}`);
 
     const unsubscribe = onConnectionsChange(
       uid,
       (conns) => {
         if (!active) return;
-        console.info(`[useConnections] Received ${conns.length} connection(s) for uid=${uid}`);
+        logger.info(`[useConnections] Received ${conns.length} connection(s) for uid=${uid}`);
         setState({ uid, connections: conns, loading: false });
       },
       (err) => {
         if (!active) return;
-        console.error(`[useConnections] Error for uid=${uid}`, err);
+        logger.error(`[useConnections] Error for uid=${uid}`, err);
         setState({ uid, connections: [], loading: false });
       }
     );

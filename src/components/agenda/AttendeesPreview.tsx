@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +33,7 @@ export const AttendeesPreview: React.FC<AttendeesPreviewProps> = ({
     if (attendee.userUsername) {
       router.push(`/u/${attendee.userUsername}`);
     } else {
-      console.warn(`[AttendeesPreview] Username missing for attendee ${attendee.userId}`);
+      logger.warn(`[AttendeesPreview] Username missing for attendee ${attendee.userId}`);
     }
   };
 

@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -66,7 +68,7 @@ export function useGeolocation() {
 
       // 1. Time Check: Minimum interval of 60 seconds
       if (lastTime > 0 && now - lastTime < 60000) {
-        console.debug("[Geolocation] Update throttled: Less than 60s since last write.");
+        logger.debug("[Geolocation] Update throttled: Less than 60s since last write.");
         return;
       }
 
@@ -74,7 +76,7 @@ export function useGeolocation() {
       if (lastCoords) {
         const distance = calculateHaversineDistance(lastCoords.lat, lastCoords.lng, lat, lng);
         if (distance < 80) {
-          console.debug(`[Geolocation] Update throttled: Moved only ${distance.toFixed(1)}m (min: 80m).`);
+          logger.debug(`[Geolocation] Update throttled: Moved only ${distance.toFixed(1)}m (min: 80m).`);
           return;
         }
       }
@@ -105,13 +107,13 @@ export function useGeolocation() {
         // Update local reference states
         lastUpdateTimeRef.current = now;
         lastUpdateCoordsRef.current = { lat, lng };
-        console.debug("[Geolocation] Firestore location synchronized successfully.", {
+        logger.debug("[Geolocation] Firestore location synchronized successfully.", {
           ghostMode,
           isSharing,
           coarse,
         });
       } catch (err) {
-        console.error("[Geolocation] Failed to write coordinates to Firestore:", err);
+        logger.error("[Geolocation] Failed to write coordinates to Firestore:", err);
       }
     },
     [uid, isSharing, ghostMode, updateProfile]
@@ -137,7 +139,7 @@ export function useGeolocation() {
   );
 
   const handleError = useCallback((err: GeolocationPositionError) => {
-    console.warn("[Geolocation] Error code:", err.code, err.message);
+    logger.warn("[Geolocation] Error code:", err.code, err.message);
     setLoading(false);
 
     switch (err.code) {
@@ -243,7 +245,7 @@ export function useGeolocation() {
           lastUpdateTimeRef.current = 0;
         }
       } catch (err) {
-        console.error("[Geolocation] Failed to toggle location sharing state:", err);
+        logger.error("[Geolocation] Failed to toggle location sharing state:", err);
       }
     },
     [uid, coords, ghostMode, updateProfile]
@@ -284,7 +286,7 @@ export function useGeolocation() {
             });
           }
         } catch (err) {
-          console.error("[Geolocation] Failed to apply ghost mode on public profile:", err);
+          logger.error("[Geolocation] Failed to apply ghost mode on public profile:", err);
         }
       }
     },

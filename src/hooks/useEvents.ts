@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect, useMemo } from "react";
 import { subscribeToEvents } from "@/lib/firestore";
@@ -29,7 +31,7 @@ export function useEvents(
         });
       },
       (err) => {
-        console.warn("[useEvents] Local geolocation query failed:", err.message);
+        logger.warn("[useEvents] Local geolocation query failed:", err.message);
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );

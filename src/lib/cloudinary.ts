@@ -1,3 +1,5 @@
+
+import { logger } from "@/lib/logger";
 /* ═══════════════════════════════════════════════════
    VELORA — Cloudinary Client Service
    ═══════════════════════════════════════════════════ */
@@ -116,7 +118,7 @@ async function validateFileSignature(file: File): Promise<boolean> {
 
     return false;
   } catch (error) {
-    console.error("[Security] Failed to verify image magic numbers:", error);
+    logger.error("[Security] Failed to verify image magic numbers:", error);
     return false;
   }
 }
@@ -537,8 +539,8 @@ function performCloudinaryUpload(
     formData.forEach((_, key) => {
       keys.push(key);
     });
-    console.log(`[Cloudinary Direct Upload] URL: ${url}`);
-    console.log(`[Cloudinary Direct Upload] FormData keys: ${keys.join(", ")}`);
+    logger.debug(`[Cloudinary Direct Upload] URL: ${url}`);
+    logger.debug(`[Cloudinary Direct Upload] FormData keys: ${keys.join(", ")}`);
 
     xhr.send(formData);
   });
@@ -590,7 +592,7 @@ export async function uploadImageToCloudinary(
       return result.secure_url;
     } catch (error) {
       lastError = error;
-      console.warn(`[Cloudinary Upload] Attempt ${attempt + 1} failed:`, error);
+      logger.warn(`[Cloudinary Upload] Attempt ${attempt + 1} failed:`, error);
       if (attempt < maxRetries) {
         // Exponential backoff delay
         await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
@@ -609,7 +611,7 @@ function cacheDeleteToken(url: string, token: string) {
     cache[url] = { token, timestamp: Date.now() };
     localStorage.setItem("cloudinary_delete_tokens", JSON.stringify(cache));
   } catch (e) {
-    console.error("[Cloudinary Cache] Failed to cache delete token:", e);
+    logger.error("[Cloudinary Cache] Failed to cache delete token:", e);
   }
 }
 
@@ -660,11 +662,11 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<void>
         body: JSON.stringify({ token: deleteToken }),
       });
       if (response.ok) {
-        console.info("[Cloudinary] Successfully deleted image using delete token:", imageUrl);
+        logger.info("[Cloudinary] Successfully deleted image using delete token:", imageUrl);
         return;
       }
     } catch (e) {
-      console.warn("[Cloudinary] Client-side delete token deletion failed, falling back to API route:", e);
+      logger.warn("[Cloudinary] Client-side delete token deletion failed, falling back to API route:", e);
     }
   }
 
@@ -680,10 +682,10 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<void>
     });
 
     if (!response.ok) {
-      console.warn("[Cloudinary Delete] Server-side deletion endpoint returned non-OK status:", response.status);
+      logger.warn("[Cloudinary Delete] Server-side deletion endpoint returned non-OK status:", response.status);
     }
   } catch (error) {
-    console.error("[Cloudinary Delete] Failed to call server-side deletion route:", error);
+    logger.error("[Cloudinary Delete] Failed to call server-side deletion route:", error);
   }
 }
 

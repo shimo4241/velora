@@ -50,7 +50,7 @@ export const NetworkContactCard = memo(function NetworkContactCard({
   const router = useRouter();
   const profile = connection.profile;
   const distanceLabel =
-    typeof connection.distance === "number" ? getDistanceLabel(connection.distance, profile.locale || "fr") : "pres de vous";
+    typeof connection.distance === "number" ? getDistanceLabel(connection.distance, profile.locale || "fr") : "—";
   const cardBadges = badges(connection);
 
   return (
@@ -114,12 +114,10 @@ export const NetworkContactCard = memo(function NetworkContactCard({
                 <Sparkles size={10} className="text-velora-gold" />
                 {relativeMeeting(connection.lastInteractionAt || connection.metAt)}
               </span>
-              {typeof connection.mutualConnections === "number" && connection.mutualConnections > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
-                  <Users size={10} className="text-velora-gold" />
-                  {connection.mutualConnections} mutuels
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-velora-text-muted">
+                <Users size={10} className="text-velora-gold" />
+                {connection.mutualConnections != null ? `${connection.mutualConnections} mutuels` : "—"}
+              </span>
             </div>
           </div>
         </div>
@@ -157,7 +155,7 @@ export const NetworkContactCard = memo(function NetworkContactCard({
 
       <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-3">
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
-          Force {connection.connectionStrength ?? 72}%
+          Force {connection.connectionStrength != null ? `${connection.connectionStrength}%` : "—"}
         </span>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => onEdit(connection)} className="network-profile-btn">

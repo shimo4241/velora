@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState, useEffect, useRef } from "react";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary";
@@ -48,7 +50,7 @@ export function OptimizedImage({
     if (!src || loaded || error) return;
 
     const timer = setTimeout(() => {
-      console.warn(`[OptimizedImage] Loading timeout triggered for: ${src}`);
+      logger.warn(`[OptimizedImage] Loading timeout triggered for: ${src}`);
       setLoaded(true);
     }, 3500);
 

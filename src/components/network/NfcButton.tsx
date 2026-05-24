@@ -1,4 +1,6 @@
 "use client";
+import { logger } from "@/lib/logger";
+
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +45,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
         const username = pathParts[uIndex + 1];
         onScanProfile(username);
       } else {
-        console.warn("[NFC] Unrecognized URL pattern:", url);
+        logger.warn("[NFC] Unrecognized URL pattern:", url);
       }
     } catch {
       // In case we receive just a relative path or raw text
@@ -79,7 +81,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
       await notification();
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy link:", err);
+      logger.error("Failed to copy link:", err);
     }
   };
 
