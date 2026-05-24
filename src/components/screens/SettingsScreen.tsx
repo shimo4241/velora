@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import {
   ArrowLeft,
   Globe,
@@ -11,20 +12,22 @@ import {
   LogOut,
   Check,
   Loader2,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui";
 import { StaggerChildren, StaggerItem } from "@/components/motion/animations";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
-import { useTranslation, type Locale } from "@/lib/i18n";
+import { useTranslation, setAppLocale, type Locale } from "@/lib/i18n";
+import { VISUAL_THEMES, applyVisualTheme, getRecommendedTheme } from "@/themes";
+import { Sparkles } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════
    VELORA — Application Settings Screen
    Luxury medical & professional visual style
    ═══════════════════════════════════════════════════ */
+
+import { useScrollLock } from "@/lib/scrollLock";
 
 interface SettingsScreenProps {
   onClose: () => void;
@@ -41,6 +44,12 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [saving, setSaving] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // Lock body scroll for the settings screen itself
+  useScrollLock(true);
+
+  // Lock body scroll for the nested confirmation dialog
+  useScrollLock(showLogoutConfirm);
+
   // Local settings state (synced with profile settings or fallback to defaults)
   const [notifications, setNotifications] = useState({
     push: profile?.settings?.notifications?.push ?? true,
@@ -54,16 +63,61 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
     showEmail: profile?.settings?.privacy?.showEmail ?? true,
   });
 
-  const [themeMode, setThemeMode] = useState<"dark" | "light">(() => {
-    if (typeof window !== "undefined") {
-      const storedTheme = localStorage.getItem("velora_theme") as "dark" | "light" | null;
-      if (storedTheme) return storedTheme;
-      const hasLightClass = document.documentElement.getAttribute("data-theme") === "light" || 
-                            document.documentElement.classList.contains("light");
-      return hasLightClass ? "light" : "dark";
-    }
-    return "dark";
+  const [activeTheme, setActiveTheme] = useState<string>(() => {
+    return profile?.visualTheme || (typeof window !== "undefined" ? localStorage.getItem("velora_visual_theme") : null) || "gold";
   });
+
+  const [syncThemeToPublic, setSyncThemeToPublic] = useState<boolean>(() => {
+    return profile?.syncThemeToPublic ?? false;
+  });
+
+  const handleVisualThemeChange = async (themeId: string) => {
+    setActiveTheme(themeId);
+    setSaving("visualTheme");
+    try {
+      applyVisualTheme(themeId);
+      await updateProfile({ visualTheme: themeId });
+      showToast({
+        tone: "success",
+        title: "Thème mis à jour",
+        message: "L'ambiance visuelle a été modifiée avec succès.",
+      });
+    } catch (error) {
+      console.error("Theme update failed:", error);
+      showToast({
+        tone: "error",
+        title: t("settings_error"),
+        message: t("settings_error_msg"),
+      });
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleSyncThemeToggle = async (checked: boolean) => {
+    setSyncThemeToPublic(checked);
+    setSaving("syncThemeToPublic");
+    try {
+      await updateProfile({ syncThemeToPublic: checked });
+      showToast({
+        tone: "success",
+        title: "Profil public synchronisé",
+        message: checked 
+          ? "Votre thème s'appliquera désormais à votre profil public." 
+          : "Votre profil public conservera l'apparence par défaut.",
+      });
+    } catch (error) {
+      console.error("Sync toggle failed:", error);
+      setSyncThemeToPublic(!checked);
+      showToast({
+        tone: "error",
+        title: t("settings_error"),
+        message: t("settings_error_msg"),
+      });
+    } finally {
+      setSaving(null);
+    }
+  };
 
   if (!isProfileReady || !profile) return null;
 
@@ -71,44 +125,26 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
   const handleLanguageChange = async (lang: Locale) => {
     setSaving("locale");
     try {
-      localStorage.setItem("velora_lang", lang);
+      setAppLocale(lang);
       await updateProfile({ locale: lang });
       showToast({
         tone: "success",
-        title: lang === "ar" ? "تم تغيير اللغة" : lang === "es" ? "Idioma cambiado" : lang === "en" ? "Language changed" : "Langue modifiée",
-        message: lang === "ar" ? "تم تحديث اللغة بنجاح" : lang === "es" ? "Se ha actualizado el idioma" : lang === "en" ? "Language updated successfully" : "La langue a été mise à jour avec succès.",
+        title: t("settings_language_changed"),
+        message: t("settings_language_changed_msg"),
       });
     } catch (error) {
       console.error("Language update failed:", error);
       showToast({
         tone: "error",
-        title: "Error",
-        message: "Failed to change language. Please try again.",
+        title: t("settings_error"),
+        message: t("settings_error_msg"),
       });
     } finally {
       setSaving(null);
     }
   };
 
-  // Handles toggling dark/light theme
-  const handleThemeChange = (mode: "dark" | "light") => {
-    setThemeMode(mode);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("velora_theme", mode);
-      if (mode === "light") {
-        document.documentElement.setAttribute("data-theme", "light");
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.setAttribute("data-theme", "dark");
-        document.documentElement.classList.remove("light");
-      }
-      showToast({
-        tone: "success",
-        title: "Theme updated",
-        message: mode === "light" ? "Sahara Pearl theme enabled." : "Moroccan Midnight theme enabled.",
-      });
-    }
-  };
+
 
   // Generic settings updater for Firestore
   const updateSettingsField = async (
@@ -139,7 +175,8 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
       };
 
       await updateProfile({ settings: nextSettings });
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to update settings field:", error);
       // Revert local state on failure
       if (category === "notifications") {
         setNotifications((prev) => ({ ...prev, [field]: !value }));
@@ -148,8 +185,8 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
       }
       showToast({
         tone: "error",
-        title: "Settings error",
-        message: "Could not save your preferences. Please try again.",
+        title: t("settings_error"),
+        message: t("settings_error_msg"),
       });
     } finally {
       setSaving(null);
@@ -160,11 +197,12 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
     try {
       await signOut();
       onClose();
-    } catch (_error) {
+    } catch (error) {
+      console.error("Logout failed:", error);
       showToast({
         tone: "error",
-        title: "Logout failed",
-        message: "An error occurred while logging out.",
+        title: t("settings_logout_error"),
+        message: t("settings_logout_error_msg"),
       });
     }
   };
@@ -177,14 +215,16 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-50 bg-velora-black overflow-y-auto"
-      dir={isRtl ? "rtl" : "ltr"}
-    >
+    <ModalPortal>
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 20 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed inset-0 z-[var(--z-modal)] bg-velora-black overflow-y-auto"
+        style={{ willChange: "transform, opacity" }}
+        dir={isRtl ? "rtl" : "ltr"}
+      >
       {/* Settings Navigation Bar */}
       <div className="sticky top-0 z-10 backdrop-blur-md bg-velora-black/80 border-b border-velora-border/20">
         <div className="flex items-center justify-between px-5 pt-14 pb-3">
@@ -193,7 +233,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
             className="flex items-center gap-1 text-sm text-velora-text-muted hover:text-velora-text transition-colors"
           >
             <ArrowLeft size={16} className={isRtl ? "rotate-180" : ""} />
-            {isRtl ? "رجوع" : currentLocale === "es" ? "Atrás" : currentLocale === "en" ? "Back" : "Retour"}
+            {t("settings_back")}
           </button>
           <h2 className="text-heading text-base text-velora-text font-semibold">
             {t("settings")}
@@ -244,39 +284,99 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
             </div>
           </StaggerItem>
 
-          {/* Section: Theme */}
+          {/* Section: Themes */}
           <StaggerItem>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center gap-2 px-1">
                 <Palette size={14} className="text-velora-gold" />
                 <h3 className="text-xs uppercase tracking-wider text-velora-text-muted font-medium">
-                  {t("settings_theme")}
+                  Apparence & Thèmes
                 </h3>
               </div>
-              <GlassCard className="p-3" hover={false}>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleThemeChange("dark")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-xs font-medium transition-all ${
-                      themeMode === "dark"
-                        ? "bg-velora-gold/10 border-velora-gold/40 text-velora-gold"
-                        : "bg-white/[0.02] border-white/5 text-velora-text-secondary hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <Moon size={14} />
-                    {t("settings_dark_mode")}
-                  </button>
-                  <button
-                    onClick={() => handleThemeChange("light")}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-xs font-medium transition-all ${
-                      themeMode === "light"
-                        ? "bg-velora-gold/10 border-velora-gold/40 text-velora-gold"
-                        : "bg-white/[0.02] border-white/5 text-velora-text-secondary hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <Sun size={14} />
-                    {t("settings_light_mode")}
-                  </button>
+
+              {/* Theme Grid */}
+              <GlassCard className="p-4 space-y-4" hover={false}>
+                <div className="grid grid-cols-1 gap-3">
+                  {VISUAL_THEMES.map((theme) => {
+                    const isSelected = activeTheme === theme.id;
+                    const recommendedTheme = getRecommendedTheme(profile.professionalMode);
+                    const isRecommended = recommendedTheme === theme.id;
+
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => handleVisualThemeChange(theme.id)}
+                        disabled={saving === "visualTheme"}
+                        className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? "bg-velora-gold/10 border-velora-gold/40 text-velora-text"
+                            : "bg-white/[0.02] border-white/5 text-velora-text-secondary hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        {/* Circle Color Dot Preview */}
+                        <div
+                          className="w-10 h-10 rounded-lg shrink-0 border border-white/10 flex items-center justify-center relative shadow-inner"
+                          style={{ backgroundColor: theme.bgPreview }}
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full shadow"
+                            style={{ backgroundColor: theme.accentColor }}
+                          />
+                        </div>
+
+                        {/* Title & Desc */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold text-velora-text truncate">
+                              {theme.name}
+                            </span>
+                            {isRecommended && (
+                              <span className="inline-flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-wider text-velora-gold bg-velora-gold/10 px-1.5 py-0.5 rounded border border-velora-gold/20 shrink-0">
+                                <Sparkles size={8} />
+                                Recommandé
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-velora-text-muted mt-1 leading-relaxed">
+                            {theme.description}
+                          </p>
+                        </div>
+
+                        {/* Checkbox active state */}
+                        <div className="shrink-0 pt-0.5">
+                          <div
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                              isSelected
+                                ? "border-velora-gold bg-velora-gold text-velora-black"
+                                : "border-white/20 bg-transparent"
+                            }`}
+                          >
+                            {isSelected && <Check size={10} strokeWidth={3} />}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="divider my-2" />
+
+                {/* Public Profile Sync Toggle */}
+                <div className="flex items-center justify-between py-2">
+                  <div className="space-y-0.5 max-w-[75%]">
+                    <h4 className="text-xs font-semibold text-velora-text">
+                      Appliquer au profil public
+                    </h4>
+                    <p className="text-[10px] text-velora-text-muted leading-relaxed">
+                      Synchronise l&apos;ambiance de votre profil public pour les visiteurs.
+                    </p>
+                  </div>
+                  <ToggleSwitch
+                    checked={syncThemeToPublic}
+                    onChange={handleSyncThemeToggle}
+                    loading={saving === "syncThemeToPublic"}
+                  />
                 </div>
               </GlassCard>
             </div>
@@ -313,10 +413,10 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                 <div className="flex items-center justify-between py-2.5">
                   <div className="space-y-0.5">
                     <h4 className="text-sm font-medium text-velora-text">
-                      {currentLocale === "fr" ? "Rapport par Email" : currentLocale === "es" ? "Resumen de Email" : currentLocale === "ar" ? "ملخص البريد الإلكتروني" : "Email Digests"}
+                      {t("settings_email_digest")}
                     </h4>
                     <p className="text-[11px] text-velora-text-muted">
-                      {currentLocale === "fr" ? "Recevoir un résumé des connexions" : currentLocale === "es" ? "Recibir resúmenes de conexiones" : currentLocale === "ar" ? "تلقي ملخصات الاتصالات الأسبوعية" : "Receive weekly performance and connection summaries"}
+                      {t("settings_email_digest_desc")}
                     </p>
                   </div>
                   <ToggleSwitch
@@ -330,10 +430,10 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                 <div className="flex items-center justify-between py-2.5">
                   <div className="space-y-0.5">
                     <h4 className="text-sm font-medium text-velora-text">
-                      {currentLocale === "fr" ? "Sons & Alertes" : currentLocale === "es" ? "Alertas de Sonido" : currentLocale === "ar" ? "تنبيهات الأصوات" : "Alert Sounds"}
+                      {t("settings_alert_sounds")}
                     </h4>
                     <p className="text-[11px] text-velora-text-muted">
-                      {currentLocale === "fr" ? "Jouer un son lors d'un scan réussi" : currentLocale === "es" ? "Sonido al escanear correctamente" : currentLocale === "ar" ? "تشغيل صوت عند المسح الناجح" : "Play subtle feedback sounds during NFC/QR taps"}
+                      {t("settings_alert_sounds_desc")}
                     </p>
                   </div>
                   <ToggleSwitch
@@ -352,7 +452,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
               <div className="flex items-center gap-2 px-1">
                 <Shield size={14} className="text-velora-gold" />
                 <h3 className="text-xs uppercase tracking-wider text-velora-text-muted font-medium">
-                  {currentLocale === "fr" ? "Sécurité et Confidentialité" : currentLocale === "es" ? "Privacidad" : currentLocale === "ar" ? "الخصوصية والأمان" : "Privacy & Security"}
+                  {t("settings_privacy_section")}
                 </h3>
               </div>
               <GlassCard className="p-4 divide-y divide-white/5" hover={false}>
@@ -377,10 +477,10 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                 <div className="flex items-center justify-between py-2.5">
                   <div className="space-y-0.5">
                     <h4 className="text-sm font-medium text-velora-text">
-                      {currentLocale === "fr" ? "Indexation Google" : currentLocale === "es" ? "Indexación de Motores" : currentLocale === "ar" ? "فهرسة محركات البحث" : "Search Engine Indexing"}
+                      {t("settings_search_indexing")}
                     </h4>
                     <p className="text-[11px] text-velora-text-muted">
-                      {currentLocale === "fr" ? "Permettre aux moteurs de recherche d'indexer votre profil" : currentLocale === "es" ? "Permitir indexar perfil públicamente" : currentLocale === "ar" ? "السماح لمحركات البحث بفهرسة ملفك الشخصي" : "Allow Google and other engines to list your profile link"}
+                      {t("settings_search_indexing_desc")}
                     </p>
                   </div>
                   <ToggleSwitch
@@ -394,10 +494,10 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                 <div className="flex items-center justify-between py-2.5">
                   <div className="space-y-0.5">
                     <h4 className="text-sm font-medium text-velora-text">
-                      {currentLocale === "fr" ? "Visibilité de l'Email" : currentLocale === "es" ? "Visibilidad del Email" : currentLocale === "ar" ? "ظهور البريد الإلكتروني" : "Email Visibility"}
+                      {t("settings_email_visibility")}
                     </h4>
                     <p className="text-[11px] text-velora-text-muted">
-                      {currentLocale === "fr" ? "Afficher publiquement votre adresse email" : currentLocale === "es" ? "Mostrar dirección de correo en perfil" : currentLocale === "ar" ? "عرض عنوان البريد الإلكتروني علنًا" : "Show your email address as a public contact action"}
+                      {t("settings_email_visibility_desc")}
                     </p>
                   </div>
                   <ToggleSwitch
@@ -433,20 +533,23 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-md"
+            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/78 px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
+            style={{ willChange: "opacity" }}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="glass-strong border border-velora-rose/30 max-w-sm w-full p-5 rounded-2xl bg-velora-black/90 space-y-4"
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-sm w-full p-5 rounded-2xl bg-velora-dark border border-white/10 space-y-4 max-h-full overflow-y-auto"
+              style={{ willChange: "transform, opacity" }}
             >
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-velora-text text-center">
-                  {currentLocale === "fr" ? "Se déconnecter de VELORA ?" : currentLocale === "es" ? "¿Cerrar sesión de VELORA?" : currentLocale === "ar" ? "هل تريد تسجيل الخروج؟" : "Log out from VELORA?"}
+                  {t("settings_logout_title")}
                 </h3>
                 <p className="text-xs text-velora-text-muted text-center leading-relaxed">
-                  {currentLocale === "fr" ? "Vous devrez vous reconnecter pour accéder à votre profil et vos insights." : currentLocale === "es" ? "Necesitarás iniciar sesión nuevamente para acceder a tu perfil." : currentLocale === "ar" ? "ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى ملفك الشخصي." : "You will need to sign in again to manage your professional identity."}
+                  {t("settings_logout_message")}
                 </p>
               </div>
 
@@ -456,21 +559,22 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
                   onClick={() => setShowLogoutConfirm(false)}
                   className="flex-1 py-3 rounded-lg border border-white/10 text-xs font-medium text-velora-text hover:bg-white/[0.03] transition-colors"
                 >
-                  {currentLocale === "fr" ? "Annuler" : currentLocale === "es" ? "Cancelar" : currentLocale === "ar" ? "إلغاء" : "Cancel"}
+                  {t("cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={handleLogout}
                   className="flex-1 py-3 rounded-lg bg-velora-rose text-xs font-medium text-white hover:bg-velora-rose/90 transition-colors"
                 >
-                  {currentLocale === "fr" ? "Déconnexion" : currentLocale === "es" ? "Cerrar sesión" : currentLocale === "ar" ? "تسجيل الخروج" : "Log Out"}
+                  {t("settings_logout_confirm")}
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+      </motion.div>
+    </ModalPortal>
   );
 }
 

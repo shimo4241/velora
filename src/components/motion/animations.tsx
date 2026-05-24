@@ -26,14 +26,15 @@ interface MotionProps {
 /* ── Fade Up ── 
    Primary entrance animation with composited movement only. */
 export function FadeUp({ children, delay = 0, className }: MotionProps) {
+  const safeDelay = Math.min(delay, 0.12);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.22 }}
+      viewport={{ once: true, amount: 0.12 }}
       transition={{
         duration: MOTION.duration.entrance,
-        delay,
+        delay: safeDelay,
         ease: PREMIUM_EASE,
       }}
       className={className}
@@ -47,14 +48,15 @@ export function FadeUp({ children, delay = 0, className }: MotionProps) {
    Used for avatars, icons, badges.
    Grows from 92% — barely noticeable but adds life. */
 export function ScaleIn({ children, delay = 0, className }: MotionProps) {
+  const safeDelay = Math.min(delay, 0.12);
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92 }}
+      initial={{ opacity: 0, scale: 0.97 }}
       whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true, amount: 0.35 }}
+      viewport={{ once: true, amount: 0.18 }}
       transition={{
         duration: MOTION.duration.slow,
-        delay,
+        delay: safeDelay,
         ease: PREMIUM_EASE,
       }}
       className={className}
@@ -67,14 +69,15 @@ export function ScaleIn({ children, delay = 0, className }: MotionProps) {
 /* ── Slide In ──
    Horizontal entrance. Used for timeline items. */
 export function SlideIn({ children, delay = 0, className }: MotionProps) {
+  const safeDelay = Math.min(delay, 0.12);
   return (
     <motion.div
-      initial={{ opacity: 0, x: -12 }}
+      initial={{ opacity: 0, x: -8 }}
       whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.14 }}
       transition={{
         duration: MOTION.duration.slow,
-        delay,
+        delay: safeDelay,
         ease: PREMIUM_EASE,
       }}
       className={className}
@@ -104,7 +107,7 @@ const staggerContainer: Variants = {
 };
 
 const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
@@ -121,13 +124,15 @@ export function StaggerChildren({
   delay = 0,
   staggerDelay = MOTION.stagger,
 }: StaggerProps) {
+  const safeDelay = Math.min(delay, 0.12);
+  const safeStagger = Math.min(staggerDelay, MOTION.stagger);
   return (
     <motion.div
       variants={staggerContainer}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.18 }}
-      custom={{ delay, stagger: staggerDelay }}
+      viewport={{ once: true, amount: 0.12 }}
+      custom={{ delay: safeDelay, stagger: safeStagger }}
       className={className}
     >
       {children}

@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════════
-   VELORA — Multilingual System
-   French · Arabic · English · Spanish
-   ═══════════════════════════════════════════════════ */
-
+import { useState, useEffect } from "react";
 import fr from "../locales/fr.json";
 import en from "../locales/en.json";
 import ar from "../locales/ar.json";
@@ -39,17 +35,53 @@ export function createTranslator(locale: Locale) {
 }
 
 /**
- * React hook for translations.
+ * Programmatically updates the app locale, stores it in localStorage,
+ * updates HTML dir and lang, and notifies all active useTranslation hooks.
  */
-export function useTranslation(locale: Locale = "fr") {
-  // Try to load language from localStorage client-side
-  let activeLocale = locale;
+export function setAppLocale(lang: Locale) {
   if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("velora_lang") as Locale;
-    if (saved && locales[saved]) {
-      activeLocale = saved;
+    localStorage.setItem("velora_lang", lang);
+    const isRtl = lang === "ar";
+    document.documentElement.lang = lang;
+    document.documentElement.dir = isRtl ? "rtl" : "ltr";
+    if (isRtl) {
+      document.documentElement.classList.add("rtl");
+    } else {
+      document.documentElement.classList.remove("rtl");
     }
+    window.dispatchEvent(new CustomEvent("velora_locale_change", { detail: lang }));
   }
+}
+
+/**
+ * React hook for translations. Reacts to locale changes.
+ */
+export function useTranslation(defaultLocale: Locale = "fr") {
+  const [activeLocale, setActiveLocale] = useState<Locale>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("velora_lang") as Locale;
+      if (saved && locales[saved]) {
+        return saved;
+      }
+    }
+    return defaultLocale;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleLocaleChange = (e: Event) => {
+      const customEvent = e as CustomEvent<Locale>;
+      if (customEvent.detail && locales[customEvent.detail]) {
+        setActiveLocale(customEvent.detail);
+      }
+    };
+
+    window.addEventListener("velora_locale_change", handleLocaleChange);
+    return () => {
+      window.removeEventListener("velora_locale_change", handleLocaleChange);
+    };
+  }, []);
 
   const t = createTranslator(activeLocale);
   const isRtl = activeLocale === "ar";
@@ -57,3 +89,4 @@ export function useTranslation(locale: Locale = "fr") {
 
   return { t, locale: activeLocale, getGreetingKey, isRtl, dir };
 }
+

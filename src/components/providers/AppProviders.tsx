@@ -23,12 +23,17 @@ export function AppProviders({ children }: { children: ReactNode }) {
       }
 
       // Initialize theme from localStorage
-      const savedTheme = localStorage.getItem("velora_theme") || "dark";
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      if (savedTheme === "light") {
+      const savedVisualTheme = localStorage.getItem("velora_visual_theme") || "gold";
+      document.documentElement.setAttribute("data-theme", savedVisualTheme);
+      if (savedVisualTheme === "medical") {
         document.documentElement.classList.add("light");
       } else {
-        document.documentElement.classList.remove("light");
+        const savedTheme = localStorage.getItem("velora_theme") || "dark";
+        if (savedTheme === "light") {
+          document.documentElement.classList.add("light");
+        } else {
+          document.documentElement.classList.remove("light");
+        }
       }
     } catch (e) {
       console.error("Error initializing lang/theme provider:", e);

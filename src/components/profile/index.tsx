@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useScrollLock } from "@/lib/scrollLock";
 import { AnimatePresence, motion, useScroll, useTransform, type PanInfo } from "framer-motion";
 import {
   Shield,
@@ -132,15 +133,15 @@ export function ProfileHero({
           )
         )}
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(245,243,238,0.09),transparent_32%),linear-gradient(180deg,rgba(7,7,5,0)_0%,rgba(7,7,5,0.42)_68%,#070705_100%)]" />
-        <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,rgba(196,162,101,0.12)_46%,transparent_54%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(245,243,238,0.09),transparent_32%),linear-gradient(180deg,color-mix(in srgb, var(--color-velora-black) 0%, transparent)_0%,color-mix(in srgb, var(--color-velora-black) 42%, transparent)_68%,var(--theme-bg)_100%)]" />
+        <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,color-mix(in srgb, var(--color-velora-gold) 12%, transparent)_46%,transparent_54%)]" />
 
         {/* Gold atmospheric glow — subtle, centered */}
         <motion.div
           className="glow-layer absolute left-1/2 top-[56%] h-[280px] w-[280px] rounded-full opacity-80"
           style={{
             background:
-              "radial-gradient(circle, rgba(196,162,101,0.13) 0%, rgba(196,162,101,0.04) 42%, transparent 70%)",
+              "radial-gradient(circle, color-mix(in srgb, var(--color-velora-gold) 13%, transparent) 0%, color-mix(in srgb, var(--color-velora-gold) 4%, transparent) 42%, transparent 70%)",
             x: "-50%",
             y: "-50%",
           }}
@@ -175,7 +176,7 @@ export function ProfileHero({
             <div className="relative">
               {/* Subtle glow ring */}
               <motion.div
-                className="glow-layer absolute -inset-3 rounded-full bg-velora-gold/16 opacity-60 blur-xl"
+                className="glow-layer absolute -inset-3 rounded-full bg-velora-gold/8 opacity-50 blur-md"
                 animate={{ scale: [0.94, 1.06, 0.94] }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -183,7 +184,7 @@ export function ProfileHero({
               <div className="absolute -inset-0.5 rounded-full border border-velora-gold/25" />
 
               {/* Avatar image */}
-              <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-velora-gold/35 bg-velora-surface shadow-[0_18px_70px_rgba(0,0,0,0.45)]">
+              <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-velora-gold/35 bg-velora-surface shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
                 {avatarUrl ? (
                   <OptimizedImage
                     src={avatarUrl}
@@ -375,6 +376,8 @@ export function PremiumPortfolioGallery({
   const [scale, setScale] = useState(1);
   const [dragEnabled, setDragEnabled] = useState(false);
 
+  useScrollLock(activeIndex !== null);
+
   const move = (direction: -1 | 1) => {
     if (activeIndex === null || portfolio.length === 0) return;
     // Reset zoom state on page change
@@ -428,7 +431,7 @@ export function PremiumPortfolioGallery({
                 whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.985 }}
                 onClick={() => setActiveIndex(index)}
-                className="card-interactive group relative cursor-pointer overflow-hidden rounded-[var(--radius-card)] border border-white/8 bg-white/[0.04] text-left shadow-[0_18px_60px_rgba(0,0,0,0.22)]"
+                className="card-interactive group relative cursor-pointer overflow-hidden rounded-[var(--radius-card)] border border-white/8 bg-white/[0.04] text-left shadow-[0_6px_16px_rgba(0,0,0,0.12)]"
               >
                 <div className={`relative overflow-hidden ${tall ? "aspect-[4/5]" : "aspect-[4/3]"} ${compact ? "min-h-[150px]" : ""}`}>
                   {hasMedia ? (
@@ -450,7 +453,7 @@ export function PremiumPortfolioGallery({
                       />
                     )
                   ) : (
-                    <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.22),transparent_34%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.035))]" />
+                    <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,color-mix(in srgb, var(--color-velora-gold) 22%, transparent),transparent_34%),linear-gradient(145deg,color-mix(in srgb, var(--color-velora-gold) 18%, transparent),rgba(255,255,255,0.035))]" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/76 via-black/12 to-transparent pointer-events-none" />
                   {isVideo && (
@@ -479,24 +482,24 @@ export function PremiumPortfolioGallery({
       <AnimatePresence>
         {activeProject && (
           <motion.div
-            className="fixed inset-0 z-[260] flex items-center justify-center bg-black/82 px-4 py-[max(1rem,env(safe-area-inset-top))] backdrop-blur-md"
+            className="fixed inset-0 z-[260] flex items-center justify-center bg-black/92 px-4 py-[max(1rem,env(safe-area-inset-top))]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setActiveIndex(null)}
           >
             <motion.div
-              className="relative w-full max-w-[430px] overflow-hidden rounded-[var(--radius-lg)] border border-white/12 bg-velora-black shadow-[0_30px_120px_rgba(0,0,0,0.75)]"
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              className="relative w-full max-w-[430px] overflow-hidden rounded-[var(--radius-lg)] border border-white/12 bg-velora-black shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => setActiveIndex(null)}
-                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md"
+                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-black/80 text-velora-text"
                 aria-label="Close portfolio preview"
               >
                 <X size={16} />
@@ -527,7 +530,7 @@ export function PremiumPortfolioGallery({
                     dragConstraints={{ left: -180, right: 180, top: -180, bottom: 180 }}
                     dragElastic={0.1}
                     animate={{ scale }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <OptimizedImage
                       src={activeProject.imageUrl}
@@ -537,7 +540,7 @@ export function PremiumPortfolioGallery({
                     />
                   </motion.div>
                 ) : (
-                  <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(196,162,101,0.24),transparent_36%),linear-gradient(145deg,rgba(196,162,101,0.18),rgba(255,255,255,0.04))]" />
+                  <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,color-mix(in srgb, var(--color-velora-gold) 24%, transparent),transparent_36%),linear-gradient(145deg,color-mix(in srgb, var(--color-velora-gold) 18%, transparent),rgba(255,255,255,0.04))]" />
                 )}
                 
                 {/* Visual Indicators */}
@@ -551,7 +554,7 @@ export function PremiumPortfolioGallery({
                         e.stopPropagation();
                         move(-1);
                       }}
-                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                      className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/80 text-velora-text transition-all hover:bg-black/60 active:scale-95"
                       aria-label="Previous project"
                     >
                       <ChevronLeft size={17} />
@@ -562,7 +565,7 @@ export function PremiumPortfolioGallery({
                         e.stopPropagation();
                         move(1);
                       }}
-                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/45 text-velora-text backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                      className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/80 text-velora-text transition-all hover:bg-black/60 active:scale-95"
                       aria-label="Next project"
                     >
                       <ChevronRight size={17} />

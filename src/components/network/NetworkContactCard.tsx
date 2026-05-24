@@ -59,9 +59,9 @@ export const NetworkContactCard = memo(function NetworkContactCard({
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="relative overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.045] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.34)] backdrop-blur-xl"
+      className="relative overflow-hidden rounded-[24px] border border-white/10 bg-velora-dark p-4 shadow-[0_8px_20px_rgba(0,0,0,0.22)]"
     >
-      <div className="pointer-events-none absolute inset-x-8 -top-20 h-32 rounded-full bg-velora-gold/10 blur-2xl" />
+      <div className="pointer-events-none absolute inset-x-8 -top-20 h-32 rounded-full bg-velora-gold/5 blur-xl" />
       <div className="relative flex items-start gap-3.5">
         <div
           onClick={() => {
@@ -76,7 +76,7 @@ export const NetworkContactCard = memo(function NetworkContactCard({
           className="flex flex-1 items-start gap-3.5 cursor-pointer min-w-0 group"
         >
           <div className="relative shrink-0">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,rgba(212,175,55,0.28),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))] group-hover:border-velora-gold/50 transition-colors">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,var(--color-velora-gold-muted),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))] group-hover:border-velora-gold/50 transition-colors">
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
               ) : (

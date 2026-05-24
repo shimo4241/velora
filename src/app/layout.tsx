@@ -139,12 +139,17 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('velora_theme') || 'dark';
-                  document.documentElement.setAttribute('data-theme', theme);
-                  if (theme === 'light') {
+                  var visualTheme = localStorage.getItem('velora_visual_theme') || 'gold';
+                  document.documentElement.setAttribute('data-theme', visualTheme);
+                  if (visualTheme === 'medical') {
                     document.documentElement.classList.add('light');
                   } else {
-                    document.documentElement.classList.remove('light');
+                    var theme = localStorage.getItem('velora_theme') || 'dark';
+                    if (theme === 'light') {
+                      document.documentElement.classList.add('light');
+                    } else {
+                      document.documentElement.classList.remove('light');
+                    }
                   }
                 } catch (e) {}
               })();

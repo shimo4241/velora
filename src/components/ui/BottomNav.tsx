@@ -37,37 +37,33 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             <motion.button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl min-w-[56px]"
-              whileTap={{ scale: 0.94 }}
-              whileHover={{ scale: isActive ? 1 : 1.05 }}
+              className="relative flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-colors duration-200 ease-out"
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
               aria-label={tab.label}
               aria-current={isActive ? "page" : undefined}
             >
               {/* Active background */}
-              {isActive && (
-                <motion.div
-                  layoutId="nav-active"
-                  className="absolute inset-0 bg-gradient-to-b from-[rgba(196,162,101,0.15)] to-[rgba(196,162,101,0.02)] rounded-xl border border-velora-gold/30 shadow-[0_0_15px_rgba(196,162,101,0.15)]"
-                  transition={{
-                    type: "spring",
-                    stiffness: 380,
-                    damping: 30,
-                  }}
-                />
-              )}
+              <span
+                className={`absolute inset-0 rounded-xl border bg-gradient-to-b transition-opacity duration-200 ease-out ${
+                  isActive
+                    ? "border-velora-gold/30 from-[color-mix(in srgb, var(--color-velora-gold) 15%, transparent)] to-[color-mix(in srgb, var(--color-velora-gold) 2%, transparent)] opacity-100 shadow-[0_0_8px_color-mix(in srgb, var(--color-velora-gold) 10%, transparent)]"
+                    : "border-transparent from-transparent to-transparent opacity-0"
+                }`}
+              />
 
               <Icon
                 size={20}
-                className={`relative z-10 transition-all duration-300 ${
+                className={`relative z-10 transition-[color,filter] duration-200 ease-out ${
                   isActive
-                    ? "text-velora-gold scale-110 drop-shadow-[0_0_10px_rgba(196,162,101,0.6)]"
+                    ? "text-velora-gold drop-shadow-[0_0_4px_color-mix(in srgb, var(--color-velora-gold) 20%, transparent)]"
                     : "text-velora-text-muted hover:text-velora-text"
                 }`}
               />
               <span
-                className={`relative z-10 text-[9px] font-bold tracking-wide transition-all duration-300 ${
+                className={`relative z-10 text-[9px] font-bold tracking-wide transition-colors duration-200 ease-out ${
                   isActive
-                    ? "text-velora-gold font-bold scale-105"
+                    ? "text-velora-gold"
                     : "text-velora-text-muted"
                 }`}
               >

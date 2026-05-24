@@ -1,39 +1,23 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
-  Activity,
-  BarChart3,
-  Briefcase,
   Check,
-  Eye,
+  Clock,
   Globe,
   LogOut,
+  MapPin,
   MessageCircle,
-  MousePointerClick,
-  Pencil,
-  QrCode,
   Shield,
-  Settings as SettingsIcon,
-  Sparkles,
+  Star,
   Users,
-  Wifi,
-  type LucideIcon,
 } from "lucide-react";
 import {
-  ContactSection,
-  ExperienceTimeline,
   IdentityHero,
-  IdentitySection,
-  LUXURY_EASE,
-  LuxuryQrSection,
-  PortfolioShowcase,
   Reveal,
-  ServiceDeck,
-  SkillMatrix,
-  SocialChannelRail,
   getIdentityTheme,
+  getActiveTheme,
 } from "@/app/u/[username]/PublicProfileClient";
 import {
   FloatingEditButton,
@@ -42,12 +26,12 @@ import {
 } from "@/components/profile/ProfileEditor";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTranslation } from "@/lib/i18n";
-import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
+
 import { EditProfileScreen } from "./EditProfileScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { useConnections } from "@/hooks/useConnections";
 import { usePortfolio, useExperience, useProfile } from "@/hooks/useProfile";
-import { useActivity, useStats } from "@/hooks/useStats";
+import { useStats } from "@/hooks/useStats";
 import {
   addExperienceEntry,
   addPortfolioItem,
@@ -57,14 +41,14 @@ import {
   updatePortfolioItem,
 } from "@/lib/firestore";
 import type {
-  ActivityItem,
-  DailyStats,
   ExperienceEntry,
   PortfolioItem,
   VeloraProfile,
 } from "@/types";
 
 type IdentityVarStyle = CSSProperties & Record<`--${string}`, string>;
+
+const PROJECT_FALLBACKS = ["/portfolio-1.png", "/portfolio-2.png"];
 
 export function ProfileScreen() {
   const {
@@ -78,13 +62,13 @@ export function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { portfolio } = usePortfolio();
   const { experience } = useExperience();
-  const { connections, count: connectionsCount } = useConnections();
+  const { count: connectionsCount } = useConnections();
   const { stats } = useStats();
-  const { activity } = useActivity();
   const { t } = useTranslation(profile?.locale || "fr");
   const [editingSection, setEditingSection] = useState<ProfileEditorSection | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showFullEdit, setShowFullEdit] = useState(false);
+  const [localTab, setLocalTab] = useState<"overview" | "activity">("overview");
   const [profileOverride, setProfileOverride] =
     useState<Partial<Omit<VeloraProfile, "id" | "username">>>({});
   const [portfolioOverride, setPortfolioOverride] = useState<PortfolioItem[] | null>(null);
@@ -98,11 +82,12 @@ export function ProfileScreen() {
   const effectivePortfolio = portfolioOverride ?? portfolio;
   const effectiveExperience = experienceOverride ?? experience;
   const theme = useMemo(
-    () => getIdentityTheme(effectiveProfile?.professionalMode),
-    [effectiveProfile?.professionalMode]
+    () => {
+      if (!effectiveProfile) return getIdentityTheme();
+      return getActiveTheme(effectiveProfile);
+    },
+    [effectiveProfile]
   );
-  const profileUrl = effectiveProfile ? getProfileUrl(effectiveProfile.username) : "";
-  const shortUrl = effectiveProfile ? getProfileShortUrl(effectiveProfile.username) : "";
   const themeVars = useMemo(
     () =>
       ({
@@ -220,217 +205,450 @@ export function ProfileScreen() {
 
   return (
     <main
-      className="luxury-profile min-h-screen overflow-hidden bg-velora-black text-velora-text safe-bottom"
+      className="luxury-profile min-h-screen bg-velora-black text-velora-text safe-bottom"
       style={themeVars}
     >
-      <div className="relative">
-        <IdentityHero
-          profile={effectiveProfile}
-          portfolioCount={effectivePortfolio.length}
-          experienceCount={effectiveExperience.length}
-          profileUrl={profileUrl}
-          shortUrl={shortUrl}
-          theme={theme}
-          t={t}
-        />
-        <div className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-20 flex items-center gap-2">
-          <motion.button
-            type="button"
-            aria-label="Edit Profile"
-            title="Edit Profile"
-            onClick={() => setShowFullEdit(true)}
-            whileHover={{ y: -2, scale: 1.04 }}
-            whileTap={{ scale: 0.92 }}
-            className="btn-3d-primary flex h-10 w-10 items-center justify-center rounded-full"
-          >
-            <Pencil size={15} />
-          </motion.button>
+      <IdentityHero
+        profile={effectiveProfile}
+        portfolioCount={effectivePortfolio.length}
+        experienceCount={effectiveExperience.length}
+        connectionsCount={connectionsCount}
+        onEdit={() => setShowSettings(true)}
+        onEditAvatar={() => setShowFullEdit(true)}
+        localTab={localTab}
+        setLocalTab={setLocalTab}
+      />
 
-          <motion.button
-            type="button"
-            aria-label="Settings"
-            title="Settings"
-            onClick={() => setShowSettings(true)}
-            whileHover={{ y: -2, scale: 1.04 }}
-            whileTap={{ scale: 0.92 }}
-            className="btn-3d-glass flex h-10 w-10 items-center justify-center rounded-full"
-          >
-            <SettingsIcon size={16} />
-          </motion.button>
-        </div>
-      </div>
+      <div className="relative z-10 mx-auto w-full max-w-[980px] px-3 pb-24">
+        {localTab === "overview" ? (
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            
+            {/* COLUMN 1 */}
+            <div className="space-y-3 col-span-1">
+              
+              {/* About Block */}
+              <OwnerEditableSurface editLabel={t("edit_bio")} onEdit={() => setEditingSection("bio")} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[150px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("biography_header") || "About"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-1.5">Professional synopsis</p>
+                    <p className="text-[10px] leading-relaxed text-velora-text-secondary line-clamp-5 whitespace-pre-line">
+                      {effectiveProfile.bio || "Professional synopsis is investing in professional communications, market strategy, and finance education."}
+                    </p>
+                  </div>
+                  {effectiveProfile.company && (
+                    <div className="text-[8px] text-velora-text-muted mt-2 border-t border-white/5 pt-1.5">
+                      {effectiveProfile.title || "Premium Member"} • {effectiveProfile.company}
+                    </div>
+                  )}
+                </div>
+              </OwnerEditableSurface>
 
-      <div className="relative z-10 mx-auto w-full max-w-[980px] px-5 pb-28">
-        <OwnerEditableSurface
-          editLabel="Edit contact cards"
-          onEdit={() => setEditingSection("contact")}
-          buttonClassName="right-1 top-1"
-        >
-          {hasContactCards(effectiveProfile) ? (
-            <ContactSection profile={effectiveProfile} theme={theme} t={t} />
-          ) : (
-            <section className="-mt-6 pb-8">
-              <LuxuryEmptyState
-                icon={MessageCircle}
-                title="Build contact cards"
-                actionLabel="Edit contact"
-                onAction={() => setEditingSection("contact")}
-              >
-                Add WhatsApp, email, phone, website, or booking access.
-              </LuxuryEmptyState>
-            </section>
-          )}
-        </OwnerEditableSurface>
+              {/* Skills Block */}
+              <OwnerEditableSurface editLabel={t("edit_skills")} onEdit={() => setEditingSection("skills")} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("eyebrow_expertise") || "Skills & Endorsements"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Core expertise</p>
+                    
+                    {effectiveProfile.skills && effectiveProfile.skills.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {effectiveProfile.skills.slice(0, 6).map((skill, index) => (
+                          <span key={skill} className="inline-flex items-center gap-0.5 rounded-full border border-velora-gold/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
+                            {skill} <span className="text-[7.5px] text-[var(--identity-accent)] opacity-85 font-mono">{[1, 13, 6, 4, 3, 2][index % 6]}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[9px] text-velora-text-muted mt-1">No skills listed yet.</p>
+                    )}
+                  </div>
+                </div>
+              </OwnerEditableSurface>
 
-        <OwnerAnalyticsDeck
-          stats={stats}
-          connectionsCount={connectionsCount}
-          recentActivity={activity.slice(0, 3)}
-          mutualConnections={connections
-            .slice(0, 3)
-            .map((connection) => connection.profile.fullName || "VELORA")}
-          isVerified={Boolean(effectiveProfile.isVerified)}
-        />
+              {/* Experience Block */}
+              <OwnerEditableSurface editLabel={t("edit_experience")} onEdit={() => setEditingSection("experience")} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("experience") || "Professional Experience"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Trajectory history</p>
+                    
+                    {effectiveExperience && effectiveExperience.length > 0 ? (
+                      <div className="space-y-2 mt-1">
+                        {effectiveExperience.slice(0, 3).map((exp) => (
+                          <div key={exp.id} className="flex items-start gap-2">
+                            <div className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded bg-velora-gold/5 text-[var(--identity-accent)] text-[9px] border border-velora-gold/10 font-bold uppercase">
+                              {exp.company[0]}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-[9px] font-semibold text-velora-text leading-tight truncate">{exp.role}</h4>
+                              <p className="text-[8px] text-velora-text-muted truncate">{exp.company}</p>
+                              <p className="text-[7px] text-[var(--identity-accent)] mt-0.5">{exp.startYear} - {exp.isCurrent ? t("present") || "Present" : exp.endYear}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[9px] text-velora-text-muted mt-2">Aucune expérience enregistrée.</p>
+                    )}
+                  </div>
+                </div>
+              </OwnerEditableSurface>
 
-        <OwnerIdentitySection
-          eyebrow="Narrative"
-          title="Signature Bio"
-          editLabel="Edit bio"
-          onEdit={() => setEditingSection("bio")}
-        >
-          {effectiveProfile.bio ? (
-            <Reveal delay={0.04}>
-              <div className="identity-glass-card identity-reflective rounded-[24px] p-5">
-                <p className="text-sm leading-7 text-velora-text-secondary">
-                  {effectiveProfile.bio}
-                </p>
+              {/* Dentist Clinic Details (if dentist mode) */}
+              {effectiveProfile.professionalMode === "dentist" && (
+                <OwnerEditableSurface editLabel={t("edit_clinic")} onEdit={() => setShowFullEdit(true)} buttonClassName="right-2 top-2">
+                  <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
+                    {/* Subtly Moroccan Zellige ornament */}
+                    <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                      <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                        <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                        <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                        <circle cx="50" cy="50" r="12" />
+                        <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                      </svg>
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-xs font-semibold text-velora-text leading-tight">{effectiveProfile.clinicName || "Clinic Details"}</h3>
+                      <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">{effectiveProfile.specialty || "Specialty Information"}</p>
+                      <div className="space-y-1.5 mt-2">
+                        {effectiveProfile.clinicAddress && (
+                          <div className="flex items-start gap-1.5 text-[8.5px] text-velora-text-secondary">
+                            <MapPin size={9} className="text-[var(--identity-accent)] shrink-0 mt-0.5" />
+                            <span className="line-clamp-2">{effectiveProfile.clinicAddress}</span>
+                          </div>
+                        )}
+                        {effectiveProfile.workHours && (
+                          <div className="flex items-start gap-1.5 text-[8.5px] text-velora-text-secondary">
+                            <Clock size={9} className="text-[var(--identity-accent)] shrink-0 mt-0.5" />
+                            <span>{effectiveProfile.workHours}</span>
+                          </div>
+                        )}
+                        {effectiveProfile.orderNumber && (
+                          <div className="text-[7.5px] font-mono text-velora-text-muted mt-1">
+                            ONMD N° {effectiveProfile.orderNumber}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </OwnerEditableSurface>
+              )}
+
+              {/* Services Offered Block */}
+              <OwnerEditableSurface editLabel={t("edit_services")} onEdit={() => setEditingSection("services")} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[120px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("eyebrow_services") || "Services"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Offerings & pricing</p>
+                    {(!effectiveProfile.services || effectiveProfile.services.length === 0) ? (
+                      <p className="text-[9px] text-velora-text-muted mt-2">Aucun service proposé pour le moment.</p>
+                    ) : (
+                      <div className="space-y-1.5 mt-2">
+                        {effectiveProfile.services.slice(0, 3).map((srv) => (
+                          <div key={srv.id} className="flex justify-between items-center bg-white/[0.02] border border-white/5 rounded-md p-1.5">
+                            <span className="text-[9px] font-medium text-velora-text leading-tight truncate mr-2">{srv.title}</span>
+                            {srv.price && <span className="text-[8px] font-mono text-[var(--identity-accent)] font-semibold shrink-0">{srv.price}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </OwnerEditableSurface>
+
+              {/* Certifications Block */}
+              <OwnerEditableSurface editLabel={t("edit_profile_skills_title") || "Certifications"} onEdit={() => setShowFullEdit(true)} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("certifications") || "Certifications"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Credentials & licensing</p>
+                    {(!effectiveProfile.certifications || effectiveProfile.certifications.length === 0) ? (
+                      <p className="text-[9px] text-velora-text-muted mt-2">Aucune certification enregistrée.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {effectiveProfile.certifications.map((cert) => (
+                          <span key={cert} className="inline-flex items-center gap-0.5 rounded-full border border-velora-gold/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
+                            {cert}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </OwnerEditableSurface>
+
+            </div>
+
+            {/* COLUMN 2 */}
+            <div className="space-y-3 col-span-1">
+              
+              {/* Recent Activity Block */}
+              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[190px] flex flex-col justify-between shadow-md">
+                {/* Subtly Moroccan Zellige ornament */}
+                <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                  <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                    <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                    <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                    <circle cx="50" cy="50" r="12" />
+                    <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("recent_activity") || "Recent Activity"}</h3>
+                  <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-1.5">Posts</p>
+                  
+                  <div className="space-y-2 mt-1">
+                    <div className="flex items-start gap-1.5">
+                      <MessageCircle size={10} className="text-[var(--identity-accent)] shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <h4 className="text-[8.5px] font-medium text-velora-text leading-tight truncate">Insights on Global Markets</h4>
+                        <p className="text-[7.5px] text-velora-text-muted">Apr 15, 2023</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <Globe size={10} className="text-[var(--identity-accent)] shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <h4 className="text-[8.5px] font-medium text-velora-text leading-tight truncate">Future of AI in Finance</h4>
+                        <p className="text-[7.5px] text-velora-text-muted">Jan 18, 2023</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activity picture placeholder */}
+                  <div className="mt-2.5 relative h-12 w-full overflow-hidden rounded-lg border border-white/5 bg-white/5">
+                    <img
+                      src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60"
+                      alt="Activity visualization"
+                      className="h-full w-full object-cover opacity-50"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-            </Reveal>
-          ) : (
-            <LuxuryEmptyState
-              icon={Sparkles}
-              title="Write your cinematic bio"
-              actionLabel="Edit bio"
-              onAction={() => setEditingSection("bio")}
-            >
-              A focused founder-style narrative appears in the hero and profile body.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
 
-        <OwnerIdentitySection
-          eyebrow="Expertise"
-          title="Signal Stack"
-          editLabel="Edit skills"
-          onEdit={() => setEditingSection("skills")}
-        >
-          {(effectiveProfile.skills || []).length ? (
-            <SkillMatrix skills={effectiveProfile.skills || []} />
-          ) : (
-            <LuxuryEmptyState
-              icon={Check}
-              title="Add premium skill signals"
-              actionLabel="Edit skills"
-              onAction={() => setEditingSection("skills")}
-            >
-              Skills render as the same animated glass chips as the public profile.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
+              {/* Velora Network Block */}
+              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                {/* Subtly Moroccan Zellige ornament */}
+                <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                  <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                    <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                    <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                    <circle cx="50" cy="50" r="12" />
+                    <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("network") || "Velora Network"}</h3>
+                  <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Mutual connections</p>
+                  
+                  {connectionsCount === 0 ? (
+                    <p className="text-[9px] text-velora-text-muted mt-2">Aucun contact dans le réseau pour le moment.</p>
+                  ) : (
+                    <div className="space-y-1.5 mt-2">
+                      <div className="flex items-center gap-2">
+                        <Users size={10} className="text-[var(--identity-accent)]" />
+                        <span className="text-[9.5px] text-velora-text-secondary font-medium">
+                          {connectionsCount} {connectionsCount > 1 ? "connexions actives" : "connexion active"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-        <OwnerIdentitySection
-          eyebrow="Services"
-          title="Private Offering"
-          editLabel="Edit services"
-          onEdit={() => setEditingSection("services")}
-        >
-          {(effectiveProfile.services || []).length ? (
-            <ServiceDeck services={effectiveProfile.services || []} />
-          ) : (
-            <LuxuryEmptyState
-              icon={Briefcase}
-              title="Shape your service deck"
-              actionLabel="Add service"
-              onAction={() => setEditingSection("services")}
-            >
-              Services become cinematic offering cards with pricing signals.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
+              {/* Analytics Block */}
+              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                {/* Subtly Moroccan Zellige ornament */}
+                <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                  <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                    <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                    <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                    <circle cx="50" cy="50" r="12" />
+                    <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("analytics") || "Live Analytics"}</h3>
+                  <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Realtime signals</p>
+                  
+                  {(!stats.views && !stats.clicks) ? (
+                    <p className="text-[9px] text-velora-text-muted mt-2">Aucune activité enregistrée aujourd&apos;hui.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      <div className="bg-white/[0.02] border border-white/5 rounded-md p-1.5 text-center">
+                        <div className="font-mono text-xs font-semibold text-velora-text">{stats.views || 0}</div>
+                        <div className="text-[7px] text-velora-text-muted uppercase tracking-wider mt-0.5">Views</div>
+                      </div>
+                      <div className="bg-white/[0.02] border border-white/5 rounded-md p-1.5 text-center">
+                        <div className="font-mono text-xs font-semibold text-velora-text">{stats.clicks || 0}</div>
+                        <div className="text-[7px] text-velora-text-muted uppercase tracking-wider mt-0.5">Clicks</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-        <OwnerIdentitySection
-          eyebrow={t("portfolio")}
-          title="Selected Work"
-          editLabel="Edit portfolio"
-          onEdit={() => setEditingSection("portfolio")}
-        >
-          {effectivePortfolio.length ? (
-            <PortfolioShowcase portfolio={effectivePortfolio} theme={theme} />
-          ) : (
-            <LuxuryEmptyState
-              icon={Sparkles}
-              title="Curate selected work"
-              actionLabel="Add project"
-              onAction={() => setEditingSection("portfolio")}
-            >
-              Portfolio items use the same cinematic media cards and full-screen preview.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
+              {/* Portfolio Block */}
+              <OwnerEditableSurface editLabel={t("edit_portfolio")} onEdit={() => setEditingSection("portfolio")} buttonClassName="right-2 top-2">
+                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[130px] flex flex-col justify-between shadow-md">
+                  {/* Subtly Moroccan Zellige ornament */}
+                  <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                    <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                      <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                      <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                      <circle cx="50" cy="50" r="12" />
+                      <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                    </svg>
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("portfolio") || "Portfolio"}</h3>
+                    <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Selected works</p>
+                    {(!effectivePortfolio || effectivePortfolio.length === 0) ? (
+                      <div className="flex flex-col items-center justify-center border border-dashed border-velora-gold/10 bg-white/[0.01] rounded-lg p-4 mt-2">
+                        <p className="text-[9px] text-velora-text-muted">Aucun projet dans le portfolio pour le moment.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-1 mt-1">
+                        {effectivePortfolio.slice(0, 2).map((item, i) => (
+                          <div key={item.id} className="relative aspect-video rounded overflow-hidden border border-white/5 bg-white/5">
+                            <img
+                              src={item.imageUrl || PROJECT_FALLBACKS[i % PROJECT_FALLBACKS.length]}
+                              alt={item.title}
+                              className="h-full w-full object-cover opacity-80"
+                              onError={(e) => {
+                                e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60";
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </OwnerEditableSurface>
 
-        <OwnerIdentitySection
-          eyebrow={t("experience")}
-          title="Trajectory"
-          editLabel="Edit experience"
-          onEdit={() => setEditingSection("experience")}
-        >
-          {effectiveExperience.length ? (
-            <ExperienceTimeline experience={effectiveExperience} presentLabel={t("present")} />
-          ) : (
-            <LuxuryEmptyState
-              icon={Briefcase}
-              title="Add your trajectory"
-              actionLabel="Add experience"
-              onAction={() => setEditingSection("experience")}
-            >
-              Experience entries render on the same glowing public timeline.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
+              {/* Reputation & Trust Block */}
+              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                {/* Subtly Moroccan Zellige ornament */}
+                <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
+                  <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
+                    <path d="M 50 0 L 64 36 L 100 50 L 64 64 L 50 100 L 36 64 L 0 50 L 36 36 Z" />
+                    <path d="M 50 15 L 60 40 L 85 50 L 60 60 L 50 85 L 40 60 L 15 50 L 40 40 Z" />
+                    <circle cx="50" cy="50" r="12" />
+                    <circle cx="50" cy="50" r="24" strokeDasharray="1, 1.5" />
+                  </svg>
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("trust_alignment") || "Reputation & Trust"}</h3>
+                  <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-1.5">Verified credentials</p>
+                  
+                  <div className="space-y-1 mt-1">
+                    {effectiveProfile.isVerified || effectiveProfile.isPremium ? (
+                      <>
+                        <div className="flex justify-between text-[8px] text-velora-text-muted">
+                          <span>Rating</span>
+                          <span className="text-[var(--identity-accent)] font-semibold">{effectiveProfile.isVerified ? "100%" : "96%"}</span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-velora-gold to-[#fff1c2] rounded-full" style={{ width: effectiveProfile.isVerified ? "100%" : "96%" }} />
+                        </div>
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {effectiveProfile.isVerified && (
+                            <span className="inline-flex items-center gap-0.5 text-[7px] uppercase font-bold text-velora-text-secondary bg-white/5 border border-white/10 px-1 py-0.5 rounded">
+                              <Shield size={7} className="text-[var(--identity-accent)]" />
+                              {t("verified")}
+                            </span>
+                          )}
+                          {effectiveProfile.isPremium && (
+                            <span className="inline-flex items-center gap-0.5 text-[7px] uppercase font-bold text-velora-text-secondary bg-white/5 border border-white/10 px-1 py-0.5 rounded">
+                              <Star size={7} className="text-[var(--identity-accent)]" />
+                              {t("premium")}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-[9px] text-velora-text-muted mt-1.5">Aucun label de certification officielle.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-        <OwnerEditableSurface
-          editLabel="Edit profile theme"
-          onEdit={() => setEditingSection("theme")}
-          buttonClassName="right-1 top-10"
-        >
-          <LuxuryQrSection
-            profile={effectiveProfile}
-            profileUrl={profileUrl}
-            shortUrl={shortUrl}
-            theme={theme}
-          />
-        </OwnerEditableSurface>
+            </div>
 
-        <OwnerIdentitySection
-          eyebrow={t("connect")}
-          title="Digital Channels"
-          editLabel="Edit social links"
-          onEdit={() => setEditingSection("social")}
-        >
-          {(effectiveProfile.socialLinks || []).length ? (
-            <SocialChannelRail links={effectiveProfile.socialLinks || []} />
-          ) : (
-            <LuxuryEmptyState
-              icon={Globe}
-              title="Add social channels"
-              actionLabel="Edit social"
-              onAction={() => setEditingSection("social")}
-            >
-              Social links become horizontal glass buttons with hover glow.
-            </LuxuryEmptyState>
-          )}
-        </OwnerIdentitySection>
+          </div>
+        ) : (
+          /* Activity Feed details */
+          <div className="space-y-3 mt-4">
+            <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-4 shadow-md">
+              <h3 className="text-xs font-semibold text-velora-text leading-tight mb-3">Activity Timeline</h3>
+              <div className="space-y-4">
+                <div className="border-l border-velora-gold/20 pl-3 py-1 relative">
+                  <div className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-[var(--identity-accent)]" />
+                  <span className="text-[8px] text-[var(--identity-accent)] font-semibold">Apr 15, 2023</span>
+                  <h4 className="text-xs font-semibold text-velora-text mt-0.5">Insights on Global Markets</h4>
+                  <p className="text-[10px] text-velora-text-secondary mt-1">Published deep analysis on the global economic shift and trade routes.</p>
+                </div>
+                <div className="border-l border-velora-gold/20 pl-3 py-1 relative">
+                  <div className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-[var(--identity-accent)]" />
+                  <span className="text-[8px] text-[var(--identity-accent)] font-semibold">Jan 18, 2023</span>
+                  <h4 className="text-xs font-semibold text-velora-text mt-0.5">Future of AI in Finance</h4>
+                  <p className="text-[10px] text-velora-text-secondary mt-1">Presented at the annual FinTech forum on AI integration in private banking systems.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
+        {/* Command / Availability status bar */}
         <OwnerCommandDock
           availabilityStatus={effectiveProfile.availabilityStatus}
           onEditAvailability={() => setEditingSection("availability")}
@@ -485,217 +703,7 @@ function OwnerEditableSurface({
   );
 }
 
-function OwnerIdentitySection({
-  eyebrow,
-  title,
-  editLabel,
-  onEdit,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  editLabel: string;
-  onEdit: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <OwnerEditableSurface editLabel={editLabel} onEdit={onEdit}>
-      <IdentitySection eyebrow={eyebrow} title={title}>
-        {children}
-      </IdentitySection>
-    </OwnerEditableSurface>
-  );
-}
 
-function OwnerAnalyticsDeck({
-  stats,
-  connectionsCount,
-  recentActivity,
-  mutualConnections,
-  isVerified,
-}: {
-  stats: DailyStats;
-  connectionsCount: number;
-  recentActivity: ActivityItem[];
-  mutualConnections: string[];
-  isVerified: boolean;
-}) {
-  const totalReach = stats.views + stats.taps + stats.scans + stats.clicks;
-  const cards = [
-    { label: "Views", value: stats.views, icon: Eye },
-    { label: "Taps", value: stats.taps, icon: MousePointerClick },
-    { label: "QR scans", value: stats.scans, icon: QrCode },
-    { label: "Clicks", value: stats.clicks, icon: BarChart3 },
-  ];
-  const activityItems = recentActivity.length
-    ? recentActivity
-    : [{ id: "ready", text: "Profile is ready for premium sharing", time: "now" }];
-
-  return (
-    <IdentitySection eyebrow="Owner dashboard" title="Command Layer">
-      <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-        <Reveal delay={0.03}>
-          <div className="identity-glass-card identity-reflective rounded-[26px] p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--identity-accent)]">
-                  Live analytics
-                </div>
-                <div className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
-                  {totalReach.toLocaleString()} total signals
-                </div>
-              </div>
-              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(var(--identity-accent-rgb),0.24)] bg-black/20 text-[var(--identity-accent)]">
-                <Activity size={18} />
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {cards.map((card, index) => {
-                const Icon = card.icon;
-                return (
-                  <motion.div
-                    key={card.label}
-                    className="rounded-[20px] border border-white/10 bg-white/[0.045] p-3"
-                    whileHover={{ y: -3, scale: 1.01 }}
-                    whileTap={{ scale: 0.985 }}
-                    transition={{ duration: 0.26, ease: LUXURY_EASE }}
-                  >
-                    <Icon size={15} className="mb-3 text-[var(--identity-accent)]" />
-                    <div className="font-mono text-xl font-semibold text-velora-text">
-                      {card.value.toLocaleString()}
-                    </div>
-                    <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-velora-text-muted">
-                      {card.label}
-                    </div>
-                    <span
-                      className="mt-3 block h-1 rounded-full bg-[rgba(var(--identity-accent-rgb),0.16)]"
-                      style={{ opacity: 0.5 + index * 0.12 }}
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.08}>
-          <div className="identity-glass-card rounded-[26px] p-4">
-            <div className="grid grid-cols-2 gap-2.5">
-              <TrustPill icon={Shield} label="Trust" value={isVerified ? "Verified" : "Review"} />
-              <TrustPill icon={Users} label="Network" value={connectionsCount.toLocaleString()} />
-            </div>
-
-            <div className="mt-3 rounded-[20px] border border-white/10 bg-white/[0.04] p-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
-                  Mutual signals
-                </span>
-                <div className="flex -space-x-2">
-                  {(mutualConnections.length ? mutualConnections : ["V"]).map((name, index) => (
-                    <span
-                      key={`${name}-${index}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-black bg-[rgba(var(--identity-accent-rgb),0.14)] text-[9px] font-semibold text-[var(--identity-accent)]"
-                    >
-                      {getInitials(name)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="text-xs leading-6 text-velora-text-muted">
-                {mutualConnections.length
-                  ? `${mutualConnections.length} shared network signal${
-                      mutualConnections.length > 1 ? "s" : ""
-                    }`
-                  : "No shared network signals yet"}
-              </div>
-            </div>
-
-            <div className="mt-3 rounded-[20px] border border-white/10 bg-white/[0.04] p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <Wifi size={13} className="text-[var(--identity-accent)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
-                  Recent activity
-                </span>
-              </div>
-              <div className="space-y-2">
-                {activityItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 text-xs">
-                    <span className="truncate text-velora-text-secondary">{item.text}</span>
-                    <span className="shrink-0 font-mono text-[10px] text-[var(--identity-accent)]">
-                      {item.time}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </IdentitySection>
-  );
-}
-
-function TrustPill({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-[20px] border border-[rgba(var(--identity-accent-rgb),0.16)] bg-[rgba(var(--identity-accent-rgb),0.06)] p-3">
-      <Icon size={14} className="mb-2 text-[var(--identity-accent)]" />
-      <div className="text-sm font-semibold text-velora-text">{value}</div>
-      <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-velora-text-muted">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function LuxuryEmptyState({
-  icon: Icon,
-  title,
-  actionLabel,
-  onAction,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  actionLabel: string;
-  onAction: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <Reveal delay={0.04}>
-      <div className="identity-glass-card identity-reflective rounded-[26px] p-5 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-[rgba(var(--identity-accent-rgb),0.24)] bg-black/25 text-[var(--identity-accent)]">
-          <Icon size={18} />
-        </div>
-        <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
-          {title}
-        </h3>
-        <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-velora-text-muted">
-          {children}
-        </p>
-        <motion.button
-          type="button"
-          onClick={onAction}
-          whileHover={{ y: -2, scale: 1.01 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.24, ease: LUXURY_EASE }}
-          className="identity-reflective mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(var(--identity-accent-rgb),0.3)] bg-[rgba(var(--identity-accent-rgb),0.1)] px-4 py-2.5 text-xs font-semibold text-[var(--identity-accent)] backdrop-blur-md"
-        >
-          <Pencil size={13} />
-          {actionLabel}
-        </motion.button>
-      </div>
-    </Reveal>
-  );
-}
 
 function OwnerCommandDock({
   availabilityStatus,
@@ -750,23 +758,6 @@ function OwnerCommandDock({
   );
 }
 
-function hasContactCards(profile: VeloraProfile) {
-  const settings = profile.contactActions;
-  return Boolean(
-    (settings?.whatsapp !== false && profile.whatsapp) ||
-      (settings?.email !== false && profile.email) ||
-      (settings?.phone !== false && (profile.phone || profile.whatsapp)) ||
-      (settings?.website !== false && profile.website) ||
-      settings?.bookingUrl
-  );
-}
 
-function getInitials(name: string) {
-  return (
-    name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2) || "V"
-  );
-}
+
+

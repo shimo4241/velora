@@ -67,7 +67,7 @@ export function OptimizedImage({
       const initials = getInitials(alt || "U");
       return (
         <div
-          className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,rgba(var(--identity-accent-rgb,196,162,101),0.22),transparent_48%),#111] font-[family-name:var(--font-display)] font-semibold text-[var(--identity-accent,#c4a265)] text-3xl ${className}`}
+          className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,var(--color-velora-gold-dim),transparent_48%),var(--color-velora-dark)] font-[family-name:var(--font-display)] font-semibold text-[var(--identity-accent,var(--color-velora-gold))] text-3xl ${className}`}
           style={style}
         >
           {initials}

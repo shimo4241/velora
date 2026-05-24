@@ -155,10 +155,10 @@ export function ProgressRing({
       <svg width={size} height={size} className="-rotate-90 overflow-visible">
         <defs>
           <linearGradient id="goldGradientRing" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#cfac62" />
-            <stop offset="30%" stopColor="#edd69b" />
-            <stop offset="70%" stopColor="#b88c3a" />
-            <stop offset="100%" stopColor="#edd69b" />
+            <stop offset="0%" stopColor="var(--color-velora-gold)" />
+            <stop offset="30%" stopColor="var(--color-velora-gold-light)" />
+            <stop offset="70%" stopColor="var(--color-velora-gold-muted)" />
+            <stop offset="100%" stopColor="var(--color-velora-gold-light)" />
           </linearGradient>
           <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="2.5" result="blur" />

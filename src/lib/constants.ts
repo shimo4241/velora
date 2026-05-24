@@ -8,11 +8,11 @@ export const MOTION = {
   easeInOut: [0.4, 0, 0.2, 1] as const,
   duration: {
     fast: 0.15,
-    base: 0.3,
-    slow: 0.5,
-    entrance: 0.7,
+    base: 0.24,
+    slow: 0.34,
+    entrance: 0.42,
   },
-  stagger: 0.06,
+  stagger: 0.035,
 } as const;
 
 /* ── Professional Modes ── */

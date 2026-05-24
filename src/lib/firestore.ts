@@ -55,9 +55,7 @@ import type {
   VeloraEvent,
   EventCategory,
   EventStatus,
-  EventSpeaker,
   EventAttendee,
-  EventCheckin,
   ProfessionalMode,
 } from "@/types";
 
@@ -491,6 +489,10 @@ function normalizeProfile(id: string, data: DocumentData | Partial<VeloraProfile
     beforeAfterGallery: asArray<string>(data.beforeAfterGallery).filter((item) => typeof item === "string" && item.trim()),
     location_geo_coarse: normalizeCoarseLocation(data.location_geo_coarse),
     locationSharing: asBoolean(data.locationSharing),
+    ghostMode: asBoolean(data.ghostMode),
+    isVisible: data.isVisible !== undefined ? asBoolean(data.isVisible) : true,
+    visualTheme: asString(data.visualTheme) || "gold",
+    syncThemeToPublic: asBoolean(data.syncThemeToPublic),
   };
 }
 
@@ -1467,8 +1469,14 @@ export async function getDiscoverUsers(
   const users: VeloraProfile[] = [];
   
   snap.forEach((doc) => {
-    if (doc.id !== currentUserId && users.length < pageSize) {
-      users.push(normalizeProfile(doc.id, doc.data()));
+    const profile = normalizeProfile(doc.id, doc.data());
+    if (
+      doc.id !== currentUserId &&
+      profile.ghostMode !== true &&
+      profile.isVisible !== false &&
+      users.length < pageSize
+    ) {
+      users.push(profile);
     }
   });
 
@@ -1494,8 +1502,14 @@ export function onDiscoverUsersChange(
     const users: VeloraProfile[] = [];
 
     snap.forEach((doc) => {
-      if (doc.id !== currentUserId && users.length < pageSize) {
-        users.push(normalizeProfile(doc.id, doc.data()));
+      const profile = normalizeProfile(doc.id, doc.data());
+      if (
+        doc.id !== currentUserId &&
+        profile.ghostMode !== true &&
+        profile.isVisible !== false &&
+        users.length < pageSize
+      ) {
+        users.push(profile);
       }
     });
 
@@ -2287,7 +2301,7 @@ export async function getNetworkingSuggestions(
                      profile.fullName.toLowerCase().includes("demo") || 
                      profile.fullName.toLowerCase().includes("test");
                      
-      if (!connectedUserIds.has(profile.id) && !isDemo) {
+      if (!connectedUserIds.has(profile.id) && !isDemo && profile.ghostMode !== true && profile.isVisible !== false) {
         suggestions.push(profile);
       }
     });
@@ -2313,7 +2327,7 @@ export async function getNetworkingSuggestions(
                          profile.fullName.toLowerCase().includes("demo") || 
                          profile.fullName.toLowerCase().includes("test");
 
-          if (!connectedUserIds.has(profile.id) && !isDemo && !suggestions.some((s) => s.id === profile.id)) {
+          if (!connectedUserIds.has(profile.id) && !isDemo && !suggestions.some((s) => s.id === profile.id) && profile.ghostMode !== true && profile.isVisible !== false) {
             suggestions.push(profile);
           }
         });

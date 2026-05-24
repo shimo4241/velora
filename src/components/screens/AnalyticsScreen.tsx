@@ -52,7 +52,7 @@ export function AnalyticsScreen() {
       <div className="section">
         <FadeUp delay={0.1}>
           <div className="flex gap-1 p-1 rounded-[var(--radius-sm)] glass">
-            {["7 Days", "30 Days", "90 Days"].map((period, i) => (
+            {["analytics_period_7d", "analytics_period_30d", "analytics_period_90d"].map((key, i) => (
               <button
                 key={i}
                 onClick={() => setActivePeriod(i)}
@@ -62,9 +62,9 @@ export function AnalyticsScreen() {
                     : "text-velora-text-muted"
                 }`}
               >
-                {period}
+                {t(key)}
                 {i > 0 && (
-                  <span className="ml-1 text-[8px] opacity-50">soon</span>
+                  <span className="ml-1 text-[8px] opacity-50">{t("soon")}</span>
                 )}
               </button>
             ))}
@@ -82,14 +82,14 @@ export function AnalyticsScreen() {
           <GlassCard className="p-5 text-center opacity-60" gold>
             <Crown size={20} className="text-velora-gold mx-auto mb-3" />
             <h3 className="text-heading text-sm text-velora-text mb-1.5">
-              Advanced Analytics
+              {t("analytics_advanced")}
             </h3>
             <p className="text-xs text-velora-text-muted mb-4 max-w-[240px] mx-auto">
-              Detailed insights, visitor demographics, and networking intelligence
+              {t("analytics_advanced_desc")}
             </p>
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-velora-gold-dim border border-velora-gold/15">
               <span className="text-[9px] text-velora-gold font-medium tracking-wider uppercase">
-                Coming Soon
+                {t("analytics_coming_soon")}
               </span>
             </div>
           </GlassCard>

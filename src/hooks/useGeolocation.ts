@@ -23,8 +23,8 @@ export function useGeolocation() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Ghost mode allows seeing nearby profiles without appearing yourself
-  const [ghostMode, setGhostMode] = useState<boolean>(false);
+  // Ghost mode is derived directly from the profile document
+  const ghostMode = Boolean(profile?.ghostMode);
 
   // References for battery optimization / throttling
   const watchIdRef = useRef<number | null>(null);
@@ -58,7 +58,7 @@ export function useGeolocation() {
   // Update Firestore locations with throttle & battery efficiency algorithms
   const updateFirebaseLocation = useCallback(
     async (lat: number, lng: number, accuracy?: number) => {
-      if (!uid) return;
+      if (!uid || ghostMode) return; // Stop live location updates when Ghost Mode is ON
 
       const now = Date.now();
       const lastTime = lastUpdateTimeRef.current;
@@ -99,6 +99,7 @@ export function useGeolocation() {
                 lastActive: new Date().toISOString(),
               }
             : null,
+          isVisible: isSharing && !ghostMode,
         });
 
         // Update local reference states
@@ -161,10 +162,13 @@ export function useGeolocation() {
       return;
     }
 
-    if (!isSharing) {
-      // If user disabled sharing, clear their public coordinates
-      if (profile?.location_geo_coarse) {
-        updateProfile({ location_geo_coarse: null });
+    if (!isSharing || ghostMode) {
+      // If user disabled sharing or enabled ghost mode, clear their public coordinates/visibility
+      if (profile?.location_geo_coarse || (ghostMode && profile?.isVisible !== false)) {
+        updateProfile({
+          location_geo_coarse: null,
+          ...(ghostMode ? { isVisible: false, ghostMode: true } : {})
+        });
       }
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -196,7 +200,7 @@ export function useGeolocation() {
         watchIdRef.current = null;
       }
     };
-  }, [uid, isSharing, handleSuccess, handleError, updateProfile, profile?.location_geo_coarse]);
+  }, [uid, isSharing, ghostMode, handleSuccess, handleError, updateProfile, profile?.location_geo_coarse, profile?.isVisible]);
 
   // Request permissions manual trigger
   const requestPermissions = useCallback(() => {
@@ -224,6 +228,7 @@ export function useGeolocation() {
       try {
         await updateProfile({
           locationSharing: enabled,
+          isVisible: enabled && !ghostMode,
           location_geo_coarse: enabled && coords && !ghostMode
             ? {
                 ...getCoarseCoordinates(coords.lat, coords.lng),
@@ -247,18 +252,37 @@ export function useGeolocation() {
   // Toggle Ghost mode
   const toggleGhostMode = useCallback(
     async (enabled: boolean) => {
-      setGhostMode(enabled);
       // Immediately update public profile document to add/remove coarse position
-      if (uid && isSharing) {
+      if (uid) {
         try {
-          await updateProfile({
-            location_geo_coarse: !enabled && coords
-              ? {
-                  ...getCoarseCoordinates(coords.lat, coords.lng),
-                  lastActive: new Date().toISOString(),
-                }
-              : null,
-          });
+          if (enabled) {
+            // Stop geolocation watchers
+            if (watchIdRef.current !== null) {
+              navigator.geolocation.clearWatch(watchIdRef.current);
+              watchIdRef.current = null;
+            }
+            // Clear cached visibility state
+            setCoords(null);
+            lastUpdateCoordsRef.current = null;
+            lastUpdateTimeRef.current = 0;
+
+            await updateProfile({
+              ghostMode: true,
+              isVisible: false,
+              location_geo_coarse: null,
+            });
+          } else {
+            await updateProfile({
+              ghostMode: false,
+              isVisible: isSharing,
+              location_geo_coarse: isSharing && coords
+                ? {
+                    ...getCoarseCoordinates(coords.lat, coords.lng),
+                    lastActive: new Date().toISOString(),
+                  }
+                : null,
+            });
+          }
         } catch (err) {
           console.error("[Geolocation] Failed to apply ghost mode on public profile:", err);
         }

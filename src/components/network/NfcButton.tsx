@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import { Nfc, Check, Smartphone, Camera, AlertCircle, Copy, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useNfc } from "@/hooks/useNfc";
@@ -9,6 +10,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { getProfileUrl } from "@/lib/profileUrls";
 import { useHaptics } from "@/lib/capacitor";
 import QrScannerModal from "./QrScannerModal";
+
+import { useScrollLock } from "@/lib/scrollLock";
 
 interface NfcButtonProps {
   onScanProfile: (username: string) => void;
@@ -22,6 +25,8 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
   const [showFallbackModal, setShowFallbackModal] = useState(false);
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  useScrollLock(showFallbackModal);
 
   const isNfcSuccess = status === "success";
   const isNfcError = status === "error";
@@ -163,66 +168,68 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
       {/* Premium iOS Fallback sheet/modal */}
       <AnimatePresence>
         {showFallbackModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 backdrop-blur-lg"
-          >
-            {/* Modal Container */}
+          <ModalPortal>
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="relative w-full max-w-md overflow-hidden rounded-t-[36px] border-t border-x border-white/10 bg-velora-black/90 p-6 pb-8 shadow-2xl backdrop-blur-2xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/80 p-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
+              style={{ willChange: "opacity" }}
             >
-              {/* Close Handle bar on top */}
-              <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-white/15" />
-              
+              {/* Modal Container */}
+              <motion.div
+                initial={{ y: 24, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 24, opacity: 0 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="relative w-full max-w-md flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-3.5rem)] overflow-hidden rounded-[36px] border border-white/10 bg-velora-dark p-6 shadow-2xl"
+                style={{ willChange: "transform, opacity" }}
+              >
               <button
                 type="button"
                 onClick={() => setShowFallbackModal(false)}
-                className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5 text-velora-text-secondary hover:bg-white/10"
+                className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5 text-velora-text-secondary hover:bg-white/10"
               >
                 <X size={15} />
               </button>
 
-              {/* Title Header */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-velora-gold/10 text-velora-gold border border-velora-gold/15 mb-3">
-                  <Smartphone size={20} />
-                </div>
-                <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
-                  Partager votre profil
-                </h3>
-                <p className="mt-1.5 text-xs text-velora-text-muted px-4 leading-relaxed">
-                  L&apos;echange NFC direct n&apos;est pas supporte par cet appareil ou ce navigateur. Utilisez le QR Code de secours ci-dessous.
-                </p>
-              </div>
-
-              {/* Gold border Frame around user's own QR Code */}
-              <div className="relative mx-auto mt-6 flex justify-center w-full max-w-[200px]">
-                <div className="absolute -inset-3.5 pointer-events-none">
-                  <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-velora-gold rounded-tl-lg" />
-                  <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-velora-gold rounded-tr-lg" />
-                  <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-velora-gold rounded-bl-lg" />
-                  <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-velora-gold rounded-br-lg" />
+              <div className="flex-1 overflow-y-auto pr-1">
+                {/* Title Header */}
+                <div className="flex flex-col items-center text-center mt-2">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-velora-gold/10 text-velora-gold border border-velora-gold/15 mb-3">
+                    <Smartphone size={20} />
+                  </div>
+                  <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-text">
+                    Partager votre profil
+                  </h3>
+                  <p className="mt-1.5 text-xs text-velora-text-muted px-4 leading-relaxed">
+                    L&apos;echange NFC direct n&apos;est pas supporte par cet appareil ou ce navigateur. Utilisez le QR Code de secours ci-dessous.
+                  </p>
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl bg-white p-3.5 shadow-2xl">
-                  <QRCodeSVG
-                    value={getProfileUrl(profile.username)}
-                    size={160}
-                    bgColor="#FFFFFF"
-                    fgColor="#0B0B0B"
-                    level="H"
-                  />
+                {/* Gold border Frame around user's own QR Code */}
+                <div className="relative mx-auto mt-6 flex justify-center w-full max-w-[200px] mb-2">
+                  <div className="absolute -inset-3.5 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-velora-gold rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-velora-gold rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-velora-gold rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-velora-gold rounded-br-lg" />
+                  </div>
+
+                  <div className="relative overflow-hidden rounded-2xl bg-white p-3.5 shadow-2xl">
+                    <QRCodeSVG
+                      value={getProfileUrl(profile.username)}
+                      size={160}
+                      bgColor="#FFFFFF"
+                      fgColor="#0B0B0B"
+                      level="H"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* QR Scanner CTA & Quick actions */}
-              <div className="mt-8 flex flex-col gap-2.5">
+              <div className="mt-6 flex flex-col gap-2.5 shrink-0">
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.97 }}
@@ -230,7 +237,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
                     setShowFallbackModal(false);
                     setShowCameraScanner(true);
                   }}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-velora-gold/30 bg-velora-gold/10 py-3.5 text-sm font-semibold text-velora-gold shadow-[0_12px_24px_rgba(212,175,55,0.06)] transition-all hover:bg-velora-gold/15"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-velora-gold/30 bg-velora-gold/10 py-3.5 text-sm font-semibold text-velora-gold shadow-[0_4px_12px_var(--color-velora-gold-dim)] transition-all hover:bg-velora-gold/15"
                 >
                   <Camera size={16} />
                   Scanner un QR Code
@@ -257,6 +264,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
               </div>
             </motion.div>
           </motion.div>
+          </ModalPortal>
         )}
       </AnimatePresence>
 

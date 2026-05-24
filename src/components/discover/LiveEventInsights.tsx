@@ -56,8 +56,8 @@ export function LiveEventInsights() {
         <div
           className="flex items-center justify-center w-7 h-7 rounded-lg"
           style={{
-            background: "rgba(196, 162, 101, 0.12)",
-            border: "1px solid rgba(196, 162, 101, 0.18)",
+            background: "color-mix(in srgb, var(--color-velora-gold) 12%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--color-velora-gold) 18%, transparent)",
           }}
         >
           <Activity size={13} style={{ color: "var(--color-velora-gold)" }} />
@@ -220,7 +220,7 @@ export function LiveEventInsights() {
               key={i}
               className="flex items-center gap-3 px-3 py-2.5"
               style={{
-                background: i === 0 ? "rgba(196, 162, 101, 0.06)" : "rgba(255, 255, 255, 0.02)",
+                background: i === 0 ? "color-mix(in srgb, var(--color-velora-gold) 6%, transparent)" : "rgba(255, 255, 255, 0.02)",
                 borderBottom: i < AGENDA_ITEMS.length - 1 ? "1px solid rgba(255, 255, 255, 0.04)" : "none",
               }}
             >
@@ -246,7 +246,7 @@ export function LiveEventInsights() {
                 <span
                   className="ml-auto shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
                   style={{
-                    background: "rgba(196, 162, 101, 0.15)",
+                    background: "color-mix(in srgb, var(--color-velora-gold) 15%, transparent)",
                     color: "var(--color-velora-gold)",
                   }}
                 >

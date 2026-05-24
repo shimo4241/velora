@@ -97,7 +97,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastMessage; onDismiss: () =>
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 rounded-[var(--radius-md)] border p-3 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl ${toneClass}`}
+      className={`pointer-events-auto flex items-start gap-3 rounded-[var(--radius-md)] border p-3 shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-xl ${toneClass}`}
     >
       <Icon size={16} className="mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">

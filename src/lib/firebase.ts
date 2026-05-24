@@ -55,7 +55,7 @@ function getFirebaseAuth(app: FirebaseApp): Auth {
 
   try {
     return getAuth(app);
-  } catch (e) {
+  } catch {
     try {
       return initializeAuth(app, {
         persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]

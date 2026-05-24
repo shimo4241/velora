@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoldButton } from "@/components/ui";
 import { APP_CONFIG } from "@/lib/constants";
+import { useTranslation } from "@/lib/i18n";
 import {
   Sparkles,
   ChevronRight,
@@ -12,13 +13,30 @@ import {
   Crown,
 } from "lucide-react";
 
+const splashParticles = Array.from({ length: 20 }, (_, index) => {
+  const seed = index + 1;
+  return {
+    id: seed,
+    size: 1 + (seed % 4) * 0.65,
+    alpha: 0.16 + (seed % 5) * 0.07,
+    left: `${(seed * 37) % 100}%`,
+    top: `${(seed * 61) % 100}%`,
+    y: -(34 + (seed * 17) % 76),
+    x: ((seed * 29) % 41) - 20,
+    duration: 3.2 + (seed % 5) * 0.55,
+    delay: (seed % 6) * 0.42,
+  };
+});
+
 /* ═══════════════════════════════════════════════════
    VELORA — Onboarding Flow
-   Splash → 3-slide onboarding → App entry
+   Cinematic Splash → 3-slide onboarding → App entry
    ═══════════════════════════════════════════════════ */
 
-/* ── Splash Screen ── */
+/* ── Cinematic Splash Screen ── */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const timer = setTimeout(onComplete, APP_CONFIG.splashDuration);
     return () => clearTimeout(timer);
@@ -26,48 +44,91 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
   return (
     <motion.div
-      className="fixed inset-0 bg-velora-black flex flex-col items-center justify-center z-50"
+      className="fixed inset-0 bg-velora-black flex flex-col items-center justify-center z-50 overflow-hidden"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.7 }}
     >
-      {/* Ambient glow */}
+      {/* Ambient gold glow — large breathing orb */}
       <motion.div
-        className="glow-layer absolute w-[320px] h-[320px] rounded-full opacity-60"
+        className="absolute w-[420px] h-[420px] rounded-full opacity-50 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(196,162,101,0.08) 0%, transparent 68%)",
+            "radial-gradient(circle, color-mix(in srgb, var(--color-velora-gold) 12%, transparent) 0%, color-mix(in srgb, var(--color-velora-gold) 4%, transparent) 40%, transparent 70%)",
         }}
         animate={{
-          scale: [1, 1.08, 1],
+          scale: [1, 1.15, 1],
+          opacity: [0.4, 0.6, 0.4],
         }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Logo */}
+      {/* Secondary warm glow */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10"
+        className="absolute w-[280px] h-[280px] rounded-full pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--color-velora-gold-light) 8%, transparent) 0%, transparent 65%)",
+        }}
+        animate={{
+          scale: [1.1, 1, 1.1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      />
+
+      {/* Floating gold dust particles */}
+      {splashParticles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: particle.size,
+            height: particle.size,
+            background: `color-mix(in srgb, var(--color-velora-gold) ${Math.round(particle.alpha * 100)}%, transparent)`,
+            left: particle.left,
+            top: particle.top,
+          }}
+          animate={{
+            y: [0, particle.y],
+            x: [0, particle.x],
+            opacity: [0, 0.7, 0],
+            scale: [0.5, 1.2, 0.3],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 pointer-events-none"
       >
-        <h1 className="text-display text-5xl gold-text tracking-[0.15em]">
-          VELORA
-        </h1>
+        <div className="relative">
+          <h1 className="text-display text-5xl gold-reflection tracking-[0.15em]">
+            VELORA
+          </h1>
+        </div>
       </motion.div>
 
-      {/* Tagline */}
+      {/* Tagline — localized */}
       <motion.p
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="text-caption text-velora-text-muted mt-4 tracking-[0.2em] relative z-10"
+        className="text-caption text-velora-text-muted mt-4 tracking-[0.2em] relative z-10 uppercase"
       >
-        YOUR IDENTITY, ELEVATED
+        {t("tagline")}
       </motion.p>
 
       {/* Loading bar */}
       <motion.div
-        className="absolute bottom-20 flex flex-col items-center gap-3"
+        className="absolute bottom-20 flex flex-col items-center gap-3 z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
@@ -86,35 +147,41 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 }
 
 /* ── Onboarding Slides ── */
-const slides = [
-  {
-    icon: Nfc,
-    title: "Tap & Share",
-    subtitle: "Your phone is your business card",
-    description:
-      "Share your professional identity instantly with a simple NFC tap. No apps needed for the receiver.",
-    gradient: "from-amber-900/20 via-transparent to-transparent",
-  },
-  {
-    icon: QrCode,
-    title: "Scan & Connect",
-    subtitle: "Every interaction matters",
-    description:
-      "Generate stunning QR codes that open a cinematic profile experience. Make every first impression unforgettable.",
-    gradient: "from-blue-900/20 via-transparent to-transparent",
-  },
-  {
-    icon: Crown,
-    title: "Elevate Your Identity",
-    subtitle: "Premium professional presence",
-    description:
-      "Build trust and prestige in the luxury business ecosystem. Your identity, elevated.",
-    gradient: "from-velora-gold/10 via-transparent to-transparent",
-  },
+const slideIcons = [Nfc, QrCode, Crown];
+
+const slideGradients = [
+  "from-amber-900/20 via-transparent to-transparent",
+  "from-blue-900/20 via-transparent to-transparent",
+  "from-velora-gold/10 via-transparent to-transparent",
 ];
 
 export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const slides = [
+    {
+      icon: slideIcons[0],
+      title: t("onboarding_slide1_title"),
+      subtitle: t("onboarding_slide1_subtitle"),
+      description: t("onboarding_slide1_desc"),
+      gradient: slideGradients[0],
+    },
+    {
+      icon: slideIcons[1],
+      title: t("onboarding_slide2_title"),
+      subtitle: t("onboarding_slide2_subtitle"),
+      description: t("onboarding_slide2_desc"),
+      gradient: slideGradients[1],
+    },
+    {
+      icon: slideIcons[2],
+      title: t("onboarding_slide3_title"),
+      subtitle: t("onboarding_slide3_subtitle"),
+      description: t("onboarding_slide3_desc"),
+      gradient: slideGradients[2],
+    },
+  ];
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
@@ -213,11 +280,11 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           {currentSlide === slides.length - 1 ? (
             <>
               <Sparkles size={16} />
-              Enter VELORA
+              {t("onboarding_enter")}
             </>
           ) : (
             <>
-              Continue
+              {t("onboarding_continue")}
               <ChevronRight size={16} />
             </>
           )}
@@ -228,7 +295,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             onClick={onComplete}
             className="w-full text-center text-xs text-velora-text-muted mt-4 py-2"
           >
-            Skip
+            {t("onboarding_skip")}
           </button>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useSyncExternalStore } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SplashScreen, OnboardingScreen } from "@/components/onboarding";
@@ -11,6 +11,7 @@ import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfileNullable } from "@/hooks/useProfile";
 import { LoadingScreen } from "@/components/ui/States";
+import { useTranslation } from "@/lib/i18n";
 import type { AppTab } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -20,33 +21,48 @@ import type { AppTab } from "@/types";
 
 const ProfileScreen = dynamic(
   () => import("@/components/screens/ProfileScreen").then((mod) => mod.ProfileScreen),
-  { loading: () => <LoadingScreen message="Loading identity..." /> }
+  { loading: () => null }
 );
 
 const ShareScreen = dynamic(
   () => import("@/components/screens/ShareScreen").then((mod) => mod.ShareScreen),
-  { loading: () => <LoadingScreen message="Loading share hub..." /> }
+  { loading: () => null }
 );
 
 const DiscoverScreen = dynamic(
   () => import("@/components/screens/DiscoverScreen").then((mod) => mod.DiscoverScreen),
-  { loading: () => <LoadingScreen message="Loading discover..." /> }
+  { loading: () => null }
 );
 
 const AgendaScreen = dynamic(
   () => import("@/components/screens/AgendaScreen").then((mod) => mod.AgendaScreen),
-  { loading: () => <LoadingScreen message="Loading agenda..." /> }
+  { loading: () => null }
 );
 
-function getScreens(onTabChange: (tab: AppTab) => void): Record<AppTab, () => React.JSX.Element> {
-  return {
-    home: () => <HomeScreen onTabChange={onTabChange} />,
-    identity: () => <ProfileScreen />,
-    share: () => <ShareScreen />,
-    discover: () => <DiscoverScreen />,
-    agenda: () => <AgendaScreen />,
-  };
-}
+const appTabs: AppTab[] = ["home", "identity", "share", "discover", "agenda"];
+
+const MainTabPanel = memo(function MainTabPanel({
+  tab,
+  active,
+  onTabChange,
+}: {
+  tab: AppTab;
+  active: boolean;
+  onTabChange: (tab: AppTab) => void;
+}) {
+  return (
+    <section
+      aria-hidden={!active}
+      className={`app-tab-panel ${active ? "app-tab-panel-active" : "app-tab-panel-inactive"}`}
+    >
+      {tab === "home" && <HomeScreen onTabChange={onTabChange} />}
+      {tab === "identity" && <ProfileScreen />}
+      {tab === "share" && <ShareScreen />}
+      {tab === "discover" && <DiscoverScreen />}
+      {tab === "agenda" && <AgendaScreen />}
+    </section>
+  );
+});
 
 function subscribeToOnboardingStorage(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => undefined;
@@ -66,6 +82,7 @@ function getStoredOnboardingSnapshot() {
 }
 
 function VeloraAppInner() {
+  const { t } = useTranslation();
   const { user, loading: authLoading, isAuthReady } = useAuth();
   const {
     profile,
@@ -79,7 +96,8 @@ function VeloraAppInner() {
   const [splashFinished, setSplashFinished] = useState(false);
   const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
-  const screens = useMemo(() => getScreens(setActiveTab), []);
+  const [mountedTabs, setMountedTabs] = useState<Set<AppTab>>(() => new Set(["home"]));
+  const stableTabs = useMemo(() => appTabs, []);
   const hasStoredOnboarding = useSyncExternalStore(
     subscribeToOnboardingStorage,
     getStoredOnboardingSnapshot,
@@ -136,15 +154,36 @@ function VeloraAppInner() {
     }
   };
 
+  const handleTabChange = React.useCallback((tab: AppTab) => {
+    setMountedTabs((current) => {
+      if (current.has(tab)) return current;
+      const next = new Set(current);
+      next.add(tab);
+      return next;
+    });
+    setActiveTab(tab);
+  }, []);
+
+  const renderApp = phase === "app" && Boolean(user) && isProfileReady && Boolean(profile);
+
+  useEffect(() => {
+    if (!renderApp) return;
+    const id = window.setTimeout(() => {
+      void import("@/components/screens/ProfileScreen");
+      void import("@/components/screens/ShareScreen");
+      void import("@/components/screens/DiscoverScreen");
+      void import("@/components/screens/AgendaScreen");
+    }, 350);
+    return () => window.clearTimeout(id);
+  }, [renderApp]);
+
   if (phase === "loading") {
     return (
       <LoadingScreen
-        message={isAuthRestoring ? "Restauration de session..." : "Chargement du profil..."}
+        message={isAuthRestoring ? t("loading_session") : t("loading_profile")}
       />
     );
   }
-
-  const renderApp = phase === "app" && Boolean(user) && isProfileReady && Boolean(profile);
 
   return (
     <div className="app-container">
@@ -168,16 +207,16 @@ function VeloraAppInner() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-velora-black px-6">
             <div className="w-full max-w-sm rounded-2xl border border-velora-rose/20 bg-velora-rose/10 p-5 text-center">
               <p className="text-sm font-medium text-velora-text mb-2">
-                Initialisation du profil impossible
+                {t("error_profile_init")}
               </p>
               <p className="text-xs text-velora-text-muted mb-4">
-                {profileError?.message || "Veuillez reessayer."}
+                {profileError?.message || t("error_profile_retry")}
               </p>
               <button
                 onClick={() => void refreshProfile()}
                 className="h-10 px-4 rounded-xl bg-velora-gold text-velora-black text-sm font-medium"
               >
-                Reessayer
+                {t("error_retry")}
               </button>
             </div>
           </div>
@@ -201,19 +240,20 @@ function VeloraAppInner() {
       {/* Main app */}
       {renderApp && (
         <>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {screens[activeTab]()}
-            </motion.div>
-          </AnimatePresence>
+          <main className="app-tab-shell">
+            {stableTabs.map((tab) => (
+              mountedTabs.has(tab) ? (
+                <MainTabPanel
+                  key={tab}
+                  tab={tab}
+                  active={activeTab === tab}
+                  onTabChange={handleTabChange}
+                />
+              ) : null
+            ))}
+          </main>
 
-          <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
         </>
       )}
     </div>

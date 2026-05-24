@@ -91,6 +91,7 @@ export interface VeloraProfile {
   createdAt?: string;
   updatedAt?: string;
   skills: string[];
+  certifications?: string[];
   services: ProfileService[];
   availabilityStatus: AvailabilityStatus;
   profileTheme: ProfileTheme;
@@ -126,6 +127,11 @@ export interface VeloraProfile {
   location_geo?: UserLocation;
   location_geo_coarse?: PublicCoarseLocation | null;
   locationSharing?: boolean;
+  ghostMode?: boolean;
+  isVisible?: boolean;
+  proximityZone?: "close" | "medium" | "far";
+  visualTheme?: string;
+  syncThemeToPublic?: boolean;
 
   // App Settings
   settings?: {

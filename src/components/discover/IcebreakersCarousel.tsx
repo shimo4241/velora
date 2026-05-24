@@ -90,8 +90,8 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
           <div
             className="flex items-center justify-center w-7 h-7 rounded-lg"
             style={{
-              background: "rgba(196, 162, 101, 0.12)",
-              border: "1px solid rgba(196, 162, 101, 0.18)",
+              background: "color-mix(in srgb, var(--color-velora-gold) 12%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--color-velora-gold) 18%, transparent)",
             }}
           >
             <Sparkles size={13} style={{ color: "var(--color-velora-gold)" }} />
@@ -162,7 +162,7 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
               key={card.id}
               className={`
                 snap-start shrink-0 w-[270px] rounded-[20px] p-4
-                border backdrop-blur-xl relative overflow-hidden cursor-pointer bg-black/40 ${card.gradient}
+                border relative overflow-hidden cursor-pointer bg-velora-dark/95 ${card.gradient}
               `}
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -185,7 +185,7 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: "linear-gradient(135deg, rgba(196, 162, 101, 0.03) 0%, transparent 50%)",
+                  background: "linear-gradient(135deg, color-mix(in srgb, var(--color-velora-gold) 3%, transparent) 0%, transparent 50%)",
                 }}
               />
 
@@ -222,8 +222,8 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
               <div
                 className="rounded-xl p-3 mb-3"
                 style={{
-                  border: "1px solid rgba(196, 162, 101, 0.25)",
-                  background: "rgba(196, 162, 101, 0.05)",
+                  border: "1px solid color-mix(in srgb, var(--color-velora-gold) 25%, transparent)",
+                  background: "color-mix(in srgb, var(--color-velora-gold) 5%, transparent)",
                 }}
               >
                 <div className="flex items-center gap-1.5 mb-1">

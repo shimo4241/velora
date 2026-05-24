@@ -3,18 +3,18 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { useEvents } from "@/hooks/useEvents";
-import { AgendaFilter, EventCategory, VeloraEvent } from "@/types";
+import { AgendaFilter, EventCategory } from "@/types";
 import { AgendaHeader } from "@/components/agenda/AgendaHeader";
 import { EventCard } from "@/components/agenda/EventCard";
 import { EventSkeleton } from "@/components/agenda/EventSkeleton";
 import { AgendaEmptyState } from "@/components/agenda/AgendaEmptyState";
 import { EventDetailPanel } from "@/components/agenda/EventDetailPanel";
 import { FadeUp, StaggerChildren } from "@/components/motion/animations";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Star, Sparkles } from "lucide-react";
 
 export function AgendaScreen() {
-  const { t, locale, isRtl } = useTranslation();
+  const { t } = useTranslation();
 
   // State Management
   const [activeFilter, setActiveFilter] = useState<AgendaFilter>("today");
@@ -58,15 +58,15 @@ export function AgendaScreen() {
   };
 
   return (
-    <div className="agenda-screen min-h-screen overflow-hidden pb-28 text-velora-text relative">
+    <div className="agenda-screen min-h-screen pb-28 text-velora-text relative">
       {/* Ambient gold glow at top */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[420px] z-0"
         style={{
           background: `
-            radial-gradient(circle at 50% -8%, rgba(196, 162, 101, 0.14), transparent 52%),
-            radial-gradient(circle at 20% 10%, rgba(196, 162, 101, 0.06), transparent 36%),
-            radial-gradient(circle at 80% 10%, rgba(196, 162, 101, 0.06), transparent 36%)
+            radial-gradient(circle at 50% -8%, color-mix(in srgb, var(--color-velora-gold) 14%, transparent), transparent 52%),
+            radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--color-velora-gold) 6%, transparent), transparent 36%),
+            radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--color-velora-gold) 6%, transparent), transparent 36%)
           `,
         }}
       />
@@ -96,10 +96,10 @@ export function AgendaScreen() {
           // Error state
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <p className="text-sm font-semibold text-velora-rose mb-2">
-              {locale === "ar" ? "فشل تحميل الفعاليات" : "Erreur de chargement des événements"}
+              {t("event_load_error")}
             </p>
             <p className="text-xs text-velora-text-muted">
-              {error.message || "Veuillez réessayer ultérieurement."}
+              {error.message || t("event_load_error_msg")}
             </p>
           </div>
         ) : filteredEvents.length === 0 ? (
@@ -115,7 +115,7 @@ export function AgendaScreen() {
                 <div className="flex items-center gap-2 mb-3.5 px-0.5">
                   <Star size={14} className="text-velora-gold fill-velora-gold" />
                   <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-velora-gold">
-                    {locale === "ar" ? "فعاليات مميزة" : "À la Une"}
+                    {t("event_featured")}
                   </h2>
                 </div>
 
@@ -140,7 +140,7 @@ export function AgendaScreen() {
                 <div className="flex items-center gap-2 mb-4 px-0.5">
                   <Sparkles size={14} className="text-velora-text-muted" />
                   <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-velora-text-muted">
-                    {locale === "ar" ? "كل الفعاليات" : "Tous les événements"}
+                    {t("event_all")}
                   </h2>
                 </div>
               )}

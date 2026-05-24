@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { WifiOff, Loader2, Inbox, RefreshCw } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
+import { useTranslation } from "@/lib/i18n";
 
 /* ═══════════════════════════════════════════════════
    VELORA — State Components
@@ -11,6 +12,7 @@ import { GlassCard, GoldButton } from "@/components/ui";
 
 /** Offline banner — slides in from top */
 export function OfflineBanner({ isOnline }: { isOnline: boolean }) {
+  const { t } = useTranslation();
   return (
     <AnimatePresence>
       {!isOnline && (
@@ -23,7 +25,7 @@ export function OfflineBanner({ isOnline }: { isOnline: boolean }) {
         >
           <WifiOff size={14} className="text-velora-rose" />
           <span className="text-xs font-medium text-velora-rose">
-            Hors connexion
+            {t("offline_banner")}
           </span>
         </motion.div>
       )}
@@ -32,7 +34,8 @@ export function OfflineBanner({ isOnline }: { isOnline: boolean }) {
 }
 
 /** Loading spinner — luxury gold */
-export function LoadingScreen({ message = "Chargement..." }: { message?: string }) {
+export function LoadingScreen({ message }: { message?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-velora-black">
       <motion.div
@@ -47,7 +50,7 @@ export function LoadingScreen({ message = "Chargement..." }: { message?: string 
         transition={{ delay: 0.3 }}
         className="text-xs text-velora-text-muted mt-4 font-medium"
       >
-        {message}
+        {message ? t(message) : t("loading_default")}
       </motion.p>
     </div>
   );
@@ -55,8 +58,8 @@ export function LoadingScreen({ message = "Chargement..." }: { message?: string 
 
 /** Empty state — premium, not sad */
 export function EmptyState({
-  title = "Rien ici pour le moment",
-  description = "Commencez à explorer pour remplir cet espace.",
+  title,
+  description,
   actionLabel,
   onAction,
 }: {
@@ -65,6 +68,7 @@ export function EmptyState({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6">
       <motion.div
@@ -83,7 +87,7 @@ export function EmptyState({
         transition={{ delay: 0.1, duration: 0.4 }}
         className="text-heading text-sm text-velora-text mb-1 text-center"
       >
-        {title}
+        {title || t("empty_title")}
       </motion.h3>
 
       <motion.p
@@ -92,7 +96,7 @@ export function EmptyState({
         transition={{ delay: 0.2, duration: 0.4 }}
         className="text-[11px] text-velora-text-muted text-center max-w-[220px] leading-relaxed"
       >
-        {description}
+        {description || t("empty_description")}
       </motion.p>
 
       {actionLabel && onAction && (
@@ -114,13 +118,14 @@ export function EmptyState({
 
 /** Founding Access badge */
 export function FoundingAccessBadge() {
+  const { t } = useTranslation();
   return (
     <GlassCard className="p-4 text-center" gold hover={false}>
       <div className="text-[10px] text-velora-gold font-mono tracking-[0.2em] uppercase mb-1">
-        Founding Access
+        {t("founding_access")}
       </div>
       <div className="text-xs text-velora-text-secondary leading-relaxed">
-        Vous faites partie des premiers membres VELORA.
+        {t("founding_access_desc")}
       </div>
     </GlassCard>
   );

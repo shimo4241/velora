@@ -140,8 +140,8 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
           <div
             className="mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
             style={{
-              border: "1px solid rgba(196, 162, 101, 0.2)",
-              background: "rgba(196, 162, 101, 0.1)",
+              border: "1px solid color-mix(in srgb, var(--color-velora-gold) 20%, transparent)",
+              background: "color-mix(in srgb, var(--color-velora-gold) 10%, transparent)",
               color: "var(--color-velora-gold)",
             }}
           >

@@ -56,7 +56,7 @@ export function RadarDiscovery({ count = 0 }: { count?: number }) {
             className="absolute top-1/2 left-1/2 w-1/2 h-px origin-left"
             style={{
               background:
-                "linear-gradient(90deg, rgba(201,168,76,0.6) 0%, transparent 100%)",
+                "linear-gradient(90deg, color-mix(in srgb, var(--color-velora-gold) 60%, transparent) 0%, transparent 100%)",
             }}
             animate={{ rotate: 360 }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
@@ -67,7 +67,7 @@ export function RadarDiscovery({ count = 0 }: { count?: number }) {
             className="absolute top-1/2 left-1/2 w-1/2 h-8 origin-left -translate-y-1/2"
             style={{
               background:
-                "linear-gradient(90deg, rgba(201,168,76,0.08) 0%, transparent 80%)",
+                "linear-gradient(90deg, color-mix(in srgb, var(--color-velora-gold) 8%, transparent) 0%, transparent 80%)",
             }}
             animate={{ rotate: 360 }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
@@ -159,7 +159,7 @@ export function ProfessionalCard({
   mutualConnections,
   isVerified = false,
   isPremium = false,
-  avatarGradient = "from-velora-gold/30 to-amber-700/20",
+  avatarGradient = "from-velora-gold/30 to-velora-gold-light/10",
   username,
 }: ProfessionalCardProps) {
   const cardContent = (

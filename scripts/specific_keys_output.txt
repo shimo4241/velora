@@ -1,0 +1,2496 @@
+[accept]
+  en: Accept
+  fr: Accepter
+  es: Aceptar
+  ar: قبول
+
+[accept_request]
+  en: Accept Request
+  fr: Accepter la demande
+  es: Aceptar solicitud
+  ar: قبول الطلب
+
+[add_note_placeholder]
+  en: Add a note about this contact...
+  fr: Ajoutez une note sur ce contact...
+  es: Añade una nota sobre este contacto...
+  ar: أضف ملاحظة حول جهة الاتصال هذه...
+
+[add_tags_placeholder]
+  en: Add tags...
+  fr: Ajoutez des tags...
+  es: Añadir etiquetas...
+  ar: أضف وسوم...
+
+[add_to_network]
+  en: Add to Network
+  fr: Ajouter au réseau
+  es: Añadir a la red
+  ar: أضف إلى الشبكة
+
+[add_wallet]
+  en: Add to Wallet
+  fr: Ajouter au Wallet
+  es: Añadir a Wallet
+  ar: إضافة إلى المحفظة
+
+[after]
+  en: After
+  fr: Après
+  es: Después
+  ar: بعد
+
+[agenda_subtitle]
+  en: Morocco Events
+  fr: Événements au Maroc
+  es: Eventos en Marruecos
+  ar: فعاليات المغرب
+
+[agenda_title]
+  en: Agenda
+  fr: Agenda
+  es: Agenda
+  ar: الأجندة
+
+[analytics_advanced]
+  en: Advanced Analytics
+  fr: Analyses Avancées
+  es: Análisis Avanzados
+  ar: تحليلات متقدمة
+
+[analytics_advanced_desc]
+  en: Detailed insights, visitor demographics, and networking intelligence
+  fr: Statistiques détaillées, démographie des visiteurs et intelligence réseau
+  es: Estadísticas detalladas, demografía de visitantes e inteligencia de red
+  ar: إحصاءات تفصيلية، ديموغرافيا الزوار وذكاء شبكة العلاقات
+
+[analytics_coming_soon]
+  en: Coming Soon
+  fr: Bientôt Disponible
+  es: Próximamente
+  ar: قريباً
+
+[analytics_period_30d]
+  en: 30 Days
+  fr: 30 Jours
+  es: 30 Días
+  ar: ٣٠ يوماً
+
+[analytics_period_7d]
+  en: 7 Days
+  fr: 7 Jours
+  es: 7 Días
+  ar: ٧ أيام
+
+[analytics_period_90d]
+  en: 90 Days
+  fr: 90 Jours
+  es: 90 Días
+  ar: ٩٠ يوماً
+
+[availability_available]
+  en: Available
+  fr: Disponible
+  es: Disponible
+  ar: متاح
+
+[availability_available_desc]
+  en: Open to new projects and introductions
+  fr: Ouvert aux projets et rencontres
+  es: Abierto a nuevos proyectos y contactos
+  ar: متاح للمشاريع الجديدة والتعارف
+
+[availability_selective]
+  en: Selective
+  fr: Sélectif
+  es: Selectivo
+  ar: انتقائي
+
+[availability_selective_desc]
+  en: Available for select opportunities
+  fr: Disponible pour opportunités ciblées
+  es: Disponible para oportunidades selectas
+  ar: متاح للفرص المختارة فقط
+
+[availability_unavailable]
+  en: Unavailable
+  fr: Indisponible
+  es: No disponible
+  ar: غير متاح
+
+[availability_unavailable_desc]
+  en: Not taking new requests right now
+  fr: Fermé aux nouvelles demandes
+  es: No disponible para nuevas solicitudes
+  ar: لا أستقبل طلبات جديدة حالياً
+
+[before]
+  en: Before
+  fr: Avant
+  es: Antes
+  ar: قبل
+
+[block_user]
+  en: Block user
+  fr: Bloquer cet utilisateur
+  es: Bloquear usuario
+  ar: حظر المستخدم
+
+[book]
+  en: Book
+  fr: Réserver
+  es: Reservar
+  ar: حجز
+
+[btn_accept]
+  en: Accept
+  fr: Accepter
+  es: Aceptar
+  ar: قبول
+
+[btn_book_appointment]
+  en: Book Appointment
+  fr: Prendre RDV
+  es: Reservar Cita
+  ar: حجز موعد
+
+[btn_call_clinic]
+  en: Call Clinic
+  fr: Appeler la Clinique
+  es: Llamar a Clínica
+  ar: اتصال بالعيادة
+
+[btn_decline]
+  en: Decline
+  fr: Décliner
+  es: Rechazar
+  ar: رفض
+
+[btn_emergency_call]
+  en: Emergency 24/7
+  fr: Urgence 24/7
+  es: Urgencia 24/7
+  ar: طوارئ 24/7
+
+[btn_google_reviews]
+  en: Google Reviews
+  fr: Avis Google
+  es: Reseñas de Google
+  ar: تقييمات جوجل
+
+[btn_open_maps]
+  en: Get Directions
+  fr: Itinéraire Maps
+  es: Ver Mapa
+  ar: عرض الموقع على الخريطة
+
+[btn_website]
+  en: Website
+  fr: Site Web
+  es: Sitio Web
+  ar: الموقع الإلكتروني
+
+[btn_whatsapp]
+  en: Direct WhatsApp
+  fr: WhatsApp Direct
+  es: WhatsApp Directo
+  ar: واتساب مباشر
+
+[call]
+  en: Call
+  fr: Appeler
+  es: Llamar
+  ar: اتصال
+
+[cancel]
+  en: Cancel
+  fr: Annuler
+  es: Cancelar
+  ar: إلغاء
+
+[clicks]
+  en: Clicks
+  fr: Clics
+  es: Clics
+  ar: الضغطات
+
+[connect]
+  en: Connect
+  fr: Se connecter
+  es: Conectar
+  ar: تواصل
+
+[contact_call]
+  en: Call
+  fr: Appeler
+  es: Llamar
+  ar: اتصال
+
+[contact_whatsapp]
+  en: WhatsApp
+  fr: WhatsApp
+  es: WhatsApp
+  ar: واتساب
+
+[copied]
+  en: Copied!
+  fr: Copié !
+  es: ¡Copiado!
+  ar: تم النسخ!
+
+[copy_link]
+  en: Copy Link
+  fr: Copier le lien
+  es: Copiar Enlace
+  ar: نسخ الرابط
+
+[decline]
+  en: Decline
+  fr: Décliner
+  es: Rechazar
+  ar: رفض
+
+[dentist_verified]
+  en: Verified Dentist
+  fr: Dentiste Vérifié
+  es: Dentista Verificado
+  ar: طبيب أسنان موثق
+
+[discover_ghost]
+  en: Ghost
+  fr: Fantôme
+  es: Fantasma
+  ar: شبح
+
+[discover_hidden]
+  en: Hidden
+  fr: Masqué
+  es: Oculto
+  ar: مخفي
+
+[discover_my_network]
+  en: My Network
+  fr: Mon Réseau
+  es: Mi Red
+  ar: شبكتي
+
+[discover_nearby_active]
+  en: Nearby active
+  fr: Nearby actif
+  es: Cercanos activos
+  ar: القرب مفعّل
+
+[discover_nearby_enable]
+  en: Enable Nearby
+  fr: Activer Nearby
+  es: Activar Cercanos
+  ar: تفعيل القرب
+
+[discover_search_placeholder]
+  en: Search a profile, an event...
+  fr: Rechercher un profil, un événement...
+  es: Buscar un perfil, un evento...
+  ar: ابحث عن ملف شخصي أو فعالية...
+
+[discover_title]
+  en: Discover
+  fr: Découvrir
+  es: Descubrir
+  ar: اكتشف
+
+[discover_visible]
+  en: Visible
+  fr: Visible
+  es: Visible
+  ar: مرئي
+
+[distance_km]
+  en: km away
+  fr: à km
+  es: a km
+  ar: كم
+
+[download_qr]
+  en: Download QR
+  fr: Télécharger le QR
+  es: Descargar QR
+  ar: تحميل رمز QR
+
+[edit_profile_ai_apply]
+  en: Apply to form
+  fr: Appliquer au formulaire
+  es: Aplicar al formulario
+  ar: تطبيق على النموذج
+
+[edit_profile_ai_btn_gen]
+  en: Generate my profile
+  fr: Générer mon profil
+  es: Generar mi perfil
+  ar: إنشاء ملفي الشخصي
+
+[edit_profile_ai_btn_generating]
+  en: Generating...
+  fr: Génération...
+  es: Generando...
+  ar: جاري الإنشاء...
+
+[edit_profile_ai_desc]
+  en: Describe your activity, specialties, and objectives. Our AI will draft a compelling title, a premium bio, and tailored skills for you.
+  fr: Décrivez votre activité, vos spécialités et vos objectifs. Notre intelligence artificielle rédigera pour vous un titre percutant, une bio haut de gamme et des compétences adaptées.
+  es: Describe tu actividad, especialidades y objetivos. Nuestra IA redactará un título atractivo, una biografía premium y habilidades adaptadas para ti.
+  ar: صف نشاطك وتخصصاتك وأهدافك. سيقوم الذكاء الاصطناعي الخاص بنا بصياغة عنوان جذاب وسيرة ذاتية راقية ومهارات مخصصة لك.
+
+[edit_profile_ai_ignore]
+  en: Ignore
+  fr: Ignorer
+  es: Ignorar
+  ar: تجاهل
+
+[edit_profile_ai_placeholder]
+  en: e.g. I am a digital implantologist in Casablanca with 10 years of experience. I want to attract premium patients and collaborate with other clinics.
+  fr: Ex: Je suis un chirurgien-dentiste à Casablanca spécialisé en implantologie digitale avec 10 ans d'expérience. Je veux attirer des patients haut de gamme et collaborer avec d'autres cliniques.
+  es: Ej: Soy cirujano dentista en Casablanca especializado en implantología digital con 10 años de experiencia. Quiero atraer pacientes premium.
+  ar: مثال: أنا طبيب جراح أسنان في الدار البيضاء متخصص في زراعة الأسنان الرقمية ولدي ١٠ سنوات من الخبرة. أرغب في جذب عملاء راقين.
+
+[edit_profile_ai_suggestion]
+  en: Generated Suggestion:
+  fr: Suggestion générée :
+  es: Sugerencia generada:
+  ar: الاقتراح الذي تم إنشاؤه:
+
+[edit_profile_ai_title]
+  en: AI Profile Assistant
+  fr: Assistant Profil IA
+  es: Asistente de Perfil IA
+  ar: مساعد الملف الشخصي الذكي
+
+[edit_profile_availability_title]
+  en: Edit availability
+  fr: Modifier la disponibilité
+  es: Editar disponibilidad
+  ar: تعديل الحالة
+
+[edit_profile_avatar]
+  en: Profile Picture
+  fr: Photo de profil
+  es: Foto de perfil
+  ar: صورة الملف الشخصي
+
+[edit_profile_bio_title]
+  en: Edit bio
+  fr: Modifier la biographie
+  es: Editar biografía
+  ar: تعديل السيرة الذاتية
+
+[edit_profile_booking]
+  en: Booking
+  fr: Réservation
+  es: Reserva
+  ar: حجز
+
+[edit_profile_booking_link]
+  en: Booking link
+  fr: Lien de réservation
+  es: Enlace de reserva
+  ar: رابط الحجز
+
+[edit_profile_contact_empty]
+  en: Add contact actions
+  fr: Ajouter des actions de contact
+  es: Añadir acciones de contacto
+  ar: إضافة وسائل الاتصال
+
+[edit_profile_contact_title]
+  en: Edit contact actions
+  fr: Modifier les actions de contact
+  es: Editar acciones de contacto
+  ar: تعديل وسائل الاتصال
+
+[edit_profile_cover]
+  en: Cover Banner
+  fr: Bannière de couverture
+  es: Banner de portada
+  ar: صورة الغلاف
+
+[edit_profile_cover_url]
+  en: Cover or video banner URL
+  fr: URL de la couverture ou vidéo
+  es: URL del banner o vídeo
+  ar: رابط صورة الغلاف أو الفيديو
+
+[edit_profile_experience_add]
+  en: Add experience
+  fr: Ajouter une expérience
+  es: Añadir experiencia
+  ar: إضافة خبرة
+
+[edit_profile_experience_company_placeholder]
+  en: Company
+  fr: Entreprise
+  es: Empresa
+  ar: الشركة
+
+[edit_profile_experience_current]
+  en: Current role
+  fr: Poste actuel
+  es: Puesto actual
+  ar: الوظيفة الحالية
+
+[edit_profile_experience_empty]
+  en: Add experience
+  fr: Ajouter une expérience
+  es: Añadir experiencia
+  ar: إضافة خبرة
+
+[edit_profile_experience_end_placeholder]
+  en: End year
+  fr: Année de fin
+  es: Año de finalización
+  ar: سنة الانتهاء
+
+[edit_profile_experience_label]
+  en: Experience
+  fr: Expérience
+  es: Experiencia
+  ar: الخبرة
+
+[edit_profile_experience_role_placeholder]
+  en: Role
+  fr: Poste
+  es: Puesto / Rol
+  ar: المسمى الوظيفي
+
+[edit_profile_experience_start_placeholder]
+  en: Start year
+  fr: Année de début
+  es: Año de inicio
+  ar: سنة البدء
+
+[edit_profile_experience_title]
+  en: Edit experience
+  fr: Modifier l'expérience
+  es: Editar experiencia
+  ar: تعديل الخبرات المهنية
+
+[edit_profile_header_title]
+  en: Edit profile header
+  fr: Modifier l'en-tête du profil
+  es: Editar cabecera del perfil
+  ar: تعديل ترويسة الملف الشخصي
+
+[edit_profile_mode]
+  en: Professional Mode
+  fr: Mode professionnel
+  es: Modo profesional
+  ar: الوضع المهني
+
+[edit_profile_no_cover]
+  en: No cover image
+  fr: Aucune image de couverture
+  es: Sin imagen de portada
+  ar: لا توجد صورة غلاف
+
+[edit_profile_portfolio_empty]
+  en: Add your projects
+  fr: Ajouter vos projets
+  es: Añadir tus proyectos
+  ar: أضف مشاريعك
+
+[edit_profile_portfolio_title]
+  en: Edit portfolio
+  fr: Modifier le portfolio
+  es: Editar portafolio
+  ar: تعديل معرض الأعمال
+
+[edit_profile_primary_action]
+  en: Primary action
+  fr: Action principale
+  es: Acción principal
+  ar: الإجراء الرئيسي
+
+[edit_profile_project_add]
+  en: Add project
+  fr: Ajouter un projet
+  es: Añadir proyecto
+  ar: إضافة مشروع
+
+[edit_profile_project_category_placeholder]
+  en: Category
+  fr: Catégorie
+  es: Categoría
+  ar: الفئة
+
+[edit_profile_project_desc_placeholder]
+  en: Description
+  fr: Description
+  es: Descripción
+  ar: الوصف
+
+[edit_profile_project_label]
+  en: Project
+  fr: Projet
+  es: Proyecto
+  ar: المشروع
+
+[edit_profile_project_link_placeholder]
+  en: https://project.com
+  fr: https://projet.fr
+  es: https://proyecto.es
+  ar: https://project.com
+
+[edit_profile_project_title_placeholder]
+  en: Project title
+  fr: Titre du projet
+  es: Título del proyecto
+  ar: عنوان المشروع
+
+[edit_profile_project_upload]
+  en: Upload image
+  fr: Mettre en ligne une image
+  es: Subir imagen
+  ar: تحميل صورة
+
+[edit_profile_saved]
+  en: Saved
+  fr: Enregistré
+  es: Guardado
+  ar: تم الحفظ
+
+[edit_profile_service_add]
+  en: Add service
+  fr: Ajouter un service
+  es: Añadir servicio
+  ar: إضافة خدمة
+
+[edit_profile_service_desc_placeholder]
+  en: Short description
+  fr: Description courte
+  es: Descripción corta
+  ar: وصف قصير
+
+[edit_profile_service_label]
+  en: Service
+  fr: Service
+  es: Servicio
+  ar: الخدمة
+
+[edit_profile_service_price_placeholder]
+  en: From 1,500 MAD
+  fr: À partir de 1 500 MAD
+  es: Desde 1.500 MAD
+  ar: ابتداءً من ١٥٠٠ درهم
+
+[edit_profile_service_title_placeholder]
+  en: Private consultation
+  fr: Consultation privée
+  es: Consulta privada
+  ar: استشارة خاصة
+
+[edit_profile_services_empty]
+  en: Add your services
+  fr: Ajoutez vos services
+  es: Añade tus servicios
+  ar: أضف خدماتك
+
+[edit_profile_services_title]
+  en: Edit services
+  fr: Modifier les services
+  es: Editar servicios
+  ar: تعديل الخدمات
+
+[edit_profile_skills_add_cta]
+  en: Add skills
+  fr: Ajouter des compétences
+  es: Añadir habilidades
+  ar: إضافة مهارات
+
+[edit_profile_skills_btn_add]
+  en: Add
+  fr: Ajouter
+  es: Añadir
+  ar: إضافة
+
+[edit_profile_skills_empty]
+  en: No skills added.
+  fr: Aucune compétence ajoutée.
+  es: No se han añadido habilidades.
+  ar: لم يتم إضافة مهارات بعد.
+
+[edit_profile_skills_placeholder]
+  en: Add a skill...
+  fr: Ajouter une compétence...
+  es: Añadir habilidad...
+  ar: إضافة مهارة...
+
+[edit_profile_skills_placeholder_ex]
+  en: e.g. Brand strategy
+  fr: Ex : Stratégie de marque
+  es: Ej: Estrategia de marca
+  ar: مثال: استراتيجية العلامة التجارية
+
+[edit_profile_skills_title]
+  en: Skills / Tags
+  fr: Compétences / Tags
+  es: Habilidades / Etiquetas
+  ar: المهارات / الوسوم
+
+[edit_profile_skills_title_editor]
+  en: Edit skills
+  fr: Modifier les compétences
+  es: Editar habilidades
+  ar: تعديل المهارات
+
+[edit_profile_social_add]
+  en: Add social link
+  fr: Ajouter un lien
+  es: Añadir enlace social
+  ar: إضافة رابط تواصل
+
+[edit_profile_social_color_placeholder]
+  en: #C4A265
+  fr: #C4A265
+  es: #C4A265
+  ar: #C4A265
+
+[edit_profile_social_empty]
+  en: Add social links
+  fr: Ajouter des réseaux sociaux
+  es: Añadir redes sociales
+  ar: إضافة روابط التواصل
+
+[edit_profile_social_icon_placeholder]
+  en: in
+  fr: in
+  es: in
+  ar: in
+
+[edit_profile_social_label]
+  en: Social link
+  fr: Lien social
+  es: Enlace social
+  ar: رابط التواصل
+
+[edit_profile_social_platform_placeholder]
+  en: LinkedIn
+  fr: LinkedIn
+  es: LinkedIn
+  ar: لينكد إن
+
+[edit_profile_social_title]
+  en: Edit social links
+  fr: Modifier les réseaux sociaux
+  es: Editar redes sociales
+  ar: تعديل روابط التواصل
+
+[edit_profile_social_url_placeholder]
+  en: https://linkedin.com/in/...
+  fr: https://linkedin.com/in/...
+  es: https://linkedin.com/in/...
+  ar: https://linkedin.com/in/...
+
+[edit_profile_theme_title]
+  en: Customize theme
+  fr: Personnaliser le thème
+  es: Personalizar tema
+  ar: تخصيص السمة
+
+[edit_profile_title]
+  en: Edit Profile
+  fr: Modifier le profil
+  es: Editar Perfil
+  ar: تعديل الملف الشخصي
+
+[edit_profile_upload_banner]
+  en: Upload banner
+  fr: Mettre en ligne une bannière
+  es: Subir banner
+  ar: تحميل صورة الغلاف
+
+[edit_profile_upload_portrait]
+  en: Upload portrait
+  fr: Mettre en ligne un portrait
+  es: Subir retrato
+  ar: تحميل صورة شخصية
+
+[email]
+  en: Email
+  fr: Email
+  es: Correo
+  ar: البريد الإلكتروني
+
+[emergency_badge]
+  en: Emergency Duty
+  fr: Garde d'Urgence
+  es: Guardia de Emergencia
+  ar: مناوبة الطوارئ
+
+[empty_description]
+  en: Start exploring to fill this space.
+  fr: Commencez à explorer pour remplir cet espace.
+  es: Empieza a explorar para llenar este espacio.
+  ar: ابدأ الاستكشاف لملء هذا المساحة.
+
+[empty_title]
+  en: Nothing here yet
+  fr: Rien ici pour le moment
+  es: Nada aquí por ahora
+  ar: لا شيء هنا حتى الآن
+
+[error_profile_init]
+  en: Profile initialization failed
+  fr: Initialisation du profil impossible
+  es: No se pudo inicializar el perfil
+  ar: تعذر تهيئة الملف الشخصي
+
+[error_profile_retry]
+  en: Please try again.
+  fr: Veuillez réessayer.
+  es: Inténtalo de nuevo.
+  ar: يرجى المحاولة مرة أخرى.
+
+[error_retry]
+  en: Retry
+  fr: Réessayer
+  es: Reintentar
+  ar: إعادة المحاولة
+
+[event_about]
+  en: About the event
+  fr: À propos de l'événement
+  es: Sobre el evento
+  ar: تفاصيل الفعالية
+
+[event_add_calendar]
+  en: Add to Calendar
+  fr: Ajouter au calendrier
+  es: Añadir al calendario
+  ar: إضافة للتقويم
+
+[event_all]
+  en: All Events
+  fr: Tous les événements
+  es: Todos los eventos
+  ar: كل الفعاليات
+
+[event_attendees]
+  en: Attendees
+  fr: Participants
+  es: Asistentes
+  ar: الحاضرون
+
+[event_back_agenda]
+  en: Back to agenda
+  fr: Retour à l'agenda
+  es: Volver a la agenda
+  ar: العودة إلى الأجندة
+
+[event_checkin_btn]
+  en: Check In
+  fr: S'enregistrer
+  es: Registrarse
+  ar: تسجيل الحضور
+
+[event_checkin_done]
+  en: Attendance validated
+  fr: Présence validée
+  es: Asistencia validada
+  ar: تم تأكيد الحضور
+
+[event_checkin_error]
+  en: Check-in failed. Please try again.
+  fr: Échec de l'enregistrement. Veuillez réessayer.
+  es: Error en el registro. Inténtalo de nuevo.
+  ar: فشل تسجيل الحضور. يرجى المحاولة مرة أخرى.
+
+[event_checkin_scan]
+  en: Scan Event QR Code
+  fr: Scanner le QR Code
+  es: Escanear código QR del evento
+  ar: مسح رمز QR للفعالية
+
+[event_checkin_success]
+  en: Successfully checked in to the event!
+  fr: Enregistrement à l'événement réussi !
+  es: ¡Registrado en el evento con éxito!
+  ar: تم تسجيل الحضور للفعالية بنجاح!
+
+[event_country]
+  en: Morocco
+  fr: Maroc
+  es: Marruecos
+  ar: المغرب
+
+[event_empty_desc]
+  en: Try selecting a different filter or check back later.
+  fr: Essayez de changer de filtre ou revenez plus tard.
+  es: Prueba a seleccionar otro filtro o vuelve más tarde.
+  ar: يرجى اختيار فلتر آخر أو المحاولة لاحقاً.
+
+[event_empty_title]
+  en: No events found
+  fr: Aucun événement trouvé
+  es: No se encontraron eventos
+  ar: لم يتم العثور على فعاليات
+
+[event_ended]
+  en: Ended
+  fr: Terminé
+  es: Terminado
+  ar: منتهي
+
+[event_error]
+  en: An error occurred
+  fr: Une erreur est survenue
+  es: Ocurrió un error
+  ar: حدث خطأ
+
+[event_featured]
+  en: Featured
+  fr: À la Une
+  es: Destacados
+  ar: فعاليات مميزة
+
+[event_gallery]
+  en: Gallery
+  fr: Galerie
+  es: Galería
+  ar: معرض الصور
+
+[event_interested]
+  en: Interested
+  fr: Intéressé
+  es: Interesado
+  ar: مهتم
+
+[event_link_copied]
+  en: Link copied to clipboard!
+  fr: Lien copié dans le presse-papiers !
+  es: ¡Enlace copiado al portapapeles!
+  ar: تم نسخ الرابط!
+
+[event_link_copy_error]
+  en: Failed to copy link
+  fr: Échec de la copie du lien
+  es: Error al copiar enlace
+  ar: فشل نسخ الرابط
+
+[event_live]
+  en: LIVE
+  fr: EN DIRECT
+  es: EN VIVO
+  ar: مباشر الآن
+
+[event_load_error]
+  en: Failed to load events
+  fr: Erreur de chargement des événements
+  es: Error al cargar eventos
+  ar: فشل تحميل الفعاليات
+
+[event_load_error_msg]
+  en: Please try again later.
+  fr: Veuillez réessayer ultérieurement.
+  es: Inténtalo de nuevo más tarde.
+  ar: يرجى المحاولة مرة أخرى لاحقاً.
+
+[event_loading]
+  en: Loading event...
+  fr: Chargement de l'événement...
+  es: Cargando evento...
+  ar: جاري تحميل الفعالية...
+
+[event_location]
+  en: Location
+  fr: Localisation
+  es: Ubicación
+  ar: الموقع الجغرافي
+
+[event_name]
+  en: Event name
+  fr: Nom de l'événement
+  es: Nombre del evento
+  ar: اسم الحدث
+
+[event_name_placeholder]
+  en: Event (e.g. Velora Gala, Conference...)
+  fr: Événement (ex: Velora Gala, Conférence...)
+  es: Evento (ej: Velora Gala, Congreso...)
+  ar: الحدث (مثال: حفل فيلورا، مؤتمر...)
+
+[event_networking_title]
+  en: People you may want to meet
+  fr: Personnes à rencontrer
+  es: Personas que te puede interesar conocer
+  ar: أشخاص قد تود مقابلتهم
+
+[event_no_attendees]
+  en: No attendees yet. Be the first!
+  fr: Aucun participant pour le moment. Soyez le premier !
+  es: Aún no hay asistentes. ¡Sé el primero!
+  ar: لا يوجد مشاركون بعد. كن أول المهتمين!
+
+[event_not_found]
+  en: Event not found
+  fr: Événement introuvable
+  es: Evento no encontrado
+  ar: الفعالية غير موجودة
+
+[event_open_maps]
+  en: Open Maps
+  fr: Itinéraire Maps
+  es: Ver Mapa
+  ar: خرائط جوجل
+
+[event_organizer]
+  en: Organizer
+  fr: Organisateur
+  es: Organizador
+  ar: المنظم
+
+[event_qr_invalid]
+  en: Invalid QR code for this event.
+  fr: Code QR invalide pour cet événement.
+  es: Código QR no válido para este evento.
+  ar: رمز QR غير صالح لهذه الفعالية.
+
+[event_sold_out]
+  en: Sold Out
+  fr: Complet
+  es: Agotado
+  ar: نفدت التذاكر
+
+[event_speakers]
+  en: Speakers
+  fr: Intervenants
+  es: Ponentes
+  ar: المتحدثون
+
+[event_spots_left]
+  en: spots left
+  fr: places restantes
+  es: plazas restantes
+  ar: أماكن متبقية
+
+[event_starting_soon]
+  en: Starting Soon
+  fr: Commence bientôt
+  es: Comienza pronto
+  ar: يبدأ قريباً
+
+[event_upcoming]
+  en: Upcoming
+  fr: À venir
+  es: Próximo
+  ar: قادم
+
+[event_view_profile]
+  en: View
+  fr: Voir
+  es: Ver
+  ar: عرض
+
+[experience]
+  en: Experience
+  fr: Expérience
+  es: Experiencia
+  ar: الخبرات
+
+[field_address]
+  en: Clinic Address
+  fr: Adresse de la Clinique
+  es: Dirección de la Clínica
+  ar: عنوان العيادة
+
+[field_bio]
+  en: Professional Bio
+  fr: Biographie Professionnelle
+  es: Biografía Profesional
+  ar: النبذة المهنية
+
+[field_bio_short]
+  en: Bio
+  fr: Biographie
+  es: Biografía
+  ar: السيرة الذاتية
+
+[field_booking_link]
+  en: Appointment Link
+  fr: Lien de Réservation
+  es: Enlace de Citas
+  ar: رابط حجز المواعيد
+
+[field_clinic_name]
+  en: Clinic Name
+  fr: Nom de la Clinique
+  es: Nombre de la Clínica
+  ar: اسم العيادة
+
+[field_company]
+  en: Company
+  fr: Entreprise
+  es: Empresa
+  ar: الشركة
+
+[field_description]
+  en: Description
+  fr: Description
+  es: Descripción
+  ar: الوصف
+
+[field_email]
+  en: Email
+  fr: Email
+  es: Correo electrónico
+  ar: البريد الإلكتروني
+
+[field_emergency_contact]
+  en: Emergency Contact
+  fr: Contact d'Urgence
+  es: Contacto de Emergencia
+  ar: رقم الطوارئ
+
+[field_fixed_phone]
+  en: Fixed Phone Line
+  fr: Téléphone Fixe
+  es: Teléfono Fijo
+  ar: الهاتف الثابت
+
+[field_fullname]
+  en: Full Name
+  fr: Nom Complet
+  es: Nombre Completo
+  ar: الاسم الكامل
+
+[field_google_maps]
+  en: Google Maps URL
+  fr: Lien Google Maps
+  es: Enlace de Google Maps
+  ar: رابط خرائط جوجل
+
+[field_google_reviews]
+  en: Google Reviews Link
+  fr: Lien Avis Google
+  es: Enlace de Reseñas de Google
+  ar: رابط تقييمات جوجل
+
+[field_headline]
+  en: Headline
+  fr: Titre professionnel
+  es: Titular profesional
+  ar: العنوان المهني
+
+[field_location]
+  en: Location
+  fr: Localisation
+  es: Ubicación
+  ar: الموقع
+
+[field_mode]
+  en: Mode
+  fr: Mode
+  es: Modo
+  ar: الوضع
+
+[field_order_number]
+  en: Order Number
+  fr: Numéro d'Ordre
+  es: Número de Colegiado
+  ar: رقم التسجيل المهني
+
+[field_phone]
+  en: Phone Number
+  fr: Téléphone
+  es: Teléfono
+  ar: رقم الهاتف
+
+[field_specialty]
+  en: Specialty
+  fr: Spécialité
+  es: Especialidad
+  ar: التخصص
+
+[field_website]
+  en: Website
+  fr: Site web
+  es: Sitio web
+  ar: الموقع الإلكتروني
+
+[field_whatsapp]
+  en: WhatsApp Number
+  fr: Numéro WhatsApp
+  es: Número de WhatsApp
+  ar: رقم الواتساب
+
+[field_work_hours]
+  en: Work Hours
+  fr: Horaires de Travail
+  es: Horario de Trabajo
+  ar: أوقات العمل
+
+[filter_all]
+  en: All
+  fr: Tous
+  es: Todos
+  ar: الكل
+
+[filter_business]
+  en: Business
+  fr: Business
+  es: Negocios
+  ar: أعمال
+
+[filter_client]
+  en: Client
+  fr: Client
+  es: Cliente
+  ar: عميل
+
+[filter_dentist]
+  en: Dentist
+  fr: Dentiste
+  es: Dentista
+  ar: طبيب أسنان
+
+[filter_friend]
+  en: Friend
+  fr: Ami
+  es: Amigo
+  ar: صديق
+
+[filter_nearby]
+  en: Nearby
+  fr: À proximité
+  es: Cerca
+  ar: بالقرب مني
+
+[filter_partner]
+  en: Partner
+  fr: Partenaire
+  es: Socio
+  ar: شريك
+
+[filter_this_month]
+  en: This Month
+  fr: Ce mois-ci
+  es: Este mes
+  ar: هذا الشهر
+
+[filter_this_week]
+  en: This Week
+  fr: Cette semaine
+  es: Esta semana
+  ar: هذا الأسبوع
+
+[filter_today]
+  en: Today
+  fr: Aujourd'hui
+  es: Hoy
+  ar: اليوم
+
+[filter_trending]
+  en: Trending
+  fr: Tendances
+  es: Tendencias
+  ar: شائع
+
+[filter_vip]
+  en: VIP
+  fr: VIP
+  es: VIP
+  ar: VIP
+
+[follow_up]
+  en: Follow up
+  fr: Suivi
+  es: Seguimiento
+  ar: متابعة
+
+[founding_access]
+  en: Founding Access
+  fr: Founding Access
+  es: Acceso Fundador
+  ar: عضوية تأسيسية
+
+[founding_access_desc]
+  en: You are among the first VELORA members.
+  fr: Vous faites partie des premiers membres VELORA.
+  es: Eres uno de los primeros miembros de VELORA.
+  ar: أنت من بين أوائل أعضاء فيلورا.
+
+[greeting_afternoon]
+  en: Good afternoon
+  fr: Bon après-midi
+  es: Buenas tardes
+  ar: مساء الخير
+
+[greeting_evening]
+  en: Good evening
+  fr: Bonsoir
+  es: Buenas noches
+  ar: مساء الخير
+
+[greeting_morning]
+  en: Good morning
+  fr: Bonjour
+  es: Buenos días
+  ar: صباح الخير
+
+[in_network]
+  en: In your Network
+  fr: Déjà dans votre réseau
+  es: En su red
+  ar: في شبكتك
+
+[introduced_by]
+  en: Introduced by
+  fr: Présenté par
+  es: Presentado por
+  ar: تم تقديمه بواسطة
+
+[loading_agenda]
+  en: Loading agenda...
+  fr: Chargement de l'agenda...
+  es: Cargando agenda...
+  ar: جاري تحميل الأجندة...
+
+[loading_default]
+  en: Loading...
+  fr: Chargement...
+  es: Cargando...
+  ar: جاري التحميل...
+
+[loading_discover]
+  en: Loading discover...
+  fr: Chargement de la découverte...
+  es: Cargando descubrir...
+  ar: جاري تحميل الاكتشاف...
+
+[loading_identity]
+  en: Loading identity...
+  fr: Chargement de l'identité...
+  es: Cargando identidad...
+  ar: جاري تحميل الهوية...
+
+[loading_profile]
+  en: Loading profile...
+  fr: Chargement du profil...
+  es: Cargando perfil...
+  ar: جاري تحميل الملف الشخصي...
+
+[loading_session]
+  en: Restoring session...
+  fr: Restauration de session...
+  es: Restaurando sesión...
+  ar: جاري استعادة الجلسة...
+
+[loading_share]
+  en: Loading share hub...
+  fr: Chargement du partage...
+  es: Cargando compartir...
+  ar: جاري تحميل المشاركة...
+
+[login_required_network]
+  en: Please log in to add this user to your network.
+  fr: Veuillez vous connecter pour ajouter cet utilisateur à votre réseau.
+  es: Inicia sesión para añadir este usuario a tu red.
+  ar: يرجى تسجيل الدخول لإضافة هذا المستخدم إلى شبكتك.
+
+[met_at]
+  en: Met at
+  fr: Rencontré à
+  es: Conocido en
+  ar: التقينا في
+
+[met_at_location]
+  en: Where we met
+  fr: Où nous nous sommes rencontrés
+  es: Dónde nos conocimos
+  ar: أين التقينا
+
+[mode_artist]
+  en: Artist
+  fr: Artiste
+  es: Artista
+  ar: فنان
+
+[mode_business]
+  en: Business
+  fr: Entreprise
+  es: Empresarial
+  ar: أعمال
+
+[mode_creator]
+  en: Creator
+  fr: Créateur
+  es: Creador
+  ar: صانع محتوى
+
+[mode_dentist]
+  en: Dentist
+  fr: Dentiste
+  es: Dentista
+  ar: طبيب أسنان
+
+[mode_vip]
+  en: VIP Member
+  fr: Membre VIP
+  es: Miembro VIP
+  ar: عضو VIP
+
+[mutual_connections]
+  en: mutual connections
+  fr: connexions mutuelles
+  es: conexiones mutuas
+  ar: اتصالات مشتركة
+
+[my_network]
+  en: My Network
+  fr: Mon Réseau
+  es: Mi Red
+  ar: شبكتي
+
+[nav_agenda]
+  en: Agenda
+  fr: Agenda
+  es: Agenda
+  ar: الأجندة
+
+[nav_discover]
+  en: Discover
+  fr: Découvrir
+  es: Descubrir
+  ar: اكتشف
+
+[nav_home]
+  en: Home
+  fr: Accueil
+  es: Inicio
+  ar: الرئيسية
+
+[nav_identity]
+  en: Identity
+  fr: Identité
+  es: Identidad
+  ar: الهوية
+
+[nav_insights]
+  en: Insights
+  fr: Insights
+  es: Estadísticas
+  ar: إحصائيات
+
+[nav_share]
+  en: Share
+  fr: Partager
+  es: Compartir
+  ar: مشاركة
+
+[network_connected_badge]
+  en: Connected
+  fr: Connecté
+  es: Conectado
+  ar: متصل
+
+[network_default_name]
+  en: Velora Member
+  fr: Membre Velora
+  es: Miembro Velora
+  ar: عضو فيلورا
+
+[network_default_title]
+  en: Professional
+  fr: Professionnel
+  es: Profesional
+  ar: محترف
+
+[network_empty_desc]
+  en: Start adding connections by scanning NFC cards, QR codes, or through profile links.
+  fr: Commencez à ajouter des connexions en scannant des cartes NFC, des codes QR, ou via des liens de profils.
+  es: Empieza a añadir conexiones escaneando tarjetas NFC, códigos QR o a través de enlaces de perfil.
+  ar: ابدأ بإضافة اتصالات عبر مسح بطاقات NFC أو رموز QR أو عبر روابط الملفات الشخصية.
+
+[network_empty_title]
+  en: Your network is empty
+  fr: Votre réseau est vide
+  es: Tu red está vacía
+  ar: شبكتك فارغة
+
+[network_loading]
+  en: Loading your network...
+  fr: Chargement de votre réseau...
+  es: Cargando tu red...
+  ar: جاري تحميل شبكتك...
+
+[network_member]
+  en: member
+  fr: membre
+  es: miembro
+  ar: عضو
+
+[network_members]
+  en: members
+  fr: membres
+  es: miembros
+  ar: أعضاء
+
+[network_no_results]
+  en: No results found for
+  fr: Aucun résultat trouvé pour
+  es: No se encontraron resultados para
+  ar: لم يتم العثور على نتائج لـ
+
+[network_search_placeholder]
+  en: Search by name or title...
+  fr: Rechercher par nom ou titre...
+  es: Buscar por nombre o título...
+  ar: بحث بالاسم أو المسمى...
+
+[network_subtitle]
+  en: Find and connect with your professional contacts.
+  fr: Retrouvez et échangez avec vos relations professionnelles connectées.
+  es: Encuentra e interactúa con tus contactos profesionales.
+  ar: ابحث وتواصل مع جهات اتصالك المهنية.
+
+[network_title]
+  en: My Network
+  fr: Mon Réseau
+  es: Mi Red
+  ar: شبكتي
+
+[nfc_description]
+  en: Hold your phone near another device to share your profile
+  fr: Approchez votre téléphone d'un autre appareil pour partager votre profil
+  es: Acerque su teléfono a otro dispositivo para compartir su perfil
+  ar: قرّب هاتفك من جهاز آخر لمشاركة ملفك الشخصي فوراً
+
+[nfc_tap]
+  en: NFC Tap
+  fr: Toucher NFC
+  es: Toque NFC
+  ar: نقرة NFC
+
+[no_connections]
+  en: No connections yet
+  fr: Aucune connexion pour le moment
+  es: No hay conexiones aún
+  ar: لا توجد اتصالات بعد
+
+[no_pending_requests]
+  en: No pending requests
+  fr: Aucune demande en attente
+  es: No hay solicitudes pendientes
+  ar: لا توجد طلبات معلقة
+
+[notes]
+  en: Notes
+  fr: Notes
+  es: Notas
+  ar: ملاحظات
+
+[offline_banner]
+  en: Offline
+  fr: Hors connexion
+  es: Sin conexión
+  ar: غير متصل بالإنترنت
+
+[onboarding_continue]
+  en: Continue
+  fr: Continuer
+  es: Continuar
+  ar: متابعة
+
+[onboarding_enter]
+  en: Enter VELORA
+  fr: Entrer dans VELORA
+  es: Entrar a VELORA
+  ar: دخول فيلورا
+
+[onboarding_skip]
+  en: Skip
+  fr: Passer
+  es: Omitir
+  ar: تخطي
+
+[onboarding_slide1_desc]
+  en: Share your professional identity instantly with a simple NFC tap. No apps needed for the receiver.
+  fr: Partagez votre identité professionnelle instantanément avec un simple toucher NFC. Aucune application nécessaire pour le destinataire.
+  es: Comparte tu identidad profesional al instante con un simple toque NFC. Sin necesidad de apps para el receptor.
+  ar: شارك هويتك المهنية فوراً بلمسة NFC بسيطة. لا حاجة لتطبيق عند المستلم.
+
+[onboarding_slide1_subtitle]
+  en: Your phone is your business card
+  fr: Votre téléphone est votre carte de visite
+  es: Tu teléfono es tu tarjeta de visita
+  ar: هاتفك هو بطاقتك المهنية
+
+[onboarding_slide1_title]
+  en: Tap & Share
+  fr: Toucher & Partager
+  es: Tocar & Compartir
+  ar: انقر وشارك
+
+[onboarding_slide2_desc]
+  en: Generate stunning QR codes that open a cinematic profile experience. Make every first impression unforgettable.
+  fr: Générez de superbes codes QR qui ouvrent une expérience cinématique. Rendez chaque première impression inoubliable.
+  es: Genera increíbles códigos QR que abren una experiencia cinematográfica de perfil. Haz que cada primera impresión sea inolvidable.
+  ar: أنشئ رموز QR مذهلة تفتح تجربة ملف شخصي سينمائية. اجعل كل انطباع أول لا يُنسى.
+
+[onboarding_slide2_subtitle]
+  en: Every interaction matters
+  fr: Chaque interaction compte
+  es: Cada interacción importa
+  ar: كل تفاعل مهم
+
+[onboarding_slide2_title]
+  en: Scan & Connect
+  fr: Scanner & Connecter
+  es: Escanear & Conectar
+  ar: امسح وتواصل
+
+[onboarding_slide3_desc]
+  en: Build trust and prestige in the luxury business ecosystem. Your identity, elevated.
+  fr: Bâtissez confiance et prestige dans l'écosystème du luxe. Votre identité, élevée.
+  es: Construye confianza y prestigio en el ecosistema del lujo. Tu identidad, elevada.
+  ar: ابنِ الثقة والمكانة في منظومة الأعمال الراقية. هويتك، بمستوى أرقى.
+
+[onboarding_slide3_subtitle]
+  en: Premium professional presence
+  fr: Présence professionnelle premium
+  es: Presencia profesional premium
+  ar: حضور مهني فاخر
+
+[onboarding_slide3_title]
+  en: Elevate Your Identity
+  fr: Élevez Votre Identité
+  es: Eleva Tu Identidad
+  ar: ارتقِ بهويتك
+
+[other_methods]
+  en: Other methods
+  fr: Autres méthodes
+  es: Otros métodos
+  ar: طرق أخرى
+
+[pending_requests]
+  en: Pending Requests
+  fr: Demandes en attente
+  es: Solicitudes pendientes
+  ar: طلبات معلقة
+
+[performance]
+  en: Performance
+  fr: Performance
+  es: Rendimiento
+  ar: الأداء
+
+[placeholder_appointment_link]
+  en: https://bookinglink.com/...
+  fr: https://doctolib.fr/...
+  es: https://bookinglink.com/...
+  ar: https://bookinglink.com/...
+
+[placeholder_clinic_address]
+  en: e.g. 123 Bd Anfa, Casablanca
+  fr: Ex: 123 Bd Anfa, Casablanca
+  es: Ej: 123 Bd Anfa, Casablanca
+  ar: مثال: ١٢٣ شارع أنفا، الدار البيضاء
+
+[placeholder_clinic_name]
+  en: e.g. Dr. El Amrani Clinic
+  fr: Ex: Cabinet Dentaire Dr. El Amrani
+  es: Ej: Clínica Dental Dr. El Amrani
+  ar: مثال: عيادة طب الأسنان د. العمراني
+
+[placeholder_clinic_website]
+  en: https://www.clinicwebsite.com
+  fr: https://www.cabinetdentaire.com
+  es: https://www.clinicadental.com
+  ar: https://www.clinicwebsite.com
+
+[placeholder_company]
+  en: e.g. VELORA Studios
+  fr: Ex: VELORA Studios
+  es: Ej: VELORA Studios
+  ar: مثال: VELORA Studios
+
+[placeholder_email]
+  en: you@velora.app
+  fr: vous@velora.app
+  es: tu@velora.app
+  ar: you@velora.app
+
+[placeholder_emergency_contact]
+  en: e.g. +212 6XX XXX XXX
+  fr: Ex: +212 6XX XXX XXX
+  es: Ej: +212 6XX XXX XXX
+  ar: مثال: +212 6XX XXX XXX
+
+[placeholder_fixed_phone]
+  en: e.g. +212 5XX XXX XXX
+  fr: Ex: +212 5XX XXX XXX
+  es: Ej: +212 5XX XXX XXX
+  ar: مثال: +212 5XX XXX XXX
+
+[placeholder_google_maps]
+  en: https://maps.google.com/?q=...
+  fr: https://maps.google.com/?q=...
+  es: https://maps.google.com/?q=...
+  ar: https://maps.google.com/?q=...
+
+[placeholder_google_reviews]
+  en: https://g.page/r/...
+  fr: https://g.page/r/...
+  es: https://g.page/r/...
+  ar: https://g.page/r/...
+
+[placeholder_order_number]
+  en: e.g. 123456
+  fr: Ex: 123456
+  es: Ej: 123456
+  ar: مثال: ١٢٣٤٥٦
+
+[placeholder_phone]
+  en: e.g. +212 6XX XXX XXX
+  fr: Ex: +212 6XX XXX XXX
+  es: Ej: +212 6XX XXX XXX
+  ar: مثال: +212 6XX XXX XXX
+
+[placeholder_specialty]
+  en: e.g. Orthodontist, Oral Surgeon
+  fr: Ex: Chirurgien-Dentiste, Orthodontiste...
+  es: Ej: Cirujano Dentista, Ortodoncista...
+  ar: مثال: طبيب جراح أسنان، تقويم الأسنان...
+
+[placeholder_website]
+  en: velora.app
+  fr: velora.app
+  es: velora.app
+  ar: velora.app
+
+[placeholder_whatsapp_pro]
+  en: e.g. +212 6XX XXX XXX
+  fr: Ex: +212 6XX XXX XXX
+  es: Ej: +212 6XX XXX XXX
+  ar: مثال: +212 6XX XXX XXX
+
+[placeholder_work_hours]
+  en: Mon - Fri: 9:00 AM - 6:00 PM
+  fr: Lun - Ven: 09h00 - 18h00 / Sam: 09h00 - 13h00
+  es: Lun - Vie: 09:00 - 18:00 / Sáb: 09:00 - 13:00
+  ar: الاثنين - الجمعة: ٠٩:٠٠ - ١٨:٠٠ / السبت: ٠٩:٠٠ - ١٣:٠٠
+
+[portfolio]
+  en: Portfolio
+  fr: Portfolio
+  es: Portafolio
+  ar: الأعمال
+
+[premium]
+  en: Premium
+  fr: Premium
+  es: Premium
+  ar: مميز
+
+[present]
+  en: Present
+  fr: Présent
+  es: Presente
+  ar: حتى الآن
+
+[professional_mode]
+  en: Professional Mode
+  fr: Mode professionnel
+  es: Modo Profesional
+  ar: الوضع المهني
+
+[profile_completion]
+  en: Profile complete
+  fr: Profil complété à
+  es: Perfil completado al
+  ar: اكتمل الملف الشخصي بنسبة
+
+[profile_link]
+  en: Your profile link
+  fr: Votre lien de profil
+  es: Enlace de su perfil
+  ar: رابط ملفك الشخصي
+
+[qr_code]
+  en: QR Code
+  fr: Code QR
+  es: Código QR
+  ar: رمز QR
+
+[quick_share]
+  en: Quick Share
+  fr: Partage rapide
+  es: Compartir Rápido
+  ar: مشاركة سريعة
+
+[ready]
+  en: Ready
+  fr: Prêt
+  es: Listo
+  ar: جاهز
+
+[received_request_msg]
+  en: Sent you a connection request
+  fr: Vous a envoyé une demande de connexion
+  es: Te envió una solicitud de conexión
+  ar: أرسل لك طلب اتصال
+
+[recent_activity]
+  en: Recent Activity
+  fr: Activité récente
+  es: Actividad Reciente
+  ar: النشاط الأخير
+
+[recent_interactions]
+  en: Recently met
+  fr: Récemment rencontrés
+  es: Encuentros recientes
+  ar: التقينا مؤخراً
+
+[relationship_status_connected]
+  en: Connected
+  fr: Connecté
+  es: Conectado
+  ar: متصل
+
+[relationship_status_none]
+  en: Not connected
+  fr: Non connecté
+  es: No conectado
+  ar: غير متصل
+
+[relationship_status_pending_received]
+  en: Received Request
+  fr: Demande reçue
+  es: Solicitud recibida
+  ar: طلب مستلم
+
+[relationship_status_pending_sent]
+  en: Pending Request
+  fr: Demande en attente
+  es: Solicitud pendiente
+  ar: طلب معلق
+
+[remove_connection]
+  en: Remove Connection
+  fr: Supprimer du réseau
+  es: Eliminar de la red
+  ar: إزالة من الشبكة
+
+[request_pending]
+  en: Request Sent
+  fr: Demande envoyée
+  es: Solicitud enviada
+  ar: تم إرسال الطلب
+
+[save]
+  en: Save
+  fr: Enregistrer
+  es: Guardar
+  ar: حفظ
+
+[save_contact]
+  en: Save Contact
+  fr: Enregistrer le contact
+  es: Guardar Contacto
+  ar: حفظ جهة الاتصال
+
+[save_notes]
+  en: Save changes
+  fr: Enregistrer les modifications
+  es: Guardar cambios
+  ar: حفظ التغييرات
+
+[scan_memory]
+  en: Scan Memory
+  fr: Mémoire de scan
+  es: Historial de Escaneos
+  ar: ذاكرة المسح
+
+[scans]
+  en: Scans
+  fr: Scans
+  es: Escaneos
+  ar: المسوح
+
+[search_contacts]
+  en: Search contacts...
+  fr: Rechercher des contacts...
+  es: Buscar contactos...
+  ar: بحث جهات الاتصال...
+
+[section_before_after]
+  en: Clinical Cases (Before / After)
+  fr: Cas Cliniques (Avant / Après)
+  es: Casos Clínicos (Antes / Después)
+  ar: الحالات السريرية (قبل / بعد)
+
+[section_gallery]
+  en: Clinic Gallery
+  fr: Galerie du Cabinet
+  es: Galería de la Clínica
+  ar: معرض العيادة
+
+[settings]
+  en: Settings
+  fr: Paramètres
+  es: Ajustes
+  ar: الإعدادات
+
+[settings_alert_sounds]
+  en: Alert Sounds
+  fr: Sons & Alertes
+  es: Alertas de Sonido
+  ar: تنبيهات الأصوات
+
+[settings_alert_sounds_desc]
+  en: Play subtle feedback sounds during NFC/QR taps
+  fr: Jouer un son lors d'un scan réussi
+  es: Sonido al escanear correctamente
+  ar: تشغيل صوت عند المسح الناجح
+
+[settings_back]
+  en: Back
+  fr: Retour
+  es: Atrás
+  ar: رجوع
+
+[settings_dark_mode]
+  en: Dark Mode
+  fr: Mode Sombre
+  es: Modo Oscuro
+  ar: المظهر الداكن
+
+[settings_email_digest]
+  en: Email Digests
+  fr: Rapport par Email
+  es: Resumen de Email
+  ar: ملخص البريد الإلكتروني
+
+[settings_email_digest_desc]
+  en: Receive weekly performance and connection summaries
+  fr: Recevoir un résumé hebdomadaire des performances et connexions
+  es: Recibir resúmenes semanales de rendimiento y conexiones
+  ar: تلقي ملخصات أسبوعية للأداء والاتصالات
+
+[settings_email_visibility]
+  en: Email Visibility
+  fr: Visibilité de l'Email
+  es: Visibilidad del Email
+  ar: ظهور البريد الإلكتروني
+
+[settings_email_visibility_desc]
+  en: Show your email address as a public contact action
+  fr: Afficher publiquement votre adresse email
+  es: Mostrar dirección de correo en perfil
+  ar: عرض عنوان البريد الإلكتروني علنًا
+
+[settings_error]
+  en: Settings error
+  fr: Erreur des paramètres
+  es: Error de ajustes
+  ar: خطأ في الإعدادات
+
+[settings_error_msg]
+  en: Could not save your preferences. Please try again.
+  fr: Impossible de sauvegarder vos préférences. Veuillez réessayer.
+  es: No se pudieron guardar las preferencias. Inténtalo de nuevo.
+  ar: تعذر حفظ تفضيلاتك. يرجى المحاولة مرة أخرى.
+
+[settings_language]
+  en: App Language
+  fr: Langue de l'application
+  es: Idioma de la App
+  ar: لغة التطبيق
+
+[settings_language_changed]
+  en: Language changed
+  fr: Langue modifiée
+  es: Idioma cambiado
+  ar: تم تغيير اللغة
+
+[settings_language_changed_msg]
+  en: Language updated successfully
+  fr: La langue a été mise à jour avec succès.
+  es: Se ha actualizado el idioma correctamente.
+  ar: تم تحديث اللغة بنجاح.
+
+[settings_light_mode]
+  en: Light Mode
+  fr: Mode Clair
+  es: Modo Claro
+  ar: المظهر الفاتح
+
+[settings_logout]
+  en: Log Out
+  fr: Se déconnecter
+  es: Cerrar Sesión
+  ar: تسجيل الخروج
+
+[settings_logout_confirm]
+  en: Log Out
+  fr: Déconnexion
+  es: Cerrar sesión
+  ar: تسجيل الخروج
+
+[settings_logout_error]
+  en: Logout failed
+  fr: Échec de la déconnexion
+  es: Error al cerrar sesión
+  ar: فشل تسجيل الخروج
+
+[settings_logout_error_msg]
+  en: An error occurred while logging out.
+  fr: Une erreur est survenue lors de la déconnexion.
+  es: Ocurrió un error al cerrar sesión.
+  ar: حدث خطأ أثناء تسجيل الخروج.
+
+[settings_logout_message]
+  en: You will need to sign in again to manage your professional identity.
+  fr: Vous devrez vous reconnecter pour accéder à votre profil et vos insights.
+  es: Necesitarás iniciar sesión nuevamente para acceder a tu perfil.
+  ar: ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى ملفك الشخصي.
+
+[settings_logout_title]
+  en: Log out from VELORA?
+  fr: Se déconnecter de VELORA ?
+  es: ¿Cerrar sesión de VELORA?
+  ar: هل تريد تسجيل الخروج من فيلورا؟
+
+[settings_notifications]
+  en: Push Notifications
+  fr: Notifications Push
+  es: Notificaciones Push
+  ar: التنبيهات الآنية
+
+[settings_notifications_desc]
+  en: Enable scan and connection alerts
+  fr: Activer les alertes de scan et connexion
+  es: Activar alertas de escaneo y conexión
+  ar: تفعيل تنبيهات المسح والاتصالات الجديدة
+
+[settings_privacy]
+  en: Private Profile
+  fr: Mode Privé
+  es: Perfil Privado
+  ar: الملف الشخصي الخاص
+
+[settings_privacy_desc]
+  en: Hide my profile from global directory search
+  fr: Masquer mon profil dans la recherche globale
+  es: Ocultar mi perfil de la búsqueda global
+  ar: إخفاء ملفي الشخصي من البحث العام
+
+[settings_privacy_section]
+  en: Privacy & Security
+  fr: Sécurité et Confidentialité
+  es: Privacidad y Seguridad
+  ar: الخصوصية والأمان
+
+[settings_search_indexing]
+  en: Search Engine Indexing
+  fr: Indexation Google
+  es: Indexación de Motores
+  ar: فهرسة محركات البحث
+
+[settings_search_indexing_desc]
+  en: Allow Google and other engines to list your profile link
+  fr: Permettre aux moteurs de recherche d'indexer votre profil
+  es: Permitir indexar perfil públicamente
+  ar: السماح لمحركات البحث بفهرسة ملفك الشخصي
+
+[settings_theme]
+  en: Visual Theme (Dark / Light)
+  fr: Thème visuel (Sombre / Clair)
+  es: Tema Visual (Oscuro / Claro)
+  ar: مظهر التطبيق (داكن / فاتح)
+
+[settings_theme_dark_msg]
+  en: Moroccan Midnight theme enabled.
+  fr: Thème Moroccan Midnight activé.
+  es: Tema Moroccan Midnight activado.
+  ar: تم تفعيل مظهر منتصف الليل المغربي.
+
+[settings_theme_light_msg]
+  en: Sahara Pearl theme enabled.
+  fr: Thème Sahara Pearl activé.
+  es: Tema Sahara Pearl activado.
+  ar: تم تفعيل مظهر لؤلؤة الصحراء.
+
+[settings_theme_updated]
+  en: Theme updated
+  fr: Thème mis à jour
+  es: Tema actualizado
+  ar: تم تحديث المظهر
+
+[settings_title]
+  en: Application Settings
+  fr: Configuration de l'application
+  es: Configuración de la Aplicación
+  ar: إعدادات التطبيق
+
+[setup_error_auth]
+  en: Please sign in again before uploading an image.
+  fr: Veuillez vous reconnecter avant de télécharger une image.
+  es: Inicia sesión nuevamente antes de subir una imagen.
+  ar: يرجى تسجيل الدخول مجدداً قبل رفع صورة.
+
+[setup_error_general]
+  en: Profile setup failed
+  fr: Échec de la configuration du profil
+  es: Error en la configuración del perfil
+  ar: فشل إعداد الملف الشخصي
+
+[setup_error_required]
+  en: Please complete the required fields.
+  fr: Veuillez compléter les champs requis.
+  es: Por favor completa los campos requeridos.
+  ar: يرجى إكمال الحقول المطلوبة.
+
+[setup_error_upload]
+  en: Avatar upload failed
+  fr: Échec du téléchargement de l'avatar
+  es: Error al subir el avatar
+  ar: فشل رفع الصورة الشخصية
+
+[setup_label_bio]
+  en: Bio
+  fr: Bio
+  es: Bio
+  ar: نبذة
+
+[setup_label_fullname]
+  en: Full Name *
+  fr: Nom Complet *
+  es: Nombre Completo *
+  ar: الاسم الكامل *
+
+[setup_label_instagram]
+  en: Instagram (Optional)
+  fr: Instagram (Optionnel)
+  es: Instagram (Opcional)
+  ar: إنستغرام (اختياري)
+
+[setup_label_location]
+  en: Location
+  fr: Localisation
+  es: Ubicación
+  ar: الموقع
+
+[setup_label_mode]
+  en: Professional Mode
+  fr: Mode Professionnel
+  es: Modo Profesional
+  ar: الوضع المهني
+
+[setup_label_title]
+  en: Professional Title *
+  fr: Titre Professionnel *
+  es: Título Profesional *
+  ar: المسمى المهني *
+
+[setup_label_username]
+  en: Username
+  fr: Nom d'utilisateur
+  es: Nombre de usuario
+  ar: اسم المستخدم
+
+[setup_label_whatsapp]
+  en: WhatsApp Number *
+  fr: Numéro WhatsApp *
+  es: Número de WhatsApp *
+  ar: رقم الواتساب *
+
+[setup_mode_corporate]
+  en: Corporate
+  fr: Corporate
+  es: Corporativo
+  ar: شركات
+
+[setup_mode_creative]
+  en: Creative
+  fr: Créatif
+  es: Creativo
+  ar: إبداعي
+
+[setup_mode_entrepreneur]
+  en: Entrepreneur
+  fr: Entrepreneur
+  es: Emprendedor
+  ar: رائد أعمال
+
+[setup_mode_luxury]
+  en: Luxury
+  fr: Luxe
+  es: Lujo
+  ar: فخامة
+
+[setup_mode_nightlife]
+  en: Nightlife
+  fr: Nightlife
+  es: Vida Nocturna
+  ar: حياة ليلية
+
+[setup_placeholder_bio]
+  en: A brief description of your journey...
+  fr: Une courte description de votre parcours...
+  es: Una breve descripción de tu trayectoria...
+  ar: وصف مختصر لمسيرتك المهنية...
+
+[setup_placeholder_location]
+  en: Casablanca, Morocco
+  fr: Casablanca, Maroc
+  es: Casablanca, Marruecos
+  ar: الدار البيضاء، المغرب
+
+[setup_placeholder_name]
+  en: e.g. Youssef El Amrani
+  fr: Ex: Youssef El Amrani
+  es: Ej: Youssef El Amrani
+  ar: مثال: يوسف العمراني
+
+[setup_placeholder_title]
+  en: e.g. Founder & Creative Director
+  fr: Ex: Fondateur & Directeur Créatif
+  es: Ej: Fundador y Director Creativo
+  ar: مثال: مؤسس ومدير إبداعي
+
+[setup_submit]
+  en: Finalize profile
+  fr: Finaliser le profil
+  es: Finalizar perfil
+  ar: إنهاء إعداد الملف
+
+[setup_subtitle]
+  en: Set up your VELORA professional profile
+  fr: Configurez votre profil professionnel VELORA
+  es: Configura tu perfil profesional VELORA
+  ar: قم بإعداد ملفك المهني في فيلورا
+
+[setup_title]
+  en: Create your identity
+  fr: Créez votre identité
+  es: Crea tu identidad
+  ar: أنشئ هويتك
+
+[share_hub]
+  en: Share Hub
+  fr: Partager
+  es: Centro de Compartir
+  ar: مركز المشاركة
+
+[share_identity]
+  en: Share your identity
+  fr: Partagez votre identité
+  es: Comparte tu identidad
+  ar: شارك هويتك مع الآخرين
+
+[share_link]
+  en: Share Link
+  fr: Lien
+  es: Enlace de Perfil
+  ar: رابط الملف الشخصي
+
+[soon]
+  en: Soon
+  fr: Bientôt
+  es: Pronto
+  ar: قريباً
+
+[tagline]
+  en: Your identity, elevated
+  fr: Votre identité, élevée
+  es: Su identidad, elevada
+  ar: هويتك المهنية، بمستوى أرقى
+
+[tags]
+  en: Tags
+  fr: Tags
+  es: Etiquetas
+  ar: وسوم
+
+[taps]
+  en: Taps
+  fr: Taps
+  es: Toques
+  ar: النقرات
+
+[theme_emerald]
+  en: Emerald
+  fr: Émeraude
+  es: Esmeralda
+  ar: زمردي (Emerald)
+
+[theme_gold]
+  en: Gold
+  fr: Gold
+  es: Oro (Gold)
+  ar: ذهبي (Gold)
+
+[theme_noir]
+  en: Noir
+  fr: Noir
+  es: Noir
+  ar: أسود (Noir)
+
+[theme_violet]
+  en: Violet
+  fr: Violet
+  es: Violeta
+  ar: بنفسجي (Violet)
+
+[toast_ai_apply_msg]
+  en: Title, bio, and skills have been updated.
+  fr: Le titre, la bio et les compétences ont été mis à jour.
+  es: El título, la biografía y las habilidades han sido actualizados.
+  ar: تم تحديث العنوان المهني والسيرة الذاتية والمهارات.
+
+[toast_ai_apply_title]
+  en: Profile Applied
+  fr: Profil appliqué
+  es: Perfil Aplicado
+  ar: تم تطبيق الملف الشخصي
+
+[toast_ai_gen_error_msg]
+  en: Could not generate AI profile.
+  fr: Impossible de générer le profil IA.
+  es: No se pudo generar el perfil de IA.
+  ar: فشل إنشاء الملف الشخصي بالذكاء الاصطناعي.
+
+[toast_ai_gen_error_title]
+  en: Generation Error
+  fr: Erreur de génération
+  es: Error de Generación
+  ar: خطأ في الإنشاء
+
+[toast_ai_gen_success_msg]
+  en: AI profile generated successfully.
+  fr: Le profil IA a été généré avec succès.
+  es: El perfil de IA se generó correctamente.
+  ar: تم إنشاء الملف الشخصي بالذكاء الاصطناعي بنجاح.
+
+[toast_ai_gen_success_title]
+  en: Profile Generated
+  fr: Profil généré
+  es: Perfil Generado
+  ar: تم إنشاء الملف الشخصي
+
+[toast_avatar_error_title]
+  en: Avatar upload failed
+  fr: Échec de la mise en ligne
+  es: Error al subir avatar
+  ar: فشل تحميل الصورة الشخصية
+
+[toast_avatar_success_msg]
+  en: Your profile image has been uploaded.
+  fr: Votre photo de profil a été mise en ligne.
+  es: Tu foto de perfil ha sido subida correctamente.
+  ar: تم تحميل صورتك الشخصية بنجاح.
+
+[toast_avatar_success_title]
+  en: Avatar updated
+  fr: Avatar mis à jour
+  es: Avatar actualizado
+  ar: تم تحديث الصورة الشخصية
+
+[toast_banner_error_title]
+  en: Banner upload failed
+  fr: Échec de la mise en ligne de la bannière
+  es: Error al subir banner
+  ar: فشل تحميل صورة الغلاف
+
+[toast_banner_success_msg]
+  en: Your profile banner has been uploaded.
+  fr: Votre bannière de profil a été mise en ligne.
+  es: Tu banner de perfil ha sido subido.
+  ar: تم تحميل صورة غلاف ملفك الشخصي بنجاح.
+
+[toast_banner_success_title]
+  en: Banner updated
+  fr: Bannière mise à jour
+  es: Banner actualizado
+  ar: تم تحديث صورة الغلاف
+
+[toast_cover_error_title]
+  en: Cover upload failed
+  fr: Échec de la mise en ligne
+  es: Error al subir portada
+  ar: فشل تحميل صورة الغلاف
+
+[toast_cover_success_msg]
+  en: Your cover image has been uploaded.
+  fr: Votre image de couverture a été mise en ligne.
+  es: Tu imagen de portada ha sido subida correctamente.
+  ar: تم تحميل صورة الغلاف بنجاح.
+
+[toast_cover_success_title]
+  en: Cover updated
+  fr: Couverture mise à jour
+  es: Portada actualizada
+  ar: تم تحديث صورة الغلاف
+
+[toast_portfolio_error_title]
+  en: Portfolio upload failed
+  fr: Échec de la mise en ligne du portfolio
+  es: Error al subir imagen del portafolio
+  ar: فشل تحميل صورة المشروع
+
+[toast_portfolio_success_msg]
+  en: The project image has been uploaded.
+  fr: L'image du projet a été mise en ligne.
+  es: La imagen del proyecto ha sido subida.
+  ar: تم تحميل صورة المشروع بنجاح.
+
+[toast_portfolio_success_title]
+  en: Portfolio image updated
+  fr: Image du portfolio mise à jour
+  es: Imagen del portafolio actualizada
+  ar: تم تحديث صورة المشروع
+
+[toast_validation_link_invalid_msg]
+  en: Invalid link format for
+  fr: Le format du lien n'est pas correct pour
+  es: El formato del enlace no es correcto para
+  ar: تنسيق الرابط غير صحيح لـ
+
+[toast_validation_link_invalid_title]
+  en: Invalid Link
+  fr: Lien invalide
+  es: Enlace inválido
+  ar: رابط غير صالح
+
+[toast_validation_order_invalid_msg]
+  en: Order number must contain 3 to 20 characters.
+  fr: Le numéro d'ordre doit contenir entre 3 et 20 caractères.
+  es: El número de colegiado debe contener entre 3 y 20 caracteres.
+  ar: يجب أن يحتوي رقم القيد الوطني على ما بين ٣ إلى ٢٠ حرفاً أو رقماً.
+
+[toast_validation_order_invalid_title]
+  en: Invalid Order Number
+  fr: Numéro d'Ordre invalide
+  es: Número de Colegiado inválido
+  ar: رقم قيد غير صالح
+
+[toast_validation_order_required_msg]
+  en: National order number is mandatory for Dentist profile.
+  fr: Le numéro d'ordre national est obligatoire pour le profil Dentiste.
+  es: El número nacional de colegiado es obligatorio para el perfil de Dentista.
+  ar: رقم القيد الوطني إلزامي لملف طبيب الأسنان.
+
+[toast_validation_order_required_title]
+  en: Order Number Required
+  fr: Numéro d'Ordre requis
+  es: Número de Colegiado requerido
+  ar: رقم القيد مطلوب
+
+[toast_validation_phone_invalid_msg]
+  en: The number must contain 8 to 20 digits for
+  fr: Le numéro doit contenir entre 8 et 20 chiffres pour
+  es: El número debe contener entre 8 y 20 dígitos para
+  ar: يجب أن يحتوي رقم الهاتف على 8 إلى 20 رقماً لـ
+
+[toast_validation_phone_invalid_title]
+  en: Invalid Phone
+  fr: Téléphone invalide
+  es: Teléfono inválido
+  ar: رقم هاتف غير صالح
+
+[todays_activity]
+  en: Today's Activity
+  fr: Activité du jour
+  es: Actividad de Hoy
+  ar: نشاط اليوم
+
+[unblock_user]
+  en: Unblock
+  fr: Débloquer
+  es: Desbloquear
+  ar: إلغاء الحظر
+
+[verified]
+  en: Verified
+  fr: Vérifié
+  es: Verificado
+  ar: موثق
+
+[views]
+  en: Views
+  fr: Vues
+  es: Vistas
+  ar: المشاهدات
+
+[welcome_cta]
+  en: Continue with Google
+  fr: Continuer avec Google
+  es: Continuar con Google
+  ar: المتابعة عبر جوجل
+
+[welcome_error_blocked]
+  en: Google sign-in blocked
+  fr: Connexion Google bloquée
+  es: Inicio de sesión con Google bloqueado
+  ar: تم حظر تسجيل الدخول عبر جوجل
+
+[welcome_error_failed]
+  en: Sign-in failed
+  fr: Connexion impossible
+  es: Inicio de sesión fallido
+  ar: فشل تسجيل الدخول
+
+[welcome_heading]
+  en: Your professional
+  fr: Votre identité
+  es: Tu identidad
+  ar: هويتك
+
+[welcome_heading_highlight]
+  en: identity
+  fr: professionnelle
+  es: profesional
+  ar: المهنية
+
+[welcome_retry]
+  en: Retry
+  fr: Réessayer
+  es: Reintentar
+  ar: إعادة المحاولة
+
+[welcome_subheading]
+  en: The exclusive network of creators and entrepreneurs in Morocco.
+  fr: Le réseau exclusif des créateurs et entrepreneurs au Maroc.
+  es: La red exclusiva de creadores y emprendedores en Marruecos.
+  ar: الشبكة الحصرية لرواد الأعمال والمبدعين في المغرب.
+
+[welcome_terms]
+  en: By continuing, you agree to our terms of use and privacy policy.
+  fr: En continuant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+  es: Al continuar, aceptas nuestros términos de uso y nuestra política de privacidad.
+  ar: بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية.
+
+[whatsapp]
+  en: WhatsApp
+  fr: WhatsApp
+  es: WhatsApp
+  ar: واتساب
+
+[whatsapp_share]
+  en: Send via WhatsApp
+  fr: Envoyer via WhatsApp
+  es: Enviar por WhatsApp
+  ar: إرسال عبر واتساب
+
+[where_met_placeholder]
+  en: Meeting location (e.g. Paris, Office...)
+  fr: Lieu de rencontre (ex: Paris, Bureau...)
+  es: Lugar de encuentro (ej: Madrid, Oficina...)
+  ar: مكان اللقاء (مثال: الدار البيضاء، المكتب...)
+
+[your_connections]
+  en: Your connections
+  fr: Vos connexions
+  es: Sus conexiones
+  ar: اتصالاتك
+

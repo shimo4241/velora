@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import { Camera, Loader2, ArrowRight } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { FadeUp, StaggerChildren, StaggerItem } from "@/components/motion/animations";
@@ -15,6 +16,7 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useTranslation } from "@/lib/i18n";
 import type { VeloraProfile, VeloraRole } from "@/types";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -27,6 +29,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
   const { user } = useAuth();
   const { profile, refreshProfile, updateProfile } = useProfile();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<string[]>([]);
 
@@ -78,7 +81,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     } catch (error) {
       console.error("[Upload:avatar] setup image-picker failed", error);
       setAvatarFile(null);
-      showToast({ tone: "error", title: "Avatar upload failed", message: getUploadErrorMessage(error, "avatar") });
+      showToast({ tone: "error", title: t("setup_error_upload"), message: getUploadErrorMessage(error, "avatar") });
     }
   };
 
@@ -86,8 +89,8 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
 
     if (!user) {
       console.error("[ProfileSetup Error] Submission aborted: No authenticated user found.");
-      setSetupError("Please sign in again before uploading an image.");
-      showToast({ tone: "error", title: "Authentication required", message: "Please sign in again before uploading an image." });
+      setSetupError(t("setup_error_auth"));
+      showToast({ tone: "error", title: t("setup_error_auth"), message: t("setup_error_auth") });
       return;
     }
     if (!form.fullName || !form.title || !form.whatsapp) {
@@ -96,7 +99,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
         title: !!form.title,
         whatsapp: !!form.whatsapp
       });
-      setSetupError("Veuillez completer les champs requis.");
+      setSetupError(t("setup_error_required"));
       return;
     }
 
@@ -153,9 +156,9 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
       onComplete();
     } catch (err) {
       console.error("[ProfileSetup Error] Critical failure during setup:", err);
-      const message = avatarFile ? getUploadErrorMessage(err, "avatar") : err instanceof Error ? err.message : "Profile setup failed.";
+      const message = avatarFile ? getUploadErrorMessage(err, "avatar") : err instanceof Error ? err.message : t("setup_error_general");
       setSetupError(message);
-      showToast({ tone: "error", title: "Profile setup failed", message });
+      showToast({ tone: "error", title: t("setup_error_general"), message });
     } finally {
       setSaving(false);
       setUploading(false);
@@ -169,20 +172,22 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     .join("") || "V";
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed inset-0 z-50 bg-velora-black overflow-y-auto"
-    >
+    <ModalPortal>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="fixed inset-0 z-[var(--z-modal)] bg-velora-black overflow-y-auto"
+        style={{ willChange: "transform, opacity" }}
+      >
       <div className="px-5 pt-14 pb-8 max-w-lg mx-auto">
         <FadeUp>
           <div className="text-center mb-8">
             <h1 className="text-display text-2xl text-velora-text mb-2">
-              Créez votre identité
+              {t("setup_title")}
             </h1>
             <p className="text-xs text-velora-text-muted">
-              Configurez votre profil professionnel VELORA
+              {t("setup_subtitle")}
             </p>
           </div>
         </FadeUp>
@@ -241,7 +246,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Numéro WhatsApp *
+                {t("setup_label_whatsapp")}
               </label>
               <PhoneInput
                 international
@@ -256,13 +261,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Nom Complet *
+                {t("setup_label_fullname")}
               </label>
               <input
                 type="text"
                 value={form.fullName}
                 onChange={(e) => handleChange("fullName", e.target.value)}
-                placeholder="Ex: Youssef El Amrani"
+                placeholder={t("setup_placeholder_name")}
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
               />
             </GlassCard>
@@ -272,7 +277,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
             <StaggerItem>
               <GlassCard className="p-4 border-velora-gold/20" hover={false}>
                 <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                  Username
+                  {t("setup_label_username")}
                 </label>
                 <div className="flex items-center text-sm text-velora-text">
                   <span className="text-velora-text-muted mr-1">@</span>
@@ -286,13 +291,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Titre Professionnel *
+                {t("setup_label_title")}
               </label>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="Ex: Founder & Creative Director"
+                placeholder={t("setup_placeholder_title")}
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
               />
             </GlassCard>
@@ -301,12 +306,12 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Bio
+                {t("setup_label_bio")}
               </label>
               <textarea
                 value={form.bio}
                 onChange={(e) => handleChange("bio", e.target.value)}
-                placeholder="Une courte description de votre parcours..."
+                placeholder={t("setup_placeholder_bio")}
                 rows={3}
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none resize-none"
               />
@@ -316,7 +321,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Instagram (Optionnel)
+                {t("setup_label_instagram")}
               </label>
               <input
                 type="text"
@@ -331,13 +336,13 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Localisation
+                {t("setup_label_location")}
               </label>
               <input
                 type="text"
                 value={form.location}
                 onChange={(e) => handleChange("location", e.target.value)}
-                placeholder="Casablanca, Morocco"
+                placeholder={t("setup_placeholder_location")}
                 className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
               />
             </GlassCard>
@@ -346,18 +351,18 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
           <StaggerItem>
             <GlassCard className="p-4" hover={false}>
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider mb-2 block">
-                Mode Professionnel
+                {t("setup_label_mode")}
               </label>
               <select
                 value={form.professionalMode}
                 onChange={(e) => handleChange("professionalMode", e.target.value)}
-                className="w-full bg-transparent text-sm text-velora-text outline-none appearance-none"
+                className="w-full bg-transparent text-sm text-velora-text outline-none appearance-none font-medium"
               >
-                <option value="entrepreneur" className="bg-velora-black text-velora-text">Entrepreneur</option>
-                <option value="corporate" className="bg-velora-black text-velora-text">Corporate</option>
-                <option value="creative" className="bg-velora-black text-velora-text">Créatif</option>
-                <option value="luxury" className="bg-velora-black text-velora-text">Luxury</option>
-                <option value="nightlife" className="bg-velora-black text-velora-text">Nightlife</option>
+                <option value="entrepreneur" className="bg-velora-black text-velora-text">{t("setup_mode_entrepreneur")}</option>
+                <option value="corporate" className="bg-velora-black text-velora-text">{t("setup_mode_corporate")}</option>
+                <option value="creative" className="bg-velora-black text-velora-text">{t("setup_mode_creative")}</option>
+                <option value="luxury" className="bg-velora-black text-velora-text">{t("setup_mode_luxury")}</option>
+                <option value="nightlife" className="bg-velora-black text-velora-text">{t("setup_mode_nightlife")}</option>
               </select>
             </GlassCard>
           </StaggerItem>
@@ -376,13 +381,14 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
               </>
             ) : (
               <>
-                Finaliser le profil
+                {t("setup_submit")}
                 <ArrowRight size={16} />
               </>
             )}
           </GoldButton>
         </FadeUp>
       </div>
-    </motion.div>
+      </motion.div>
+    </ModalPortal>
   );
 }

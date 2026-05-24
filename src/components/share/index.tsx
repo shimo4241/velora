@@ -85,7 +85,7 @@ export function QRGenerator({
   return (
     <FadeUp delay={0.2}>
       <GlassCard className="relative overflow-hidden p-5" gold hover>
-        <div className="glow-layer pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-velora-gold/14 blur-xl" />
+        <div className="glow-layer pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-velora-gold/8 blur-lg" />
         <div className="pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.08),transparent)] animate-gold-scan" />
 
         <div className="relative mb-5 flex items-center justify-between gap-3">
@@ -117,7 +117,7 @@ export function QRGenerator({
 
           <ScaleIn delay={0.35}>
             <motion.div
-              className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-[0_18px_70px_rgba(0,0,0,0.35)]"
+              className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
               id="velora-qr-container"
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -360,7 +360,7 @@ export function ShareActions() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
           >
-            <div className="flex items-center gap-2 rounded-full border border-velora-emerald/20 bg-velora-emerald/12 px-4 py-2 text-xs font-semibold text-velora-emerald shadow-[0_12px_32px_rgba(107,191,138,0.1)] backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-full border border-velora-emerald/20 bg-velora-emerald/12 px-4 py-2 text-xs font-semibold text-velora-emerald shadow-[0_4px_12px_rgba(107,191,138,0.06)] backdrop-blur-md">
               <Check size={13} />
               {shareSuccess}
             </div>

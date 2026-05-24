@@ -6,11 +6,13 @@ import { useConnections } from "@/hooks/useConnections";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserCheck, Search, Sparkles, Loader2, User } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
+import { useTranslation } from "@/lib/i18n";
 
 export default function MesReseaux() {
   const router = useRouter();
   const { connections, loading } = useConnections();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const { t } = useTranslation();
 
   // Filter connections by name or headline
   const filteredConnections = connections.filter((conn) => {
@@ -29,13 +31,13 @@ export default function MesReseaux() {
       {/* Header section */}
       <div className="mb-6 flex flex-col gap-1">
         <h2 className="text-xl font-bold tracking-tight text-velora-text flex items-center gap-2">
-          Mon Réseau
+          {t("network_title")}
           <span className="text-xs px-2.5 py-0.5 rounded-full bg-velora-gold/10 text-velora-gold font-medium border border-velora-gold/20">
-            {connections.length} {connections.length > 1 ? "membres" : "membre"}
+            {connections.length} {connections.length > 1 ? t("network_members") : t("network_member")}
           </span>
         </h2>
         <p className="text-xs text-velora-text-muted">
-          Retrouvez et échangez avec vos relations professionnelles connectées.
+          {t("network_subtitle")}
         </p>
       </div>
 
@@ -47,7 +49,7 @@ export default function MesReseaux() {
           </span>
           <input
             type="text"
-            placeholder="Rechercher par nom ou titre..."
+            placeholder={t("network_search_placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white/[0.03] border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-velora-text placeholder-velora-text-muted focus:outline-none focus:border-velora-gold/30 transition-colors"
@@ -59,21 +61,21 @@ export default function MesReseaux() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
           <Loader2 className="animate-spin text-velora-gold" size={24} />
-          <p className="text-xs text-velora-text-muted">Chargement de votre réseau...</p>
+          <p className="text-xs text-velora-text-muted">{t("network_loading")}</p>
         </div>
       ) : connections.length === 0 ? (
         <div className="relative overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] p-8 text-center backdrop-blur-md">
           <div className="mx-auto w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-velora-gold/60 mb-4">
             <Sparkles size={20} />
           </div>
-          <h3 className="text-sm font-semibold text-velora-text mb-1">Votre réseau est vide</h3>
+          <h3 className="text-sm font-semibold text-velora-text mb-1">{t("network_empty_title")}</h3>
           <p className="text-xs text-velora-text-muted max-w-[280px] mx-auto mb-5 leading-relaxed">
-            Commencez à ajouter des connexions en scannant des cartes NFC, des codes QR, ou via des liens de profils.
+            {t("network_empty_desc")}
           </p>
         </div>
       ) : filteredConnections.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-sm text-velora-text-muted">Aucun résultat trouvé pour &quot;{searchQuery}&quot;.</p>
+          <p className="text-sm text-velora-text-muted">{t("network_no_results")} &quot;{searchQuery}&quot;.</p>
         </div>
       ) : (
         <motion.div
@@ -85,9 +87,9 @@ export default function MesReseaux() {
               const profile = conn.profile;
               const uid = conn.uid || profile?.id;
               const username = conn.username || profile?.username;
-              const displayName = conn.displayName || profile?.fullName || "Membre Velora";
+              const displayName = conn.displayName || profile?.fullName || t("network_default_name");
               const photoURL = conn.photoURL || profile?.avatarUrl;
-              const headline = profile?.title || "Professionnel";
+              const headline = profile?.title || t("network_default_title");
 
               return (
                 <motion.div
@@ -138,7 +140,7 @@ export default function MesReseaux() {
                   <div className="flex-shrink-0 ml-4">
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-velora-gold bg-velora-gold/10 px-2.5 py-1 rounded-full border border-velora-gold/20 shadow-sm shadow-black/10">
                       <UserCheck size={10} />
-                      Connecté
+                      {t("network_connected_badge")}
                     </span>
                   </div>
                 </motion.div>

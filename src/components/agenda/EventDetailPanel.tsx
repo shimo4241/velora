@@ -63,14 +63,14 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
         .then(() => {
           showToast({
             title: "Velora",
-            message: locale === "ar" ? "تم نسخ الرابط!" : "Lien copié dans le presse-papiers !",
+            message: t("event_link_copied"),
             tone: "success"
           });
         })
         .catch(() => {
           showToast({
             title: "Velora",
-            message: "Failed to copy link",
+            message: t("event_link_copy_error"),
             tone: "error"
           });
         });
@@ -95,14 +95,14 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
       } catch {
         showToast({
           title: "Velora",
-          message: "Check-in failed. Please try again.",
+          message: t("event_checkin_error"),
           tone: "error"
         });
       }
     } else {
       showToast({
         title: "Velora",
-        message: locale === "ar" ? "رمز QR غير صالح لهذه الفعالية" : "Code QR invalide pour cet événement.",
+        message: t("event_qr_invalid"),
         tone: "error"
       });
     }
@@ -156,15 +156,16 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
       initial={{ y: "100%" }}
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 26, stiffness: 220 }}
-      className="event-detail-panel fixed inset-0 z-50 bg-velora-black text-velora-text flex flex-col"
+      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+      style={{ willChange: "transform" }}
+      className="event-detail-panel fixed inset-0 z-[var(--z-modal)] bg-velora-black text-velora-text flex flex-col"
     >
       {/* Header Bar */}
       <div className="absolute top-0 inset-x-0 h-16 z-20 flex items-center justify-between px-5 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <button
           onClick={onClose}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur-md transition-all active:scale-95"
-          aria-label={locale === "ar" ? "رجوع" : "Retour"}
+          aria-label={t("settings_back")}
         >
           <ArrowLeft size={18} className={isRtl ? "rotate-180" : ""} />
         </button>
@@ -183,18 +184,18 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-velora-black">
           <div className="w-10 h-10 border-2 border-velora-gold border-t-transparent rounded-full animate-spin" />
-          <span className="mt-4 text-sm text-velora-text-muted">Chargement de l&apos;événement...</span>
+          <span className="mt-4 text-sm text-velora-text-muted">{t("event_loading")}</span>
         </div>
       ) : error || !event ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-velora-black px-6 text-center">
           <p className="text-sm font-semibold text-velora-rose mb-3">
-            {error ? "Une erreur est survenue" : "Événement introuvable"}
+            {error ? t("event_error") : t("event_not_found")}
           </p>
           <button
             onClick={onClose}
             className="h-11 px-6 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold"
           >
-            Retour à l&apos;agenda
+            {t("event_back_agenda")}
           </button>
         </div>
       ) : (
@@ -270,7 +271,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold text-velora-text">{event.venue}</div>
-                  <div className="text-[11px] text-velora-text-muted mt-0.5">{event.city}, Maroc</div>
+                  <div className="text-[11px] text-velora-text-muted mt-0.5">{event.city}, {t("event_country")}</div>
                 </div>
               </div>
             </div>
@@ -278,7 +279,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
             {/* Description */}
             <div className="mb-8">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-velora-gold mb-3">
-                {locale === "ar" ? "تفاصيل الفعالية" : "À propos de l'événement"}
+                {t("event_about")}
               </h3>
               <p className="text-sm leading-relaxed text-velora-text-secondary whitespace-pre-line">
                 {event.description}
@@ -349,14 +350,14 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
             {/* Static Map & Map Trigger */}
             <div className="mb-8">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-velora-gold mb-4">
-                {locale === "ar" ? "الموقع الجغرافي" : "Localisation"}
+                {t("event_location")}
               </h3>
               <div
                 onClick={handleMapsClick}
                 className="relative w-full aspect-video rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden cursor-pointer group flex flex-col items-center justify-center p-4 text-center"
               >
                 {/* Fallback stylized static preview */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(196,162,101,0.06)_0%,transparent_100%)] pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,color-mix(in srgb, var(--color-velora-gold) 6%, transparent)_0%,transparent_100%)] pointer-events-none" />
                 
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-velora-gold/15 text-velora-gold border border-velora-gold/25 group-hover:scale-110 transition-transform duration-350">
@@ -364,7 +365,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-velora-text">{event.venue}</div>
-                    <div className="text-xs text-velora-text-muted mt-1">{event.city}, Maroc</div>
+                    <div className="text-xs text-velora-text-muted mt-1">{event.city}, {t("event_country")}</div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-velora-gold hover:underline mt-1 bg-velora-gold/10 px-3 py-1.5 rounded-full border border-velora-gold/20">
                     {t("event_open_maps")} <ExternalLink size={11} />
@@ -381,7 +382,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
 
               {attendees.length === 0 ? (
                 <div className="p-5 rounded-2xl border border-dashed border-white/10 text-center text-xs text-velora-text-muted bg-white/[0.01]">
-                  {locale === "ar" ? "لا يوجد مشاركون بعد. كن أول المهتمين!" : "Aucun participant pour le moment. Soyez le premier !"}
+                  {t("event_no_attendees")}
                 </div>
               ) : (
                 <div className="grid grid-cols-5 gap-3.5">
@@ -488,7 +489,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
 
                         {/* View Profile */}
                         <span className="text-[10px] font-semibold text-velora-gold group-hover:underline shrink-0 pl-3">
-                          {locale === "ar" ? "عرض" : "Voir"}
+                          {t("event_view_profile")}
                         </span>
                       </div>
                     );
@@ -524,7 +525,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
             {isCheckedIn ? (
               <div className="flex-[1.2] flex items-center justify-center gap-2 h-12 rounded-xl text-xs font-semibold bg-velora-emerald/10 border border-velora-emerald/20 text-velora-emerald">
                 <CheckCircle2 size={16} />
-                <span>{locale === "ar" ? "تم تسجيل الحضور" : "Présence validée"}</span>
+                <span>{t("event_checkin_done")}</span>
               </div>
             ) : (
               <motion.button

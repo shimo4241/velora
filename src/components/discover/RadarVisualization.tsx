@@ -25,9 +25,9 @@ interface DiscoveredPerson {
 }
 
 const DISTANCE_COLORS = {
-  close: { ring: "rgba(107, 191, 138, 0.8)", bg: "rgba(107, 191, 138, 0.15)", label: "< 50m" },
-  medium: { ring: "rgba(196, 162, 101, 0.8)", bg: "rgba(196, 162, 101, 0.15)", label: "50-200m" },
-  far: { ring: "rgba(123, 168, 212, 0.6)", bg: "rgba(123, 168, 212, 0.12)", label: "> 200m" },
+  close: { ring: "rgba(107, 191, 138, 0.8)", bg: "rgba(107, 191, 138, 0.15)", label: "Très proche" },
+  medium: { ring: "color-mix(in srgb, var(--color-velora-gold) 80%, transparent)", bg: "color-mix(in srgb, var(--color-velora-gold) 15%, transparent)", label: "À proximité" },
+  far: { ring: "rgba(123, 168, 212, 0.6)", bg: "rgba(123, 168, 212, 0.12)", label: "Dans votre zone" },
 };
 
 function polarToCartesian(angleDeg: number, radiusFraction: number, containerSize: number) {
@@ -40,19 +40,26 @@ function polarToCartesian(angleDeg: number, radiusFraction: number, containerSiz
   };
 }
 
-function getDeterministicCoords(id: string) {
+function getDeterministicCoords(id: string, proximityZone?: "close" | "medium" | "far") {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = id.charCodeAt(i) + ((hash << 5) - hash);
   }
   const angle = Math.abs(hash % 360);
-  const radius = 0.35 + (Math.abs((hash >> 4) % 45) / 100); // 0.35 to 0.80
+  
+  let radius = 0.5;
+  const offset = (Math.abs(hash % 15)) / 100; // 0.00 to 0.14
+  
+  const zone = proximityZone || "medium";
+  if (zone === "close") {
+    radius = 0.22 + offset; // Inner ring: 0.22 to 0.36
+  } else if (zone === "medium") {
+    radius = 0.48 + offset; // Middle ring: 0.48 to 0.62
+  } else {
+    radius = 0.72 + offset; // Outer ring: 0.72 to 0.86
+  }
 
-  let distance: "close" | "medium" | "far" = "medium";
-  if (radius < 0.5) distance = "close";
-  else if (radius > 0.68) distance = "far";
-
-  return { angle, radius, distance };
+  return { angle, radius, distance: zone };
 }
 
 interface RadarProps {
@@ -65,7 +72,8 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
   const SIZE = 280;
 
   const people: DiscoveredPerson[] = discoveredUsers.map((user) => {
-    const coords = getDeterministicCoords(user.id);
+    const proximityZone = user.proximityZone;
+    const coords = getDeterministicCoords(user.id, proximityZone);
     const initials = user.fullName
       ?.split(" ")
       ?.map((n) => n[0])
@@ -92,10 +100,10 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
         className="absolute inset-0 -top-12 -bottom-12 overflow-hidden rounded-3xl opacity-30 pointer-events-none"
         style={{
           backgroundImage: `
-            radial-gradient(ellipse at 50% 30%, rgba(196, 162, 101, 0.08) 0%, transparent 60%),
-            radial-gradient(ellipse at 30% 70%, rgba(40, 38, 31, 0.6) 0%, transparent 50%),
-            radial-gradient(ellipse at 70% 50%, rgba(40, 38, 31, 0.5) 0%, transparent 50%),
-            linear-gradient(180deg, rgba(7, 7, 5, 0.9), rgba(7, 7, 5, 0.7))
+            radial-gradient(ellipse at 50% 30%, var(--color-velora-gold-dim) 0%, transparent 60%),
+            radial-gradient(ellipse at 30% 70%, color-mix(in srgb, var(--color-velora-elevated) 60%, transparent) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 50%, color-mix(in srgb, var(--color-velora-elevated) 50%, transparent) 0%, transparent 50%),
+            linear-gradient(180deg, color-mix(in srgb, var(--color-velora-black) 90%, transparent), color-mix(in srgb, var(--color-velora-black) 70%, transparent))
           `,
         }}
       />
@@ -111,7 +119,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
               top: `${(1 - scale) * 50}%`,
               width: `${scale * 100}%`,
               height: `${scale * 100}%`,
-              border: `1px solid rgba(196, 162, 101, ${0.08 + i * 0.03})`,
+              border: `1px solid color-mix(in srgb, var(--color-velora-gold) ${(0.08 + i * 0.03) * 100}%, transparent)`,
             }}
           />
         ))}
@@ -119,11 +127,11 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
         {/* Cross-hair lines */}
         <div
           className="absolute top-1/2 left-[12%] right-[12%] h-px pointer-events-none"
-          style={{ background: "rgba(196, 162, 101, 0.06)" }}
+          style={{ background: "var(--color-velora-gold-dim)" }}
         />
         <div
           className="absolute left-1/2 top-[12%] bottom-[12%] w-px pointer-events-none"
-          style={{ background: "rgba(196, 162, 101, 0.06)" }}
+          style={{ background: "var(--color-velora-gold-dim)" }}
         />
 
         {/* Animated pulse rings from center */}
@@ -136,7 +144,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
               top: "50%",
               width: 0,
               height: 0,
-              border: "1px solid rgba(196, 162, 101, 0.15)",
+              border: "1px solid var(--color-velora-gold-glow)",
               transform: "translate(-50%, -50%)",
             }}
             animate={{
@@ -160,7 +168,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
             style={{
               width: SIZE * 0.44,
               height: "1px",
-              background: "linear-gradient(90deg, rgba(196, 162, 101, 0.7) 0%, rgba(196, 162, 101, 0.1) 70%, transparent 100%)",
+              background: "linear-gradient(90deg, color-mix(in srgb, var(--color-velora-gold) 70%, transparent) 0%, var(--color-velora-gold-dim) 70%, transparent 100%)",
             }}
             animate={{ rotate: 360 }}
             transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
@@ -174,7 +182,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
             style={{
               width: SIZE * 0.44,
               height: 24,
-              background: "linear-gradient(90deg, rgba(196, 162, 101, 0.06) 0%, transparent 80%)",
+              background: "linear-gradient(90deg, var(--color-velora-gold-dim) 0%, transparent 80%)",
               borderRadius: "0 12px 12px 0",
             }}
             animate={{ rotate: 360 }}
@@ -199,7 +207,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
               height: 52,
               left: -26,
               top: -26,
-              background: "radial-gradient(circle, rgba(196, 162, 101, 0.15) 0%, transparent 70%)",
+              background: "radial-gradient(circle, var(--color-velora-gold-glow) 0%, transparent 70%)",
             }}
             animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0.3, 0.6] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -213,9 +221,9 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
               left: -18,
               top: -18,
               position: "absolute",
-              border: "2px solid rgba(196, 162, 101, 0.6)",
-              background: "rgba(196, 162, 101, 0.12)",
-              boxShadow: "0 0 16px rgba(196, 162, 101, 0.2), inset 0 0 8px rgba(196, 162, 101, 0.1)",
+              border: "2px solid color-mix(in srgb, var(--color-velora-gold) 60%, transparent)",
+              background: "var(--color-velora-gold-dim)",
+              boxShadow: "0 0 16px var(--color-velora-gold-glow), inset 0 0 8px var(--color-velora-gold-dim)",
             }}
           >
             <motion.div

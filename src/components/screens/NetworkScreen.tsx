@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ModalPortal } from "@/components/ui/ModalPortal";
 import { BookOpen, Filter, MapPin, Radar, Search, Sparkles, Star, Users, X } from "lucide-react";
 import { EmptyState } from "@/components/ui/States";
 import { FadeUp } from "@/components/motion/animations";
@@ -122,8 +123,8 @@ export function NetworkScreen() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-velora-black pb-24 text-velora-text">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-[360px] bg-[radial-gradient(circle_at_50%_0%,rgba(196,162,101,0.18),transparent_58%)]" />
+    <div className="min-h-screen bg-velora-black pb-24 text-velora-text">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[360px] bg-[radial-gradient(circle_at_50%_0%,var(--color-velora-gold-muted),transparent_58%)]" />
 
       <header className="relative px-5 pt-14">
         <FadeUp>
@@ -137,7 +138,7 @@ export function NetworkScreen() {
                 Relations premium
               </h1>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-right backdrop-blur-xl">
+            <div className="rounded-2xl border border-white/10 bg-velora-dark px-3 py-2 text-right">
               <div className="font-mono text-xl font-semibold text-velora-gold">{connections.length}</div>
               <div className="text-[10px] uppercase tracking-[0.16em] text-velora-text-muted">contacts</div>
             </div>
@@ -146,7 +147,7 @@ export function NetworkScreen() {
       </header>
 
       <section className="relative px-5 pt-5">
-        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[0.045] p-1 backdrop-blur-xl">
+        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-velora-dark p-1">
           {TABS.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -193,7 +194,7 @@ export function NetworkScreen() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Rechercher un contact, cabinet, tag..."
-            className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.045] pl-11 pr-10 text-sm text-velora-text outline-none backdrop-blur-xl placeholder:text-velora-text-muted/60 focus:border-velora-gold/30"
+            className="h-12 w-full rounded-2xl border border-white/10 bg-velora-dark pl-11 pr-10 text-sm text-velora-text outline-none placeholder:text-velora-text-muted/60 focus:border-velora-gold/30"
           />
           {query && (
             <button type="button" onClick={() => setQuery("")} className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/8 text-velora-text-muted">
@@ -205,7 +206,7 @@ export function NetworkScreen() {
 
       <section className="relative px-5 pt-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+          <div className="rounded-2xl border border-white/10 bg-velora-dark p-4">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-velora-text-muted">
               <MapPin size={13} className="text-velora-gold" />
               Proximite
@@ -217,14 +218,14 @@ export function NetworkScreen() {
           <button
             type="button"
             onClick={() => geo.toggleLocationSharing(!geo.isSharing)}
-            className="rounded-2xl border border-velora-gold/20 bg-velora-gold/10 p-4 text-left text-sm font-semibold text-velora-gold backdrop-blur-xl"
+            className="rounded-2xl border border-velora-gold/20 bg-velora-gold/10 p-4 text-left text-sm font-semibold text-velora-gold"
           >
             {geo.isSharing ? "Masquer ma position" : "Activer nearby"}
           </button>
           <button
             type="button"
             onClick={() => geo.toggleGhostMode(!geo.ghostMode)}
-            className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left text-sm font-semibold text-velora-text-secondary backdrop-blur-xl"
+            className="rounded-2xl border border-white/10 bg-velora-dark p-4 text-left text-sm font-semibold text-velora-text-secondary"
           >
             {geo.ghostMode ? "Quitter Ghost Mode" : "Invisible / Ghost Mode"}
           </button>
@@ -275,60 +276,68 @@ export function NetworkScreen() {
 
       <AnimatePresence>
         {editing && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
+          <ModalPortal>
+            <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
             <motion.div
-              className="absolute inset-0 bg-black/70 backdrop-blur-xl"
+              className="absolute inset-0 bg-black/75"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditing(null)}
+              style={{ willChange: "opacity" }}
             />
             <motion.div
-              className="relative z-10 w-full max-w-md rounded-t-[30px] border border-white/10 bg-[#0b0b09] p-5 shadow-2xl md:rounded-[30px]"
-              initial={{ y: 80, opacity: 0 }}
+              className="relative z-10 w-full max-w-md flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-3.5rem)] overflow-hidden rounded-[30px] border border-white/10 bg-velora-dark shadow-2xl"
+              initial={{ y: 24, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
+              exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              style={{ willChange: "transform, opacity" }}
             >
-              <div className="mb-4 flex items-center justify-between">
+              <div className="flex shrink-0 items-center justify-between border-b border-white/5 p-5">
                 <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">Notes & Tags</h2>
                 <button type="button" onClick={() => setEditing(null)} className="network-icon-btn">
                   <X size={15} />
                 </button>
               </div>
-              <textarea
-                value={draftNotes}
-                onChange={(event) => setDraftNotes(event.target.value)}
-                rows={4}
-                placeholder="Ajouter une note privee..."
-                className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.045] p-4 text-sm outline-none placeholder:text-velora-text-muted focus:border-velora-gold/30"
-              />
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Business", "Dentist", "Client", "VIP", "Friend", "Partner"].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                      draftTags.includes(tag)
-                        ? "border-velora-gold/35 bg-velora-gold/12 text-velora-gold"
-                        : "border-white/10 bg-white/[0.04] text-velora-text-muted"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <textarea
+                  value={draftNotes}
+                  onChange={(event) => setDraftNotes(event.target.value)}
+                  rows={4}
+                  placeholder="Ajouter une note privee..."
+                  className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm outline-none placeholder:text-velora-text-muted focus:border-velora-gold/30"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {["Business", "Dentist", "Client", "VIP", "Friend", "Partner"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                        draftTags.includes(tag)
+                          ? "border-velora-gold/35 bg-velora-gold/12 text-velora-gold"
+                          : "border-white/10 bg-white/[0.04] text-velora-text-muted"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={saveEditor}
-                disabled={saving}
-                className="mt-5 w-full rounded-2xl bg-velora-gold py-3 text-sm font-semibold text-velora-black disabled:opacity-60"
-              >
-                {saving ? "Enregistrement..." : "Enregistrer"}
-              </button>
+              <div className="p-5 border-t border-white/5 bg-velora-dark/50 shrink-0">
+                <button
+                  type="button"
+                  onClick={saveEditor}
+                  disabled={saving}
+                  className="w-full rounded-2xl bg-velora-gold py-3 text-sm font-semibold text-velora-black disabled:opacity-60"
+                >
+                  {saving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
             </motion.div>
           </div>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </div>

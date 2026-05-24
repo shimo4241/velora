@@ -11,6 +11,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui";
+import { useTranslation } from "@/lib/i18n";
 
 interface DentistFieldsProps {
   form: {
@@ -31,19 +32,21 @@ interface DentistFieldsProps {
 }
 
 export function DentistFields({ form, onChange }: DentistFieldsProps) {
+  const { t } = useTranslation();
+
   const dentistFieldsList = [
-    { key: "orderNumber", label: "Numéro d'Ordre", icon: FileText, placeholder: "123456" },
-    { key: "clinicName", label: "Nom du cabinet", icon: Briefcase, placeholder: "Cabinet Dentaire Dr. El Amrani" },
-    { key: "specialty", label: "Spécialité dentaire", icon: Briefcase, placeholder: "Chirurgien-Dentiste, Orthodontiste..." },
-    { key: "fixedPhone", label: "Téléphone fixe", icon: Phone, placeholder: "+212 5XX XXX XXX", type: "tel" },
-    { key: "whatsapp", label: "WhatsApp professionnel", icon: Phone, placeholder: "+212 6XX XXX XXX", type: "tel" },
-    { key: "clinicAddress", label: "Adresse du cabinet", icon: MapPin, placeholder: "123 Bd Anfa, Casablanca" },
-    { key: "googleMapsLink", label: "Lien Google Maps / GMB", icon: MapPin, placeholder: "https://maps.google.com/?q=..." },
-    { key: "googleReviewsLink", label: "Lien Avis Google", icon: Star, placeholder: "https://g.page/r/..." },
-    { key: "website", label: "Site Web de la clinique", icon: Globe, placeholder: "https://www.cabinetdentaire.com" },
-    { key: "appointmentLink", label: "Lien de Réservation", icon: Globe, placeholder: "https://doctolib.fr/..." },
-    { key: "emergencyContact", label: "Contact d'Urgence", icon: AlertTriangle, placeholder: "+212 6XX XXX XXX", type: "tel" },
-    { key: "workHours", label: "Horaires de travail", icon: FileText, placeholder: "Lun - Ven: 09h00 - 18h00 / Sam: 09h00 - 13h00" },
+    { key: "orderNumber", labelKey: "field_order_number", placeholderKey: "placeholder_order_number", icon: FileText },
+    { key: "clinicName", labelKey: "field_clinic_name", placeholderKey: "placeholder_clinic_name", icon: Briefcase },
+    { key: "specialty", labelKey: "field_specialty", placeholderKey: "placeholder_specialty", icon: Briefcase },
+    { key: "fixedPhone", labelKey: "field_fixed_phone", placeholderKey: "placeholder_fixed_phone", icon: Phone, type: "tel" },
+    { key: "whatsapp", labelKey: "field_whatsapp", placeholderKey: "placeholder_whatsapp_pro", icon: Phone, type: "tel" },
+    { key: "clinicAddress", labelKey: "field_address", placeholderKey: "placeholder_clinic_address", icon: MapPin },
+    { key: "googleMapsLink", labelKey: "field_google_maps", placeholderKey: "placeholder_google_maps", icon: MapPin },
+    { key: "googleReviewsLink", labelKey: "field_google_reviews", placeholderKey: "placeholder_google_reviews", icon: Star },
+    { key: "website", labelKey: "field_website", placeholderKey: "placeholder_clinic_website", icon: Globe },
+    { key: "appointmentLink", labelKey: "field_booking_link", placeholderKey: "placeholder_appointment_link", icon: Globe },
+    { key: "emergencyContact", labelKey: "field_emergency_contact", placeholderKey: "placeholder_emergency_contact", icon: AlertTriangle, type: "tel" },
+    { key: "workHours", labelKey: "field_work_hours", placeholderKey: "placeholder_work_hours", icon: FileText },
   ];
 
   return (
@@ -63,14 +66,14 @@ export function DentistFields({ form, onChange }: DentistFieldsProps) {
             <div className="flex items-center gap-2 mb-2">
               <Icon size={12} className="text-velora-gold/60" />
               <label className="text-[10px] text-velora-text-muted uppercase tracking-wider font-semibold">
-                {field.label}
+                {t(field.labelKey)}
               </label>
             </div>
             <input
               type={"type" in field ? (field.type as string) : "text"}
               value={value}
               onChange={(e) => onChange(field.key, e.target.value)}
-              placeholder={field.placeholder}
+              placeholder={t(field.placeholderKey)}
               className="w-full bg-transparent text-sm text-velora-text placeholder:text-velora-text-muted/30 outline-none"
             />
           </GlassCard>

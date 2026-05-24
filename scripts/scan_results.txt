@@ -1,0 +1,84 @@
+
+app\api\ai\generate-profile\route.ts:
+  Line 19: bio: "Chirurgien-dentiste passionné par l'intégration des nouvelles technologies en pratique clinique. Spécialisé dans les soins esthétiques et la réhabilitation prothétique moderne.",
+  Line 26: bio: "Architecte logiciel fort de plus de 8 ans d'expérience dans la conception d'applications web scalables. Passionné par l'optimisation des performances et l'intelligence artificielle.",
+  Line 42: const systemInstruction = `Tu es un assistant de rédaction de profil professionnel de haut niveau pour l'application AntiGravity Network.
+  Line 43: Génère un profil en français contenant exactement trois champs : "bio", "title" et "skills".
+  Line 55: text: `Génère le profil professionnel basé sur les indications suivantes : ${prompt}`
+
+app\p\[userId]\PublicProfileByIdClient.tsx:
+  Line 64: message: "Veuillez vous connecter pour ajouter un membre à votre réseau."
+  Line 74: message: "Vous ne pouvez pas vous ajouter à votre propre réseau."
+  Line 91: title: "Réseau mis à jour",
+  Line 92: message: `${profile.fullName} a été ajouté à votre réseau.`
+  Line 99: message: "Impossible d'ajouter ce profil à votre réseau."
+  Line 208: Votre profil public
+  Line 226: Ajouter à mon réseau
+
+app\u\[username]\PublicProfileClient.tsx:
+  Line 1298: Ajouter à mon réseau
+  Line 1310: Ajouter à mon réseau
+
+components\agenda\EventStatusBadge.tsx:
+  Line 37: if (locale === "fr") setTimeLeftStr(`dans ${hours}h ${minutes}m`);
+  Line 42: if (locale === "fr") setTimeLeftStr(`dans ${minutes}m`);
+
+components\analytics\index.tsx:
+  Line 113: Pas encore d&apos;activité. Partagez votre profil pour voir les statistiques.
+
+components\discover\IcebreakersCarousel.tsx:
+  Line 53: let icebreaker = `"Ravi de vous croiser ! Votre parcours est passionnant, j'aimerais beaucoup échanger avec vous."`;
+  Line 55: icebreaker = `"Bonjour ! J'ai vu que vous évoluez dans le secteur ${user.industry}. Seriez-vous ouvert à échanger sur les tendances actuelles ?"`;
+  Line 57: icebreaker = `"Bonjour ! Votre rôle en tant que ${user.title} a l'air passionnant. Est-ce qu'on pourrait en discuter brièvement ?"`;
+  Line 152: <p className="text-xs">Aucun utilisateur à proximité pour générer d&apos;icebreaker.</p>
+
+components\home\index.tsx:
+  Line 301: {completion < 100 ? "Complétez votre profil pour plus de visibilité" : "Profil complet ✓"}
+  Line 471: Partagez votre profil pour voir l&apos;activité ici
+
+components\network\index.tsx:
+  Line 336: Aucun professionnel à proximité pour le moment.
+
+components\network\NetworkActions.tsx:
+  Line 41: Profil
+
+components\network\NfcButton.tsx:
+  Line 197: Partager votre profil
+  Line 200: L&apos;echange NFC direct n&apos;est pas supporte par cet appareil ou ce navigateur. Utilisez le QR Code de secours ci-dessous.
+  Line 253: Copier le lien de mon profil
+
+components\network\QrScannerModal.tsx:
+  Line 66: setError("Accès caméra refusé. Veuillez accorder la permission dans les réglages.");
+  Line 129: Scannez le QR Code Velora d&apos;un autre membre pour vous connecter instantanement.
+
+components\screens\NetworkScreen.tsx:
+  Line 271: description="Scannez un QR, utilisez le NFC ou activez Nearby pour construire votre reseau."
+
+components\share\index.tsx:
+  Line 345: const body = encodeURIComponent(`Découvrez mon profil VELORA: ${url}`);
+
+components\ui\BottomNav.tsx:
+  Line 23: { id: "share", icon: Share2, label: "Partager" },
+
+hooks\useGeolocation.ts:
+  Line 204: setError("La géolocalisation n'est pas supportée par cet appareil.");
+
+hooks\useNfc.ts:
+  Line 76: setError(err instanceof Error ? err.message : "Une erreur est survenue lors de la numerisation NFC.");
+
+hooks\useSharing.ts:
+  Line 21: `Voici mon profil professionnel VELORA ✨\n\n` +
+
+lib\auth.ts:
+  Line 33: return "Configuration Firebase manquante. La connexion Google n'est pas disponible.";
+  Line 43: return "La fenetre Google a ete bloquee. Touchez le bouton pour reessayer et autorisez les fenetres contextuelles si Chrome le demande.";
+  Line 45: return "Ce mode d'affichage bloque la fenetre Google. Ouvrez VELORA dans Chrome puis reessayez.";
+  Line 47: return "Chrome bloque le stockage requis pour garder votre session. Autorisez les cookies et le stockage du site puis reessayez.";
+  Line 49: return "Ce domaine n'est pas autorise dans Firebase Auth.";
+  Line 53: return "Impossible de se connecter avec Google pour le moment.";
+
+lib\firestore.ts:
+  Line 1650: text: `${senderProfile.fullName} souhaite s'ajouter à votre réseau.`,
+
+lib\nfc.ts:
+  Line 71: onError(new Error("Aucun lien de profil Velora trouvé sur ce tag NFC."));
