@@ -26,6 +26,7 @@ import {
 } from "@/components/profile/ProfileEditor";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTranslation } from "@/lib/i18n";
+import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
 
 import { EditProfileScreen } from "./EditProfileScreen";
 import { SettingsScreen } from "./SettingsScreen";
@@ -44,13 +45,14 @@ import type {
   ExperienceEntry,
   PortfolioItem,
   VeloraProfile,
+  AppTab,
 } from "@/types";
 
 type IdentityVarStyle = CSSProperties & Record<`--${string}`, string>;
 
 const PROJECT_FALLBACKS = ["/portfolio-1.png", "/portfolio-2.png"];
 
-export function ProfileScreen() {
+export function ProfileScreen({ onNavigate }: { onNavigate?: (tab: AppTab) => void } = {}) {
   const {
     profile,
     isProfileReady,
@@ -228,7 +230,7 @@ export function ProfileScreen() {
               
               {/* About Block */}
               <OwnerEditableSurface editLabel={t("edit_bio")} onEdit={() => setEditingSection("bio")} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[150px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[150px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -255,7 +257,7 @@ export function ProfileScreen() {
 
               {/* Skills Block */}
               <OwnerEditableSurface editLabel={t("edit_skills")} onEdit={() => setEditingSection("skills")} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -272,7 +274,7 @@ export function ProfileScreen() {
                     {effectiveProfile.skills && effectiveProfile.skills.length > 0 ? (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {effectiveProfile.skills.slice(0, 6).map((skill, index) => (
-                          <span key={skill} className="inline-flex items-center gap-0.5 rounded-full border border-velora-gold/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
+                          <span key={skill} className="inline-flex items-center gap-0.5 rounded-full border border-[var(--theme-accent)]/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
                             {skill} <span className="text-[7.5px] text-[var(--identity-accent)] opacity-85 font-mono">{[1, 13, 6, 4, 3, 2][index % 6]}</span>
                           </span>
                         ))}
@@ -286,7 +288,7 @@ export function ProfileScreen() {
 
               {/* Experience Block */}
               <OwnerEditableSurface editLabel={t("edit_experience")} onEdit={() => setEditingSection("experience")} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -304,7 +306,7 @@ export function ProfileScreen() {
                       <div className="space-y-2 mt-1">
                         {effectiveExperience.slice(0, 3).map((exp) => (
                           <div key={exp.id} className="flex items-start gap-2">
-                            <div className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded bg-velora-gold/5 text-[var(--identity-accent)] text-[9px] border border-velora-gold/10 font-bold uppercase">
+                            <div className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded bg-[var(--theme-accent)]/5 text-[var(--identity-accent)] text-[9px] border border-[var(--theme-accent)]/10 font-bold uppercase">
                               {exp.company[0]}
                             </div>
                             <div className="min-w-0">
@@ -325,7 +327,7 @@ export function ProfileScreen() {
               {/* Dentist Clinic Details (if dentist mode) */}
               {effectiveProfile.professionalMode === "dentist" && (
                 <OwnerEditableSurface editLabel={t("edit_clinic")} onEdit={() => setShowFullEdit(true)} buttonClassName="right-2 top-2">
-                  <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
+                  <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[140px] flex flex-col justify-between shadow-md">
                     {/* Subtly Moroccan Zellige ornament */}
                     <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                       <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -364,7 +366,7 @@ export function ProfileScreen() {
 
               {/* Services Offered Block */}
               <OwnerEditableSurface editLabel={t("edit_services")} onEdit={() => setEditingSection("services")} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[120px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[120px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -395,7 +397,7 @@ export function ProfileScreen() {
 
               {/* Certifications Block */}
               <OwnerEditableSurface editLabel={t("edit_profile_skills_title") || "Certifications"} onEdit={() => setShowFullEdit(true)} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -413,7 +415,7 @@ export function ProfileScreen() {
                     ) : (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {effectiveProfile.certifications.map((cert) => (
-                          <span key={cert} className="inline-flex items-center gap-0.5 rounded-full border border-velora-gold/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
+                          <span key={cert} className="inline-flex items-center gap-0.5 rounded-full border border-[var(--theme-accent)]/10 bg-velora-black/50 px-2 py-0.5 text-[8.5px] text-velora-text-secondary">
                             {cert}
                           </span>
                         ))}
@@ -427,9 +429,14 @@ export function ProfileScreen() {
 
             {/* COLUMN 2 */}
             <div className="space-y-3 col-span-1">
+              <ProfileCompletionCard
+                profile={effectiveProfile}
+                onEditSection={setEditingSection}
+                onNavigate={onNavigate || (() => {})}
+              />
               
               {/* Recent Activity Block */}
-              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[190px] flex flex-col justify-between shadow-md">
+              <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[190px] flex flex-col justify-between shadow-md">
                 {/* Subtly Moroccan Zellige ornament */}
                 <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                   <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -475,7 +482,7 @@ export function ProfileScreen() {
               </div>
 
               {/* Velora Network Block */}
-              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+              <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
                 {/* Subtly Moroccan Zellige ornament */}
                 <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                   <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -505,7 +512,7 @@ export function ProfileScreen() {
               </div>
 
               {/* Analytics Block */}
-              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+              <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
                 {/* Subtly Moroccan Zellige ornament */}
                 <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                   <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -538,7 +545,7 @@ export function ProfileScreen() {
 
               {/* Portfolio Block */}
               <OwnerEditableSurface editLabel={t("edit_portfolio")} onEdit={() => setEditingSection("portfolio")} buttonClassName="right-2 top-2">
-                <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[130px] flex flex-col justify-between shadow-md">
+                <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[130px] flex flex-col justify-between shadow-md">
                   {/* Subtly Moroccan Zellige ornament */}
                   <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                     <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -552,7 +559,7 @@ export function ProfileScreen() {
                     <h3 className="text-xs font-semibold text-velora-text leading-tight">{t("portfolio") || "Portfolio"}</h3>
                     <p className="text-[8px] text-[var(--identity-accent)] opacity-80 mb-2">Selected works</p>
                     {(!effectivePortfolio || effectivePortfolio.length === 0) ? (
-                      <div className="flex flex-col items-center justify-center border border-dashed border-velora-gold/10 bg-white/[0.01] rounded-lg p-4 mt-2">
+                      <div className="flex flex-col items-center justify-center border border-dashed border-[var(--theme-accent)]/10 bg-white/[0.01] rounded-lg p-4 mt-2">
                         <p className="text-[9px] text-velora-text-muted">Aucun projet dans le portfolio pour le moment.</p>
                       </div>
                     ) : (
@@ -576,7 +583,7 @@ export function ProfileScreen() {
               </OwnerEditableSurface>
 
               {/* Reputation & Trust Block */}
-              <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
+              <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-3.5 min-h-[110px] flex flex-col justify-between shadow-md">
                 {/* Subtly Moroccan Zellige ornament */}
                 <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none opacity-[0.05] select-none">
                   <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="url(#zellige-grad)" strokeWidth="0.75">
@@ -598,7 +605,7 @@ export function ProfileScreen() {
                           <span className="text-[var(--identity-accent)] font-semibold">{effectiveProfile.isVerified ? "100%" : "96%"}</span>
                         </div>
                         <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-velora-gold to-[#fff1c2] rounded-full" style={{ width: effectiveProfile.isVerified ? "100%" : "96%" }} />
+                          <div className="h-full bg-gradient-to-r from-[var(--theme-accent)] to-[#fff1c2] rounded-full" style={{ width: effectiveProfile.isVerified ? "100%" : "96%" }} />
                         </div>
                         <div className="flex flex-wrap gap-1 pt-1">
                           {effectiveProfile.isVerified && (
@@ -628,16 +635,16 @@ export function ProfileScreen() {
         ) : (
           /* Activity Feed details */
           <div className="space-y-3 mt-4">
-            <div className="relative overflow-hidden rounded-[18px] border border-velora-gold/15 bg-velora-card/90 p-4 shadow-md">
+            <div className="relative overflow-hidden rounded-[18px] border border-[var(--theme-accent)]/15 bg-velora-card/90 p-4 shadow-md">
               <h3 className="text-xs font-semibold text-velora-text leading-tight mb-3">Activity Timeline</h3>
               <div className="space-y-4">
-                <div className="border-l border-velora-gold/20 pl-3 py-1 relative">
+                <div className="border-l border-[var(--theme-accent)]/20 pl-3 py-1 relative">
                   <div className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-[var(--identity-accent)]" />
                   <span className="text-[8px] text-[var(--identity-accent)] font-semibold">Apr 15, 2023</span>
                   <h4 className="text-xs font-semibold text-velora-text mt-0.5">Insights on Global Markets</h4>
                   <p className="text-[10px] text-velora-text-secondary mt-1">Published deep analysis on the global economic shift and trade routes.</p>
                 </div>
-                <div className="border-l border-velora-gold/20 pl-3 py-1 relative">
+                <div className="border-l border-[var(--theme-accent)]/20 pl-3 py-1 relative">
                   <div className="absolute left-[-4.5px] top-1.5 w-2 h-2 rounded-full bg-[var(--identity-accent)]" />
                   <span className="text-[8px] text-[var(--identity-accent)] font-semibold">Jan 18, 2023</span>
                   <h4 className="text-xs font-semibold text-velora-text mt-0.5">Future of AI in Finance</h4>

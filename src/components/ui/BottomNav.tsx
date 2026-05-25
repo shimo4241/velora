@@ -15,6 +15,7 @@ import type { AppTab } from "@/types";
 interface BottomNavProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
+  unreadCount?: number;
 }
 
 const tabs: { id: AppTab; icon: typeof Home; label: string }[] = [
@@ -25,7 +26,7 @@ const tabs: { id: AppTab; icon: typeof Home; label: string }[] = [
   { id: "agenda", icon: Calendar, label: "Agenda" },
 ];
 
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+export function BottomNav({ activeTab, onTabChange, unreadCount = 0 }: BottomNavProps) {
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
       <div className="bottom-nav-inner">
@@ -52,14 +53,22 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 }`}
               />
 
-              <Icon
-                size={20}
-                className={`relative z-10 transition-[color,filter] duration-200 ease-out ${
-                  isActive
-                    ? "text-velora-gold drop-shadow-[0_0_4px_color-mix(in srgb, var(--color-velora-gold) 20%, transparent)]"
-                    : "text-velora-text-muted hover:text-velora-text"
-                }`}
-              />
+              <div className="relative">
+                <Icon
+                  size={20}
+                  className={`relative z-10 transition-[color,filter] duration-200 ease-out ${
+                    isActive
+                      ? "text-velora-gold drop-shadow-[0_0_4px_color-mix(in srgb, var(--color-velora-gold) 20%, transparent)]"
+                      : "text-velora-text-muted hover:text-velora-text"
+                  }`}
+                />
+                {tab.id === "discover" && unreadCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full ring-2 ring-black z-20 animate-pulse bg-red-500"
+                    style={{ backgroundColor: "var(--color-velora-rose, #D4737B)" }}
+                  />
+                )}
+              </div>
               <span
                 className={`relative z-10 text-[9px] font-bold tracking-wide transition-colors duration-200 ease-out ${
                   isActive

@@ -7,12 +7,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserCheck, Search, Sparkles, Loader2, User } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { useTranslation } from "@/lib/i18n";
+import { ChatModal } from "@/components/network/ChatModal";
+import type { VeloraConnection } from "@/types";
 
 export default function MesReseaux() {
   const router = useRouter();
   const { connections, loading } = useConnections();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const { t } = useTranslation();
+  const [activeChatConnection, setActiveChatConnection] = useState<VeloraConnection | null>(null);
 
   // Filter connections by name or headline
   const filteredConnections = connections.filter((conn) => {
@@ -136,11 +139,18 @@ export default function MesReseaux() {
                     </div>
                   </div>
 
-                  {/* Badge Connecté */}
-                  <div className="flex-shrink-0 ml-4">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-velora-gold bg-velora-gold/10 px-2.5 py-1 rounded-full border border-velora-gold/20 shadow-sm shadow-black/10">
+                  {/* Badge Connecté / Chat Action */}
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveChatConnection(conn)}
+                      className="inline-flex items-center justify-center h-8 px-3 rounded-full border border-velora-gold/20 bg-velora-gold/10 text-xs font-semibold text-velora-gold hover:bg-velora-gold/20 transition-colors"
+                    >
+                      Chat
+                    </button>
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-velora-text-muted bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
                       <UserCheck size={10} />
-                      {t("network_connected_badge")}
+                      {t("network_connected_badge") || "Connecté"}
                     </span>
                   </div>
                 </motion.div>
@@ -149,6 +159,14 @@ export default function MesReseaux() {
           </AnimatePresence>
         </motion.div>
       )}
+      <AnimatePresence>
+        {activeChatConnection && (
+          <ChatModal
+            connection={activeChatConnection}
+            onClose={() => setActiveChatConnection(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

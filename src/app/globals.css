@@ -29,9 +29,9 @@
      Moroccan brass. Warm, matte, not yellow.
      Reference: aged brass tea trays, not crypto coins. */
   --color-velora-gold: #C4A265;
-  --color-velora-gold-light: #DCC088;
+  --color-velora-gold-light: #EED9B3;
   --color-velora-gold-muted: rgba(196, 162, 101, 0.12);
-  --color-velora-gold-dim: rgba(196, 162, 101, 0.04);
+  --color-velora-gold-dim: rgba(196, 162, 101, 0.18);
   --color-velora-gold-glow: rgba(196, 162, 101, 0.08);
 
   /* ── Text Hierarchy ──
@@ -1505,7 +1505,7 @@ html.light {
 
   --color-velora-gold: #AF8E50;
   --color-velora-gold-muted: rgba(175, 142, 80, 0.12);
-  --color-velora-gold-dim: rgba(175, 142, 80, 0.04);
+  --color-velora-gold-dim: rgba(175, 142, 80, 0.18);
   --color-velora-gold-glow: rgba(175, 142, 80, 0.08);
 
   --theme-bg: var(--color-velora-black);
@@ -1675,9 +1675,9 @@ body,
   --color-velora-elevated: #28261F;
   --color-velora-border: #2E2C24;
   --color-velora-gold: #C4A265;
-  --color-velora-gold-light: #DCC088;
+  --color-velora-gold-light: #EED9B3;
   --color-velora-gold-muted: rgba(196, 162, 101, 0.12);
-  --color-velora-gold-dim: rgba(196, 162, 101, 0.04);
+  --color-velora-gold-dim: rgba(196, 162, 101, 0.18);
   --color-velora-gold-glow: rgba(196, 162, 101, 0.08);
   --color-velora-text: #F5F3EE;
   --color-velora-text-secondary: #A09A8C;
@@ -1722,9 +1722,9 @@ body,
   --color-velora-elevated: #323944;
   --color-velora-border: #3B424E;
   --color-velora-gold: #A5B4FC;
-  --color-velora-gold-light: #C7D2FE;
+  --color-velora-gold-light: #EEF2FF;
   --color-velora-gold-muted: rgba(165, 180, 252, 0.12);
-  --color-velora-gold-dim: rgba(165, 180, 252, 0.04);
+  --color-velora-gold-dim: rgba(165, 180, 252, 0.18);
   --color-velora-gold-glow: rgba(165, 180, 252, 0.08);
   --color-velora-text: #F1F5F9;
   --color-velora-text-secondary: #94A3B8;
@@ -1769,9 +1769,9 @@ body,
   --color-velora-elevated: #382463;
   --color-velora-border: #46307A;
   --color-velora-gold: #D946EF;
-  --color-velora-gold-light: #22D3EE;
+  --color-velora-gold-light: #7BE7F6;
   --color-velora-gold-muted: rgba(217, 70, 239, 0.12);
-  --color-velora-gold-dim: rgba(217, 70, 239, 0.04);
+  --color-velora-gold-dim: rgba(217, 70, 239, 0.18);
   --color-velora-gold-glow: rgba(217, 70, 239, 0.08);
   --color-velora-text: #FDF4FF;
   --color-velora-text-secondary: #E879F9;
@@ -1816,9 +1816,9 @@ body,
   --color-velora-elevated: #3E3731;
   --color-velora-border: #4D443D;
   --color-velora-gold: #D97706;
-  --color-velora-gold-light: #FBBF24;
+  --color-velora-gold-light: #FDE08A;
   --color-velora-gold-muted: rgba(217, 119, 6, 0.12);
-  --color-velora-gold-dim: rgba(217, 119, 6, 0.04);
+  --color-velora-gold-dim: rgba(217, 119, 6, 0.18);
   --color-velora-gold-glow: rgba(217, 119, 6, 0.08);
   --color-velora-text: #FDFBF7;
   --color-velora-text-secondary: #F59E0B;
@@ -1863,9 +1863,9 @@ body,
   --color-velora-elevated: #FFFFFF;
   --color-velora-border: #94A3B8;
   --color-velora-gold: #0F766E;
-  --color-velora-gold-light: #06B6D4;
+  --color-velora-gold-light: #33E1FC;
   --color-velora-gold-muted: rgba(15, 118, 110, 0.12);
-  --color-velora-gold-dim: rgba(15, 118, 110, 0.04);
+  --color-velora-gold-dim: rgba(15, 118, 110, 0.18);
   --color-velora-gold-glow: rgba(15, 118, 110, 0.08);
   --color-velora-text: #0F172A;
   --color-velora-text-secondary: #334155;
@@ -1910,9 +1910,9 @@ body,
   --color-velora-elevated: #1F1F1F;
   --color-velora-border: #282828;
   --color-velora-gold: #737373;
-  --color-velora-gold-light: #A3A3A3;
+  --color-velora-gold-light: #CCCCCC;
   --color-velora-gold-muted: rgba(115, 115, 115, 0.12);
-  --color-velora-gold-dim: rgba(115, 115, 115, 0.04);
+  --color-velora-gold-dim: rgba(115, 115, 115, 0.18);
   --color-velora-gold-glow: rgba(115, 115, 115, 0.08);
   --color-velora-text: #E5E5E5;
   --color-velora-text-secondary: #A3A3A3;

@@ -127,7 +127,7 @@ function NetworkingPulse() {
                 className="flex flex-col items-center justify-center p-3.5 rounded-[var(--radius-md)] bg-velora-black/40 border border-white/5 shadow-inner"
               >
                 <StatIcon size={16} className="text-velora-gold/75 mb-2" />
-                <div className="text-data text-2xl font-extrabold text-gold-gradient">
+                <div className="text-data text-2xl font-extrabold text-velora-gold">
                   {stat.value}
                 </div>
                 <div className="text-[9px] font-bold text-velora-text-secondary tracking-widest uppercase mt-1">

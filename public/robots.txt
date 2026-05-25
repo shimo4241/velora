@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /p/
 
 Sitemap: https://velora.app/sitemap.xml

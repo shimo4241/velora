@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/States";
 import { FadeUp } from "@/components/motion/animations";
 import { NearbyList, RadarDiscovery } from "@/components/network";
 import { NetworkContactCard } from "@/components/network/NetworkContactCard";
+import { ChatModal } from "@/components/network/ChatModal";
 import { useConnections } from "@/hooks/useConnections";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useProfile } from "@/hooks/useProfile";
@@ -72,6 +73,7 @@ export function NetworkScreen() {
   const [draftNotes, setDraftNotes] = useState("");
   const [draftTags, setDraftTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [activeChatConnection, setActiveChatConnection] = useState<VeloraConnection | null>(null);
 
   const network = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -259,6 +261,7 @@ export function NetworkScreen() {
                   connection={connection}
                   onToggleFavorite={toggleFavorite}
                   onEdit={openEditor}
+                  onChat={setActiveChatConnection}
                 />
               ))}
             </AnimatePresence>
@@ -335,6 +338,14 @@ export function NetworkScreen() {
             </motion.div>
           </div>
           </ModalPortal>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {activeChatConnection && (
+          <ChatModal
+            connection={activeChatConnection}
+            onClose={() => setActiveChatConnection(null)}
+          />
         )}
       </AnimatePresence>
     </div>

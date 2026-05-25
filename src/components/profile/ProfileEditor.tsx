@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { AnimatePresence, motion } from "framer-motion";
 import { ModalPortal } from "@/components/ui/ModalPortal";
-import { useScrollLock } from "@/lib/scrollLock";
+
 import {
   Briefcase,
   Camera,
@@ -479,7 +479,7 @@ export function ProfileEditorSheet({
   onUploadCover: (file: File, options?: UploadOptions) => Promise<string>;
   onUploadPortfolioImage: (file: File, options?: UploadOptions) => Promise<string>;
 }) {
-  useScrollLock(section !== null);
+
 
   return (
     <AnimatePresence>

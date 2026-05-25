@@ -3,7 +3,7 @@
 import { memo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Briefcase, MapPin, Shield, Sparkles, Star, StickyNote, Users } from "lucide-react";
+import { Briefcase, MapPin, MessageSquare, Shield, Sparkles, Star, StickyNote, Users } from "lucide-react";
 import { getDistanceLabel } from "@/lib/geolocation";
 import { NetworkActions } from "./NetworkActions";
 import type { VeloraConnection } from "@/types";
@@ -42,11 +42,13 @@ export const NetworkContactCard = memo(function NetworkContactCard({
   connection,
   onToggleFavorite,
   onEdit,
+  onChat,
 }: {
   connection: VeloraConnection;
   onToggleFavorite: (connection: VeloraConnection) => void;
   onEdit: (connection: VeloraConnection) => void;
-  }) {
+  onChat: (connection: VeloraConnection) => void;
+}) {
   const router = useRouter();
   const profile = connection.profile;
   const distanceLabel =
@@ -158,6 +160,10 @@ export const NetworkContactCard = memo(function NetworkContactCard({
           Force {connection.connectionStrength != null ? `${connection.connectionStrength}%` : "—"}
         </span>
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => onChat(connection)} className="network-profile-btn flex items-center gap-1">
+            <MessageSquare size={11} className="text-velora-gold" />
+            Chat
+          </button>
           <button type="button" onClick={() => onEdit(connection)} className="network-profile-btn">
             Notes
           </button>

@@ -13,7 +13,7 @@ import { getProfileUrl } from "@/lib/profileUrls";
 import { useHaptics } from "@/lib/capacitor";
 import QrScannerModal from "./QrScannerModal";
 
-import { useScrollLock } from "@/lib/scrollLock";
+
 
 interface NfcButtonProps {
   onScanProfile: (username: string) => void;
@@ -28,7 +28,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  useScrollLock(showFallbackModal);
+
 
   const isNfcSuccess = status === "success";
   const isNfcError = status === "error";

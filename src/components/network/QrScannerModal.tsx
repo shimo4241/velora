@@ -9,7 +9,7 @@ import { Camera, X, RefreshCw, AlertCircle } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useHaptics } from "@/lib/capacitor";
 
-import { useScrollLock } from "@/lib/scrollLock";
+
 
 interface QrScannerModalProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess }: QrSca
   const qrCodeInstanceRef = useRef<Html5Qrcode | null>(null);
   const readerId = "velora-qr-reader";
 
-  useScrollLock(isOpen);
+
 
   useEffect(() => {
     if (!isOpen) return;

@@ -28,11 +28,9 @@ export function useScrollLock(locked: boolean) {
   const id = useId();
   
   useEffect(() => {
-    if (!locked) {
-      unlockBodyScroll(id);
-      return;
+    if (locked) {
+      lockBodyScroll(id);
     }
-    lockBodyScroll(id);
     return () => {
       unlockBodyScroll(id);
     };

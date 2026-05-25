@@ -105,6 +105,7 @@ export interface VeloraProfile {
   isDemo?: boolean;
   locale: "fr" | "en" | "ar" | "es";
   onboarding?: VeloraOnboardingState;
+  hasShared?: boolean;
 
   // Professional / Dentist Specific Fields
   specialty?: string;
@@ -372,3 +373,24 @@ export interface EventCheckin {
 
 /* ── Agenda Filter Tabs ── */
 export type AgendaFilter = "today" | "this-week" | "this-month" | "nearby" | "trending";
+
+import type { Timestamp } from "firebase/firestore";
+
+/* ── Direct Messaging ── */
+export interface Conversation {
+  id: string;
+  participants: string[];
+  lastMessage?: string;
+  lastMessageAt?: Timestamp | null;
+  unreadCounts?: Record<string, number>;
+  updatedAt?: Timestamp | null;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: Timestamp | null;
+  read: boolean;
+}
+

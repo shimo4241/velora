@@ -33,9 +33,12 @@ export async function generateMetadata({
     ? `${profile.title}${profile.company ? ` at ${profile.company}` : ''}`
     : "Connect with me on VELORA, the exclusive networking platform.";
   
+  const isPrivate = profile.settings?.privacy?.allowIndexing === false;
+
   return {
     title,
     description,
+    robots: isPrivate ? "noindex, nofollow" : "index, follow",
     openGraph: {
       title,
       description,
@@ -80,11 +83,38 @@ export default async function PublicProfilePage({
     getExperience(profile.id),
   ]);
 
+  const isPrivate = profile.settings?.privacy?.allowIndexing === false;
+
   return (
-    <PublicProfileClient
-      profile={profile}
-      portfolio={portfolio}
-      experience={experience}
-    />
+    <>
+      {!isPrivate && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": profile.fullName,
+              "jobTitle": profile.title || undefined,
+              "worksFor": profile.company
+                ? {
+                    "@type": "Organization",
+                    "name": profile.company,
+                  }
+                : undefined,
+              "image": profile.avatarUrl || undefined,
+              "description": profile.bio || undefined,
+              "url": getProfileUrl(profile.username),
+              "sameAs": profile.socialLinks?.map((link) => link.url) || [],
+            }),
+          }}
+        />
+      )}
+      <PublicProfileClient
+        profile={profile}
+        portfolio={portfolio}
+        experience={experience}
+      />
+    </>
   );
 }

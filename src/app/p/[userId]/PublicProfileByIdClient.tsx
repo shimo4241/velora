@@ -11,7 +11,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
 
-import { Shield, Sparkles, UserCheck, MapPin, Briefcase, ArrowLeft, Star } from "lucide-react";
+import { Shield, Sparkles, UserCheck, MapPin, Briefcase, ArrowLeft, Star, ChevronLeft } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { applyVisualTheme } from "@/themes";
 import { getActiveTheme } from "@/app/u/[username]/PublicProfileClient";
@@ -31,6 +31,13 @@ export default function PublicProfileByIdClient({
   const { user, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const { t } = useTranslation();
+  const [showBackButton, setShowBackButton] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      setShowBackButton(true);
+    }
+  }, []);
 
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [loadingConnection, setLoadingConnection] = useState<boolean>(true);
@@ -155,19 +162,21 @@ export default function PublicProfileByIdClient({
       <div className="cinematic-overlay" />
       <div className="premium-vignette" />
 
-      {/* Header Bar */}
-      <header className="relative z-10 px-4 py-4 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md">
+      {showBackButton && (
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-xs font-semibold text-velora-text-secondary hover:text-velora-text transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/5"
+          className="absolute top-4 left-4 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-velora-text border border-white/10 backdrop-blur-md transition-all"
+          aria-label="Back"
         >
-          <ArrowLeft size={14} />
-          {t("back_label")}
+          <ChevronLeft size={20} />
         </button>
+      )}
+
+      {/* Header Bar */}
+      <header className="relative z-10 px-4 py-4 flex items-center justify-center border-b border-white/5 bg-black/20 backdrop-blur-md">
         <span className="text-xs font-bold tracking-widest text-[var(--identity-accent)] uppercase">
           VELORA NETWORK
         </span>
-        <div className="w-[74px]" /> {/* Spacer */}
       </header>
 
       {/* Profile Details Container */}

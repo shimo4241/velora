@@ -48,7 +48,7 @@ import { applyVisualTheme } from "@/themes";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, query, collection, where, limit, type DocumentData } from "firebase/firestore";
 import {
@@ -263,6 +263,14 @@ export default function PublicProfileClient({
   const { profile: currentUserProfile } = useProfile();
   const searchParams = useSearchParams();
   const source = searchParams?.get("src") || null;
+  const router = useRouter();
+  const [showBackButton, setShowBackButton] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      setShowBackButton(true);
+    }
+  }, []);
 
   const [relationship, setRelationship] = useState<RelationshipStatus>({ status: "none" });
   const [connectionsCount, setConnectionsCount] = useState(0);
@@ -289,8 +297,6 @@ export default function PublicProfileClient({
   }, [profile.syncThemeToPublic, profile.visualTheme]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  useScrollLock(showAddModal || showEditModal);
 
   // Form states for adding/editing a connection
   const [notes, setNotes] = useState("");
@@ -470,12 +476,21 @@ export default function PublicProfileClient({
 
   return (
     <main
-      className={`luxury-profile min-h-screen bg-velora-black text-velora-text ${
+      className={`luxury-profile min-h-screen bg-velora-black text-velora-text relative ${
         isRtl ? "rtl" : "ltr"
       }`}
       dir={dir}
       style={themeVars}
     >
+      {showBackButton && (
+        <button
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-velora-text border border-white/10 backdrop-blur-md transition-all"
+          aria-label={t("back") || "Back"}
+        >
+          <ChevronLeft size={20} />
+        </button>
+      )}
       <IdentityHero
         profile={profile}
         portfolioCount={portfolio.length}
@@ -1201,6 +1216,7 @@ export function IdentityHero({
   setLocalTab?: (tab: "overview" | "activity") => void;
 }) {
   const heroRef = useRef<HTMLElement>(null);
+  const theme = getActiveTheme(profile);
 
   return (
     <section
@@ -1211,18 +1227,18 @@ export function IdentityHero({
       <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
         <defs>
           <linearGradient id="zellige-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#C4A265" />
-            <stop offset="50%" stopColor="#FFF1C2" />
-            <stop offset="100%" stopColor="#9D8460" />
+            <stop offset="0%" stopColor="var(--theme-accent)" />
+            <stop offset="50%" stopColor="var(--theme-accent-2)" />
+            <stop offset="100%" stopColor="var(--theme-accent)" />
           </linearGradient>
         </defs>
       </svg>
       {/* 1. Header Row */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-1.5">
-          <span className="font-semibold text-base tracking-tight text-[#C4A265]">Velora</span>
-          <span className="bg-[#2B2316] text-[#C4A265] border border-[#C4A265]/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
-            Gold
+          <span className="font-semibold text-base tracking-tight text-[var(--theme-accent)]">Velora</span>
+          <span className="bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] border border-[var(--theme-accent)]/20 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            {theme.label}
           </span>
         </div>
         <span className="text-xs font-semibold text-velora-text uppercase tracking-wider">Profile</span>
@@ -1247,7 +1263,7 @@ export function IdentityHero({
       <div className="px-4 py-4 flex items-center gap-4">
         {/* Left: Avatar with Double Gold Ring & Badge */}
         <div className="relative shrink-0">
-          <div className="h-20 w-20 rounded-full p-[2px] bg-gradient-to-tr from-[#C4A265] to-[#fff1c2] border border-[#C4A265]/30">
+          <div className="h-20 w-20 rounded-full p-[2px] bg-gradient-to-tr from-[var(--theme-accent)] to-[var(--theme-accent-2)] border border-[var(--theme-accent)]/30">
             <div className="h-full w-full rounded-full bg-black p-[2.5px]">
               <div className="h-full w-full rounded-full overflow-hidden bg-velora-surface relative">
                 {profile.avatarUrl ? (
@@ -1258,7 +1274,7 @@ export function IdentityHero({
                     alt={profile.fullName}
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[#111] font-[family-name:var(--font-display)] text-xl font-semibold text-[#C4A265]">
+                  <div className="flex h-full w-full items-center justify-center bg-[#111] font-[family-name:var(--font-display)] text-xl font-semibold text-[var(--theme-accent)]">
                     {getInitials(profile.fullName)}
                   </div>
                 )}
@@ -1280,14 +1296,14 @@ export function IdentityHero({
             </motion.button>
           )}
           {/* Small Gold badge overlap */}
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#C4A265] to-[#fff1c2] text-velora-black text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-black shadow-md tracking-wider">
-            Gold
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[var(--theme-accent)] to-[var(--theme-accent-2)] text-velora-black text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-black shadow-md tracking-wider">
+            {theme.label}
           </div>
         </div>
 
         {/* Right: Info + Stats */}
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-bold text-[#C4A265] tracking-wide truncate">
+          <h1 className="text-lg font-bold text-[var(--theme-accent)] tracking-wide truncate">
             {profile.fullName || "Eleanor Thorne"}
           </h1>
           <p className="text-[11px] text-velora-text-secondary truncate mt-0.5 font-medium leading-none">
@@ -1296,26 +1312,26 @@ export function IdentityHero({
           
           {/* Location */}
           <div className="text-[9.5px] text-velora-text-muted mt-1.5 flex items-center gap-1 leading-none">
-            <MapPin size={10} className="text-[#C4A265]" />
+            <MapPin size={10} className="text-[var(--theme-accent)]" />
             <span>{profile.location || "New York, USA"}</span>
           </div>
 
           {/* Stats row */}
           <div className="flex gap-4 mt-3">
             <div>
-              <span className="block text-sm font-semibold text-[#C4A265] leading-none">
+              <span className="block text-sm font-semibold text-[var(--theme-accent)] leading-none">
                 {connectionsCount}
               </span>
               <span className="text-[8px] text-velora-text-muted mt-0.5 block leading-none">Connections</span>
             </div>
             <div>
-              <span className="block text-sm font-semibold text-[#C4A265] leading-none">
+              <span className="block text-sm font-semibold text-[var(--theme-accent)] leading-none">
                 {portfolioCount}
               </span>
               <span className="text-[8px] text-velora-text-muted mt-0.5 block leading-none">Projects</span>
             </div>
             <div>
-              <span className="block text-sm font-semibold text-[#C4A265] leading-none">
+              <span className="block text-sm font-semibold text-[var(--theme-accent)] leading-none">
                 {experienceCount}
               </span>
               <span className="text-[8px] text-velora-text-muted mt-0.5 block leading-none">Experience</span>
@@ -1331,7 +1347,7 @@ export function IdentityHero({
             onClick={() => setLocalTab?.("overview")}
             className={`flex-1 text-center py-1.5 rounded-full text-xs font-semibold transition-all ${
               localTab === "overview"
-                ? "bg-[#2B2316] text-[#C4A265] border border-[#C4A265]/20 shadow-md"
+                ? "bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] border border-[var(--theme-accent)]/20 shadow-md"
                 : "text-velora-text-muted hover:text-velora-text-secondary"
             }`}
           >
@@ -1341,7 +1357,7 @@ export function IdentityHero({
             onClick={() => setLocalTab?.("activity")}
             className={`flex-1 text-center py-1.5 rounded-full text-xs font-semibold transition-all ${
               localTab === "activity"
-                ? "bg-[#2B2316] text-[#C4A265] border border-[#C4A265]/20 shadow-md"
+                ? "bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] border border-[var(--theme-accent)]/20 shadow-md"
                 : "text-velora-text-muted hover:text-velora-text-secondary"
             }`}
           >

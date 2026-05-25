@@ -15,6 +15,9 @@ import { useProfileNullable } from "@/hooks/useProfile";
 import { LoadingScreen } from "@/components/ui/States";
 import { useTranslation } from "@/lib/i18n";
 import type { AppTab } from "@/types";
+import { useConversations } from "@/hooks/useMessages";
+import { useToast } from "@/components/providers/ToastProvider";
+import { checkInToEvent } from "@/lib/firestore";
 
 /* ═══════════════════════════════════════════════════
    VELORA — App Orchestrator
@@ -58,7 +61,7 @@ const MainTabPanel = memo(function MainTabPanel({
       className={`app-tab-panel ${active ? "app-tab-panel-active" : "app-tab-panel-inactive"}`}
     >
       {tab === "home" && <HomeScreen onTabChange={onTabChange} />}
-      {tab === "identity" && <ProfileScreen />}
+      {tab === "identity" && <ProfileScreen onNavigate={onTabChange} />}
       {tab === "share" && <ShareScreen />}
       {tab === "discover" && <DiscoverScreen />}
       {tab === "agenda" && <AgendaScreen />}
@@ -98,6 +101,40 @@ function VeloraAppInner() {
   const [splashFinished, setSplashFinished] = useState(false);
   const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
+  const { totalUnreadCount } = useConversations();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user || !profile) return;
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get("action");
+    const eventId = params.get("eventId");
+
+    if (action === "checkin" && eventId) {
+      // Clear URL params to prevent double triggers
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
+      const performCheckIn = async () => {
+        try {
+          await checkInToEvent(eventId, user.uid, profile, "qr");
+          showToast({
+            title: "Velora",
+            message: t("event_checkin_success") || "Enregistrement validé avec succès !",
+            tone: "success",
+          });
+          setActiveTab("agenda");
+        } catch {
+          showToast({
+            title: "Velora",
+            message: t("event_checkin_error") || "Erreur lors de l'enregistrement.",
+            tone: "error",
+          });
+        }
+      };
+      void performCheckIn();
+    }
+  }, [user, profile, showToast, t]);
   const [mountedTabs, setMountedTabs] = useState<Set<AppTab>>(() => new Set(["home"]));
   const stableTabs = useMemo(() => appTabs, []);
   const hasStoredOnboarding = useSyncExternalStore(
@@ -255,7 +292,7 @@ function VeloraAppInner() {
             ))}
           </main>
 
-          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+          <BottomNav activeTab={activeTab} onTabChange={handleTabChange} unreadCount={totalUnreadCount} />
         </>
       )}
     </div>

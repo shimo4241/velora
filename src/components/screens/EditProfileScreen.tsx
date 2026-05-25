@@ -35,7 +35,7 @@ import { useTranslation } from "@/lib/i18n";
    Luxury form with avatar upload · Firebase persistence
    ═══════════════════════════════════════════════════ */
 
-import { useScrollLock } from "@/lib/scrollLock";
+
 
 interface EditProfileScreenProps {
   onClose: () => void;
@@ -49,8 +49,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<string[]>([]);
 
-  // Lock body scroll while editing profile
-  useScrollLock(true);
+
 
   // Local form state
   const [form, setForm] = useState({

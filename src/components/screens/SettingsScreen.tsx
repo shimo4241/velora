@@ -29,7 +29,7 @@ import { Sparkles } from "lucide-react";
    Luxury medical & professional visual style
    ═══════════════════════════════════════════════════ */
 
-import { useScrollLock } from "@/lib/scrollLock";
+
 
 interface SettingsScreenProps {
   onClose: () => void;
@@ -46,11 +46,7 @@ export function SettingsScreen({ onClose }: SettingsScreenProps) {
   const [saving, setSaving] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Lock body scroll for the settings screen itself
-  useScrollLock(true);
 
-  // Lock body scroll for the nested confirmation dialog
-  useScrollLock(showLogoutConfirm);
 
   // Local settings state (synced with profile settings or fallback to defaults)
   const [notifications, setNotifications] = useState({

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -8,7 +8,7 @@ import { useEventDetail } from "@/hooks/useEventDetail";
 import { CategoryBadge } from "./CategoryBadge";
 import { EventStatusBadge } from "./EventStatusBadge";
 import { downloadIcsFile } from "./EventCard";
-import QrScannerModal from "@/components/network/QrScannerModal";
+import { CheckInButton } from "./CheckInButton";
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -17,8 +17,6 @@ import {
   ExternalLink,
   Users,
   ArrowLeft,
-  QrCode,
-  CheckCircle2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -50,7 +48,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
     checkIn
   } = useEventDetail(eventId);
 
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  // Scanner state encapsulated in CheckInButton
 
   if (!isOpen) return null;
 
@@ -77,36 +75,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
     }
   };
 
-  const handleScanSuccess = async (decodedText: string) => {
-    const cleanText = decodedText.trim();
-    // Validate if the code matches our event ID
-    const matchesEvent = cleanText === eventId || 
-                         cleanText === `velora-event:${eventId}` ||
-                         cleanText.toLowerCase().includes(eventId.toLowerCase());
-
-    if (matchesEvent) {
-      try {
-        await checkIn("qr");
-        showToast({
-          title: "Velora",
-          message: t("event_checkin_success"),
-          tone: "success"
-        });
-      } catch {
-        showToast({
-          title: "Velora",
-          message: t("event_checkin_error"),
-          tone: "error"
-        });
-      }
-    } else {
-      showToast({
-        title: "Velora",
-        message: t("event_qr_invalid"),
-        tone: "error"
-      });
-    }
-  };
+  // Scan success handled inside CheckInButton
 
   const handleMapsClick = () => {
     if (!event) return;
@@ -522,22 +491,12 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
             </motion.button>
 
             {/* Check In Button */}
-            {isCheckedIn ? (
-              <div className="flex-[1.2] flex items-center justify-center gap-2 h-12 rounded-xl text-xs font-semibold bg-velora-emerald/10 border border-velora-emerald/20 text-velora-emerald">
-                <CheckCircle2 size={16} />
-                <span>{t("event_checkin_done")}</span>
-              </div>
-            ) : (
-              <motion.button
-                onClick={() => setIsScannerOpen(true)}
-                disabled={actionLoading}
-                whileTap={{ scale: 0.95 }}
-                className="flex-[1.2] flex items-center justify-center gap-2 h-12 rounded-xl text-xs font-semibold bg-velora-gold border border-velora-gold text-velora-black"
-              >
-                <QrCode size={16} />
-                <span>{t("event_checkin_btn")}</span>
-              </motion.button>
-            )}
+            <CheckInButton
+              eventId={eventId}
+              isCheckedIn={isCheckedIn}
+              actionLoading={actionLoading}
+              onCheckIn={checkIn}
+            />
           </div>
 
           {/* Sub actions row */}
@@ -563,12 +522,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
         </div>
       )}
 
-      {/* QR Code Scanner Overlay */}
-      <QrScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScanSuccess={handleScanSuccess}
-      />
+      {/* QR Code Scanner is now inside CheckInButton */}
     </motion.div>
   );
 };

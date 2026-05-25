@@ -37,6 +37,27 @@ export function AppProviders({ children }: { children: ReactNode }) {
           document.documentElement.classList.remove("light");
         }
       }
+      // Register Firebase Messaging Service Worker dynamically on app load
+      if ("serviceWorker" in navigator) {
+        const configParams = {
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+          authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+          messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+        };
+        const query = new URLSearchParams(configParams).toString();
+        const swUrl = `/firebase-messaging-sw.js?${query}`;
+        
+        navigator.serviceWorker
+          .register(swUrl)
+          .then((reg) => {
+            logger.info("FCM Service Worker registered on app load:", reg.scope);
+          })
+          .catch((err) => {
+            logger.error("FCM Service Worker registration failed on app load:", err);
+          });
+      }
     } catch (e) {
       logger.error("Error initializing lang/theme provider:", e);
     }

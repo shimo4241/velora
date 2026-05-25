@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { getAppUrl } from "@/lib/profileUrls";
 import "./globals.css";
 
@@ -158,7 +159,10 @@ export default function RootLayout({
         />
       </head>
       <body className="noise-overlay zellige-overlay antialiased">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <OfflineBanner />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
