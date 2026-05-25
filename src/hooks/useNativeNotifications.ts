@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   getNotificationPermissionState,
   registerNotificationToken,

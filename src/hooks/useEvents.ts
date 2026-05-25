@@ -3,9 +3,9 @@ import { logger } from "@/lib/logger";
 
 
 import { useState, useEffect, useMemo } from "react";
-import { subscribeToEvents } from "@/lib/firestore";
+import { subscribeToEvents } from "@/services";
 import { VeloraEvent, AgendaFilter, EventCategory } from "@/types";
-import { calculateHaversineDistance } from "@/lib/geolocation";
+import { calculateHaversineDistance } from "@/utils/geolocation";
 import { useProfile } from "@/hooks/useProfile";
 
 export function useEvents(
@@ -23,8 +23,10 @@ export function useEvents(
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
 
+    let active = true;
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!active) return;
         setUserCoords({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -35,24 +37,34 @@ export function useEvents(
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Subscribe to raw approved events from Firestore
   useEffect(() => {
+    let active = true;
     const unsubscribe = subscribeToEvents(
       null, // Fetch all approved events and filter client-side
       (fetchedEvents) => {
+        if (!active) return;
         setEvents(fetchedEvents);
         setLoading(false);
         setError(null);
       },
       (err) => {
+        if (!active) return;
         setError(err);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   // Process, filter and sort events

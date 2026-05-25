@@ -10,34 +10,15 @@ import { useTranslation } from "@/lib/i18n";
    Offline banner, loading, empty states
    ═══════════════════════════════════════════════════ */
 
-/** Offline banner — slides in from top */
-export function OfflineBanner({ isOnline }: { isOnline: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <AnimatePresence>
-      {!isOnline && (
-        <motion.div
-          initial={{ y: -60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -60, opacity: 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 py-2.5 bg-velora-rose/15 border-b border-velora-rose/20 backdrop-blur-lg"
-        >
-          <WifiOff size={14} className="text-velora-rose" />
-          <span className="text-xs font-medium text-velora-rose">
-            {t("offline_banner")}
-          </span>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
 /** Loading spinner — luxury gold */
 export function LoadingScreen({ message }: { message?: string }) {
   const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-velora-black">
+    <div
+      className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-velora-black"
+      role="status"
+      aria-live="polite"
+    >
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
@@ -50,7 +31,7 @@ export function LoadingScreen({ message }: { message?: string }) {
         transition={{ delay: 0.3 }}
         className="text-xs text-velora-text-muted mt-4 font-medium"
       >
-        {message ? t(message) : t("loading_default")}
+        {message || t("loading_default")}
       </motion.p>
     </div>
   );
@@ -69,8 +50,14 @@ export function EmptyState({
   onAction?: () => void;
 }) {
   const { t } = useTranslation();
+  const stateTitle = title || t("empty_title");
+
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6">
+    <div
+      className="flex flex-col items-center justify-center py-16 px-6"
+      role="region"
+      aria-label={stateTitle}
+    >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -87,7 +74,7 @@ export function EmptyState({
         transition={{ delay: 0.1, duration: 0.4 }}
         className="text-heading text-sm text-velora-text mb-1 text-center"
       >
-        {title || t("empty_title")}
+        {stateTitle}
       </motion.h3>
 
       <motion.p
@@ -128,5 +115,37 @@ export function FoundingAccessBadge() {
         {t("founding_access_desc")}
       </div>
     </GlassCard>
+  );
+}
+
+interface ProfileErrorStateProps {
+  error?: Error | null;
+  onRetry: () => void;
+}
+
+/** Branded error state for profile bootstrap or fetch failures */
+export function ProfileErrorState({ error, onRetry }: ProfileErrorStateProps) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-velora-black px-6"
+      role="alert"
+      aria-live="assertive"
+    >
+      <GlassCard className="w-full max-w-sm p-6 text-center border border-velora-rose/25 bg-velora-rose/5" hover={false}>
+        <div className="mx-auto w-12 h-12 rounded-full bg-velora-rose/10 flex items-center justify-center mb-4">
+          <WifiOff className="text-velora-rose" size={24} />
+        </div>
+        <h3 className="text-heading text-sm text-velora-text mb-2">
+          {t("error_profile_init")}
+        </h3>
+        <p className="text-xs text-velora-text-muted mb-6 leading-relaxed">
+          {error?.message || t("error_profile_retry")}
+        </p>
+        <GoldButton onClick={onRetry} fullWidth size="md">
+          {t("error_retry")}
+        </GoldButton>
+      </GlassCard>
+    </div>
   );
 }

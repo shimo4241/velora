@@ -2,6 +2,7 @@
   "name": "VELORA",
   "short_name": "Velora",
   "description": "Premium professional identity ecosystem for Morocco, GCC, and Africa.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -75,28 +76,19 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshot-1.png",
-      "sizes": "430x932",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "VELORA Home Dashboard"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Share Profile",
       "short_name": "Share",
       "description": "Share your VELORA identity",
-      "url": "/?screen=share",
+      "url": "/?tab=share",
       "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Scan NFC",
       "short_name": "Scan",
       "description": "Discover nearby professionals",
-      "url": "/?screen=discover",
+      "url": "/?tab=discover",
       "icons": [{ "src": "/icon-96.png", "sizes": "96x96" }]
     }
   ]

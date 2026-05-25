@@ -1,55 +1,66 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import {
   subscribeToMessages,
   subscribeToConversations,
   sendMessage,
   markConversationAsRead,
-} from "@/lib/firestore";
+} from "@/services";
 import type { Message, Conversation } from "@/types";
+import { logger } from "@/lib/logger";
 
 export function useMessages(conversationId: string | null) {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const uid = user?.uid ?? null;
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [prevConversationId, setPrevConversationId] = useState<string | null>(conversationId);
 
-  if (conversationId !== prevConversationId) {
-    setPrevConversationId(conversationId);
-    setMessages([]);
-    setLoading(!!conversationId);
-  }
+  // Reset state when conversationId changes — done via useEffect, not mid-render
+  const prevConversationIdRef = useRef<string | null>(conversationId);
+  useEffect(() => {
+    if (conversationId !== prevConversationIdRef.current) {
+      prevConversationIdRef.current = conversationId;
+      setMessages([]);
+      setLoading(!!conversationId);
+    }
+  }, [conversationId]);
 
   useEffect(() => {
-    if (!conversationId || !user) {
+    if (!conversationId || !uid) {
       return;
     }
 
+    let active = true;
+    logger.debug(`[useMessages] subscribing conv=${conversationId}`);
+
     const unsubscribe = subscribeToMessages(conversationId, (loadedMessages) => {
+      if (!active) return;
       setMessages(loadedMessages);
       setLoading(false);
-      
+
       // Auto-mark conversation as read when active
-      void markConversationAsRead(conversationId, user.uid);
+      void markConversationAsRead(conversationId, uid);
     });
 
     return () => {
+      active = false;
+      logger.debug(`[useMessages] unsubscribing conv=${conversationId}`);
       unsubscribe();
     };
-  }, [conversationId, user]);
+  }, [conversationId, uid]);
 
   const send = async (text: string) => {
-    if (!conversationId || !user || !profile) {
+    if (!conversationId || !uid || !profile) {
       throw new Error("Cannot send message: unauthenticated or no active conversation");
     }
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    await sendMessage(conversationId, user.uid, profile.fullName, trimmed);
+    await sendMessage(conversationId, uid, profile.fullName, trimmed);
   };
 
   return {
@@ -62,35 +73,45 @@ export function useMessages(conversationId: string | null) {
 
 export function useConversations() {
   const { user } = useAuth();
+  const uid = user?.uid ?? null;
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(!!user);
-  const [prevUserId, setPrevUserId] = useState<string | undefined>(user?.uid);
+  const [loading, setLoading] = useState(!!uid);
 
-  if (user?.uid !== prevUserId) {
-    setPrevUserId(user?.uid);
-    setConversations([]);
-    setLoading(!!user);
-  }
+  // Reset state when uid changes — done via useEffect, not mid-render
+  const prevUidRef = useRef<string | null>(uid);
+  useEffect(() => {
+    if (uid !== prevUidRef.current) {
+      prevUidRef.current = uid;
+      setConversations([]);
+      setLoading(!!uid);
+    }
+  }, [uid]);
 
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
       return;
     }
 
-    const unsubscribe = subscribeToConversations(user.uid, (data) => {
+    let active = true;
+    logger.debug(`[useConversations] subscribing uid=${uid}`);
+
+    const unsubscribe = subscribeToConversations(uid, (data) => {
+      if (!active) return;
       setConversations(data);
       setLoading(false);
     });
 
     return () => {
+      active = false;
+      logger.debug(`[useConversations] unsubscribing uid=${uid}`);
       unsubscribe();
     };
-  }, [user]);
+  }, [uid]);
 
   // Compute total unread count for current user
   const totalUnreadCount = conversations.reduce((acc, conv) => {
-    if (!user) return acc;
-    return acc + (conv.unreadCounts?.[user.uid] || 0);
+    if (!uid) return acc;
+    return acc + (conv.unreadCounts?.[uid] || 0);
   }, 0);
 
   return {

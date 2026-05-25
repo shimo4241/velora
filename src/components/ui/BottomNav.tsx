@@ -9,6 +9,7 @@ import {
   Calendar,
 } from "lucide-react";
 import type { AppTab } from "@/types";
+import { useTranslation } from "@/lib/i18n";
 
 /* ─── VELORA — Bottom Navigation ─── */
 
@@ -18,31 +19,37 @@ interface BottomNavProps {
   unreadCount?: number;
 }
 
-const tabs: { id: AppTab; icon: typeof Home; label: string }[] = [
-  { id: "home", icon: Home, label: "Accueil" },
-  { id: "identity", icon: User, label: "Identité" },
-  { id: "share", icon: Share2, label: "Partager" },
-  { id: "discover", icon: Radio, label: "Découvrir" },
-  { id: "agenda", icon: Calendar, label: "Agenda" },
+const tabs: { id: AppTab; icon: typeof Home; labelKey: string }[] = [
+  { id: "home", icon: Home, labelKey: "nav_home" },
+  { id: "identity", icon: User, labelKey: "nav_identity" },
+  { id: "share", icon: Share2, labelKey: "nav_share" },
+  { id: "discover", icon: Radio, labelKey: "nav_discover" },
+  { id: "agenda", icon: Calendar, labelKey: "nav_agenda" },
 ];
 
 export function BottomNav({ activeTab, onTabChange, unreadCount = 0 }: BottomNavProps) {
+  const { t } = useTranslation();
+
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
-      <div className="bottom-nav-inner">
+    <nav className="bottom-nav" role="navigation" aria-label={t("nav_home")}>
+      <div className="bottom-nav-inner" role="tablist" aria-label="Tabs">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const label = t(tab.labelKey);
 
           return (
             <motion.button
               key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`tabpanel-${tab.id}`}
+              id={`tab-${tab.id}`}
               onClick={() => onTabChange(tab.id)}
               className="relative flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-colors duration-200 ease-out"
               whileTap={{ scale: 0.97 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              aria-label={tab.label}
-              aria-current={isActive ? "page" : undefined}
+              aria-label={label}
             >
               {/* Active background */}
               <span
@@ -58,7 +65,7 @@ export function BottomNav({ activeTab, onTabChange, unreadCount = 0 }: BottomNav
                   size={20}
                   className={`relative z-10 transition-[color,filter] duration-200 ease-out ${
                     isActive
-                      ? "text-velora-gold drop-shadow-[0_0_4px_color-mix(in srgb, var(--color-velora-gold) 20%, transparent)]"
+                       ? "text-velora-gold drop-shadow-[0_0_4px_color-mix(in srgb, var(--color-velora-gold) 20%, transparent)]"
                       : "text-velora-text-muted hover:text-velora-text"
                   }`}
                 />
@@ -76,7 +83,7 @@ export function BottomNav({ activeTab, onTabChange, unreadCount = 0 }: BottomNav
                     : "text-velora-text-muted"
                 }`}
               >
-                {tab.label}
+                {label}
               </span>
             </motion.button>
           );

@@ -581,10 +581,15 @@ body {
               border-color var(--duration-base) var(--ease-out);
   will-change: transform;
 }
-.card-interactive:hover {
-  transform: translate3d(0, -3px, 0);
-  border-color: var(--color-velora-gold-muted);
+
+/* Guard: only apply hover lift on real pointer devices, not touch taps */
+@media (hover: hover) {
+  .card-interactive:hover {
+    transform: translate3d(0, -3px, 0);
+    border-color: var(--color-velora-gold-muted);
+  }
 }
+
 .card-interactive:active {
   transform: scale(0.985);
 }
@@ -708,7 +713,15 @@ body {
     transform 900ms var(--ease-out);
 }
 
-.identity-reflective:hover::after,
+/* Guard: sheen reflection only activates on real hover devices */
+@media (hover: hover) {
+  .identity-reflective:hover::after {
+    opacity: 1;
+    transform: translate3d(28%, 0, 0) rotate(8deg);
+  }
+}
+
+/* Keyboard focus-visible sheen works on all devices */
 .identity-reflective:focus-visible::after {
   opacity: 1;
   transform: translate3d(28%, 0, 0) rotate(8deg);
@@ -906,12 +919,14 @@ body {
   border-radius: inherit;
   pointer-events: none;
 }
-.btn-3d-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 3px 8px rgba(var(--identity-accent-rgb, 196, 162, 101), 0.25),
-    0 6px 14px rgba(0, 0, 0, 0.25);
+@media (hover: hover) {
+  .btn-3d-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 1px 0 rgba(255, 255, 255, 0.4) inset,
+      0 3px 8px rgba(var(--identity-accent-rgb, 196, 162, 101), 0.25),
+      0 6px 14px rgba(0, 0, 0, 0.25);
+  }
 }
 .btn-3d-primary:active {
   transform: translateY(1px);
@@ -945,14 +960,16 @@ body {
   border-radius: inherit;
   pointer-events: none;
 }
-.btn-3d-glass:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-  border-color: var(--color-velora-gold-muted);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 0 8px var(--color-velora-gold-glow),
-    0 4px 12px rgba(0, 0, 0, 0.25);
+@media (hover: hover) {
+  .btn-3d-glass:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+    border-color: var(--color-velora-gold-muted);
+    box-shadow: 
+      0 1px 0 rgba(255, 255, 255, 0.15) inset,
+      0 0 8px var(--color-velora-gold-glow),
+      0 4px 12px rgba(0, 0, 0, 0.25);
+  }
 }
 .btn-3d-glass:active {
   transform: translateY(1px);
@@ -984,12 +1001,14 @@ body {
   border-radius: inherit;
   pointer-events: none;
 }
-.btn-3d-whatsapp:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 3px 8px rgba(37, 211, 102, 0.2),
-    0 6px 14px rgba(0, 0, 0, 0.25);
+@media (hover: hover) {
+  .btn-3d-whatsapp:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 1px 0 rgba(255, 255, 255, 0.3) inset,
+      0 3px 8px rgba(37, 211, 102, 0.2),
+      0 6px 14px rgba(0, 0, 0, 0.25);
+  }
 }
 .btn-3d-whatsapp:active {
   transform: translateY(1px);
@@ -1012,13 +1031,15 @@ body {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateY(0);
 }
-.btn-3d-outline:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-velora-gold);
-  background: var(--color-velora-gold-dim);
-  box-shadow: 
-    0 0 8px var(--color-velora-gold-glow),
-    0 4px 12px rgba(0, 0, 0, 0.2);
+@media (hover: hover) {
+  .btn-3d-outline:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-velora-gold);
+    background: var(--color-velora-gold-dim);
+    box-shadow: 
+      0 0 8px var(--color-velora-gold-glow),
+      0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 }
 .btn-3d-outline:active {
   transform: translateY(1px);
@@ -1050,12 +1071,14 @@ body {
   border-radius: inherit;
   pointer-events: none;
 }
-.btn-3d-identity:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 3px 8px rgba(var(--identity-accent-rgb, 196, 162, 101), 0.2),
-    0 6px 14px rgba(0, 0, 0, 0.25);
+@media (hover: hover) {
+  .btn-3d-identity:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 1px 0 rgba(255, 255, 255, 0.4) inset,
+      0 3px 8px rgba(var(--identity-accent-rgb, 196, 162, 101), 0.2),
+      0 6px 14px rgba(0, 0, 0, 0.25);
+  }
 }
 .btn-3d-identity:active {
   transform: translateY(1px);
@@ -1089,8 +1112,10 @@ body {
   transition: transform 0.6s ease;
   pointer-events: none;
 }
-.glass-glow-sheen:hover::after {
-  transform: translateX(100%) skewX(-15deg);
+@media (hover: hover) {
+  .glass-glow-sheen:hover::after {
+    transform: translateX(100%) skewX(-15deg);
+  }
 }
 
 /* Conic avatar metallic border */
@@ -1154,6 +1179,10 @@ body.keyboard-open {
 
 body.keyboard-open .safe-bottom {
   padding-bottom: 0 !important;
+}
+
+body.keyboard-open .bottom-nav {
+  display: none !important;
 }
 
 /* Standalone PWA — extra top padding for status bar */
@@ -1946,4 +1975,8 @@ body,
 
   --theme-hero-gradient: radial-gradient(circle at 50% 22%, rgba(115, 115, 115, 0.12), transparent 35%), linear-gradient(142deg, #000000 0%, #0A0A0A 40%, #050505 100%);
   --theme-atmosphere: radial-gradient(circle, rgba(115, 115, 115, 0.18) 0%, rgba(163, 163, 163, 0.08) 38%, transparent 70%);
+}
+
+.overflow-y-auto, .overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }

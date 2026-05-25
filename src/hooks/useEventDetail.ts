@@ -2,8 +2,8 @@
 import { logger } from "@/lib/logger";
 
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import {
   subscribeToEvent,
@@ -11,12 +11,13 @@ import {
   toggleEventInterest,
   checkInToEvent,
   getNetworkingSuggestions,
-} from "@/lib/firestore";
+} from "@/services";
 import { VeloraEvent, EventAttendee, VeloraProfile } from "@/types";
 
 export function useEventDetail(eventId: string) {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const uid = user?.uid ?? null;
   const [event, setEvent] = useState<VeloraEvent | null>(null);
   const [attendees, setAttendees] = useState<EventAttendee[]>([]);
   const [networkingSuggestions, setNetworkingSuggestions] = useState<VeloraProfile[]>([]);
@@ -26,65 +27,79 @@ export function useEventDetail(eventId: string) {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [prevEventId, setPrevEventId] = useState<string | null>(null);
-
-  if (eventId !== prevEventId) {
-    setPrevEventId(eventId);
-    setEvent(null);
-    setAttendees([]);
-    setNetworkingSuggestions([]);
-    setLoading(true);
-    setError(null);
-    setIsInterested(false);
-    setIsCheckedIn(false);
-  }
+  // Reset state when eventId changes — done via useEffect, not mid-render
+  const prevEventIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (eventId !== prevEventIdRef.current) {
+      prevEventIdRef.current = eventId;
+      setEvent(null);
+      setAttendees([]);
+      setNetworkingSuggestions([]);
+      setLoading(true);
+      setError(null);
+      setIsInterested(false);
+      setIsCheckedIn(false);
+    }
+  }, [eventId]);
 
   // Subscribe to single event details
   useEffect(() => {
     if (!eventId) return;
+    let active = true;
 
     const unsubscribe = subscribeToEvent(
       eventId,
       (fetchedEvent) => {
+        if (!active) return;
         setEvent(fetchedEvent);
         setLoading(false);
       },
       (err) => {
+        if (!active) return;
         setError(err);
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [eventId]);
 
-  // Subscribe to event attendees list
+  // Subscribe to event attendees list — depend on uid, not user object
   useEffect(() => {
     if (!eventId) return;
+    let active = true;
 
     const unsubscribe = subscribeToEventAttendees(
       eventId,
       (fetchedAttendees) => {
+        if (!active) return;
         setAttendees(fetchedAttendees);
 
         // Update isInterested and isCheckedIn status based on attendees list
-        if (user) {
-          const userAttendee = fetchedAttendees.find((a) => a.userId === user.uid);
+        if (uid) {
+          const userAttendee = fetchedAttendees.find((a) => a.userId === uid);
           setIsInterested(!!userAttendee);
           setIsCheckedIn(!!userAttendee?.checkedIn);
         }
       },
       (err) => {
+        if (!active) return;
         logger.error(`[useEventDetail] Failed to subscribe to attendees for ${eventId}`, err);
       }
     );
 
-    return () => unsubscribe();
-  }, [eventId, user]);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [eventId, uid]);
 
   // Fetch networking suggestions based on user professional mode
   useEffect(() => {
-    if (!user || !profile?.professionalMode) {
+    if (!uid || !profile?.professionalMode) {
       return;
     }
 
@@ -92,7 +107,7 @@ export function useEventDetail(eventId: string) {
     const fetchSuggestions = async () => {
       try {
         const suggestions = await getNetworkingSuggestions(
-          user.uid,
+          uid,
           profile.professionalMode,
           5
         );
@@ -100,6 +115,7 @@ export function useEventDetail(eventId: string) {
           setNetworkingSuggestions(suggestions);
         }
       } catch (err) {
+        if (!active) return;
         logger.error("[useEventDetail] Error fetching networking suggestions:", err);
       }
     };
@@ -108,7 +124,7 @@ export function useEventDetail(eventId: string) {
     return () => {
       active = false;
     };
-  }, [user, profile?.professionalMode, eventId]);
+  }, [uid, profile?.professionalMode, eventId]);
 
   // Action handlers
   const handleToggleInterest = async () => {
@@ -139,7 +155,7 @@ export function useEventDetail(eventId: string) {
   return {
     event,
     attendees,
-    networkingSuggestions: (user && profile?.professionalMode) ? networkingSuggestions : [],
+    networkingSuggestions: (uid && profile?.professionalMode) ? networkingSuggestions : [],
     loading,
     error,
     isInterested,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { useScrollLock } from "@/lib/scrollLock";
+import { useScrollLock } from "@/utils/scrollLock";
 
 /**
  * ModalPortal — renders children directly into document.body.

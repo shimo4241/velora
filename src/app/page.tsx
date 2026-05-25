@@ -2,22 +2,23 @@
 import { logger } from "@/lib/logger";
 
 
-import React, { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import React, { memo, useEffect, useMemo, useState, useRef, useSyncExternalStore } from "react";
 import { AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { SplashScreen, OnboardingScreen } from "@/components/onboarding";
-import { HomeScreen } from "@/components/home";
-import { WelcomeScreen } from "@/components/screens/WelcomeScreen";
-import { ProfileSetupScreen } from "@/components/screens/ProfileSetupScreen";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { SplashScreen, OnboardingScreen } from "@/components/features/onboarding";
+import { HomeScreen } from "@/components/features/home";
+import { WelcomeScreen } from "@/components/features/onboarding/WelcomeScreen";
+import { ProfileSetupScreen } from "@/components/features/onboarding/ProfileSetupScreen";
+import { useAuth } from "@/providers/AuthProvider";
 import { useProfileNullable } from "@/hooks/useProfile";
-import { LoadingScreen } from "@/components/ui/States";
+import { LoadingScreen, ProfileErrorState } from "@/components/ui/States";
+import { AppErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useTranslation } from "@/lib/i18n";
 import type { AppTab } from "@/types";
 import { useConversations } from "@/hooks/useMessages";
-import { useToast } from "@/components/providers/ToastProvider";
-import { checkInToEvent } from "@/lib/firestore";
+import { useToast } from "@/providers/ToastProvider";
+import { checkInToEvent } from "@/services";
 
 /* ═══════════════════════════════════════════════════
    VELORA — App Orchestrator
@@ -25,22 +26,22 @@ import { checkInToEvent } from "@/lib/firestore";
    ═══════════════════════════════════════════════════ */
 
 const ProfileScreen = dynamic(
-  () => import("@/components/screens/ProfileScreen").then((mod) => mod.ProfileScreen),
+  () => import("@/components/features/profile/ProfileScreen").then((mod) => mod.ProfileScreen),
   { loading: () => null }
 );
 
 const ShareScreen = dynamic(
-  () => import("@/components/screens/ShareScreen").then((mod) => mod.ShareScreen),
+  () => import("@/components/features/share/ShareScreen").then((mod) => mod.ShareScreen),
   { loading: () => null }
 );
 
 const DiscoverScreen = dynamic(
-  () => import("@/components/screens/DiscoverScreen").then((mod) => mod.DiscoverScreen),
+  () => import("@/components/features/discover/DiscoverScreen").then((mod) => mod.DiscoverScreen),
   { loading: () => null }
 );
 
 const AgendaScreen = dynamic(
-  () => import("@/components/screens/AgendaScreen").then((mod) => mod.AgendaScreen),
+  () => import("@/components/features/agenda/AgendaScreen").then((mod) => mod.AgendaScreen),
   { loading: () => null }
 );
 
@@ -59,12 +60,17 @@ const MainTabPanel = memo(function MainTabPanel({
     <section
       aria-hidden={!active}
       className={`app-tab-panel ${active ? "app-tab-panel-active" : "app-tab-panel-inactive"}`}
+      id={`tabpanel-${tab}`}
+      aria-labelledby={`tab-${tab}`}
+      role="tabpanel"
     >
-      {tab === "home" && <HomeScreen onTabChange={onTabChange} />}
-      {tab === "identity" && <ProfileScreen onNavigate={onTabChange} />}
-      {tab === "share" && <ShareScreen />}
-      {tab === "discover" && <DiscoverScreen />}
-      {tab === "agenda" && <AgendaScreen />}
+      <AppErrorBoundary>
+        {tab === "home" && <HomeScreen onTabChange={onTabChange} />}
+        {tab === "identity" && <ProfileScreen onNavigate={onTabChange} />}
+        {tab === "share" && <ShareScreen />}
+        {tab === "discover" && <DiscoverScreen />}
+        {tab === "agenda" && <AgendaScreen />}
+      </AppErrorBoundary>
     </section>
   );
 });
@@ -104,13 +110,17 @@ function VeloraAppInner() {
   const { totalUnreadCount } = useConversations();
   const { showToast } = useToast();
 
+  const hasFiredCheckinRef = useRef(false);
+  const hasPreloadedRef = useRef(false);
+
   useEffect(() => {
-    if (typeof window === "undefined" || !user || !profile) return;
+    if (typeof window === "undefined" || !user || !profile || hasFiredCheckinRef.current) return;
     const params = new URLSearchParams(window.location.search);
     const action = params.get("action");
     const eventId = params.get("eventId");
 
     if (action === "checkin" && eventId) {
+      hasFiredCheckinRef.current = true;
       // Clear URL params to prevent double triggers
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);
@@ -135,8 +145,20 @@ function VeloraAppInner() {
       void performCheckIn();
     }
   }, [user, profile, showToast, t]);
+
   const [mountedTabs, setMountedTabs] = useState<Set<AppTab>>(() => new Set(["home"]));
   const stableTabs = useMemo(() => appTabs, []);
+
+  const handleTabChange = React.useCallback((tab: AppTab) => {
+    setMountedTabs((current) => {
+      if (current.has(tab)) return current;
+      const next = new Set(current);
+      next.add(tab);
+      return next;
+    });
+    setActiveTab(tab);
+  }, []);
+
   const hasStoredOnboarding = useSyncExternalStore(
     subscribeToOnboardingStorage,
     getStoredOnboardingSnapshot,
@@ -167,6 +189,23 @@ function VeloraAppInner() {
     }
   }
 
+  const renderApp = phase === "app" && Boolean(user) && isProfileReady && Boolean(profile);
+
+  // PWA Deep Link shortcut handler
+  useEffect(() => {
+    if (typeof window === "undefined" || !renderApp) return;
+    const params = new URLSearchParams(window.location.search);
+    const screen = params.get("screen");
+    const tab = params.get("tab");
+    const target = (tab || screen) as AppTab;
+    if (target && appTabs.includes(target)) {
+      handleTabChange(target);
+      // Clear URL params to clean address bar
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [renderApp, handleTabChange]);
+
   const handleSplashComplete = () => {
     setSplashFinished(true);
   };
@@ -193,25 +232,14 @@ function VeloraAppInner() {
     }
   };
 
-  const handleTabChange = React.useCallback((tab: AppTab) => {
-    setMountedTabs((current) => {
-      if (current.has(tab)) return current;
-      const next = new Set(current);
-      next.add(tab);
-      return next;
-    });
-    setActiveTab(tab);
-  }, []);
-
-  const renderApp = phase === "app" && Boolean(user) && isProfileReady && Boolean(profile);
-
   useEffect(() => {
-    if (!renderApp) return;
+    if (!renderApp || hasPreloadedRef.current) return;
+    hasPreloadedRef.current = true;
     const id = window.setTimeout(() => {
-      void import("@/components/screens/ProfileScreen");
-      void import("@/components/screens/ShareScreen");
-      void import("@/components/screens/DiscoverScreen");
-      void import("@/components/screens/AgendaScreen");
+      void import("@/components/features/profile/ProfileScreen");
+      void import("@/components/features/share/ShareScreen");
+      void import("@/components/features/discover/DiscoverScreen");
+      void import("@/components/features/agenda/AgendaScreen");
     }, 350);
     return () => window.clearTimeout(id);
   }, [renderApp]);
@@ -243,22 +271,11 @@ function VeloraAppInner() {
       {/* Profile bootstrap error */}
       <AnimatePresence>
         {phase === "error" && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-velora-black px-6">
-            <div className="w-full max-w-sm rounded-2xl border border-velora-rose/20 bg-velora-rose/10 p-5 text-center">
-              <p className="text-sm font-medium text-velora-text mb-2">
-                {t("error_profile_init")}
-              </p>
-              <p className="text-xs text-velora-text-muted mb-4">
-                {profileError?.message || t("error_profile_retry")}
-              </p>
-              <button
-                onClick={() => void refreshProfile()}
-                className="h-10 px-4 rounded-xl bg-velora-gold text-velora-black text-sm font-medium"
-              >
-                {t("error_retry")}
-              </button>
-            </div>
-          </div>
+          <ProfileErrorState
+            key="error-state"
+            error={profileError}
+            onRetry={() => void refreshProfile()}
+          />
         )}
       </AnimatePresence>
 

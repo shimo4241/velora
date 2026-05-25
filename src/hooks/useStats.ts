@@ -3,12 +3,12 @@ import { logger } from "@/lib/logger";
 
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   getDailyStats,
   getRecentActivity,
   trackAnalyticsEvent,
-} from "@/lib/firestore";
+} from "@/services";
 import type { DailyStats, ActivityItem } from "@/types";
 
 const EMPTY_STATS: DailyStats = { views: 0, taps: 0, scans: 0, clicks: 0 };

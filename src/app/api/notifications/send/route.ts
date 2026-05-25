@@ -1,38 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import admin from "firebase-admin";
+import { admin } from "@/lib/firebaseAdmin";
 import { logger } from "@/lib/logger";
-
-if (!admin.apps.length) {
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (serviceAccountJson) {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (e) {
-      logger.error("Failed to parse FIREBASE_SERVICE_ACCOUNT:", e);
-      admin.initializeApp();
-    }
-  } else if (
-    process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      }),
-    });
-  } else {
-    // Fallback to project ID default if env is partially available
-    admin.initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    });
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {

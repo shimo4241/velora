@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { AppProviders } from "@/components/providers/AppProviders";
+import { AppProviders } from "@/providers/AppProviders";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
-import { getAppUrl } from "@/lib/profileUrls";
+import { getAppUrl } from "@/utils/profileUrls";
 import "./globals.css";
 
 /* ═══════════════════════════════════════════════════

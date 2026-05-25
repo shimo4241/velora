@@ -675,9 +675,13 @@ export async function deleteImageFromCloudinary(imageUrl: string): Promise<void>
   if (!publicId) return;
 
   try {
+    const idToken = await auth.currentUser?.getIdToken();
     const response = await fetch("/api/cloudinary/delete", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken || ""}`,
+      },
       body: JSON.stringify({ publicId }),
     });
 

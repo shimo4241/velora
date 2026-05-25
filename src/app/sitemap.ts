@@ -1,37 +1,6 @@
 import { MetadataRoute } from "next";
-import admin from "firebase-admin";
+import { admin, isFirebaseAdminConfigured } from "@/lib/firebaseAdmin";
 import { logger } from "@/lib/logger";
-
-if (!admin.apps.length) {
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (serviceAccountJson) {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (e) {
-      logger.error("Failed to parse FIREBASE_SERVICE_ACCOUNT in sitemap:", e);
-      admin.initializeApp();
-    }
-  } else if (
-    process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      }),
-    });
-  } else {
-    admin.initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    });
-  }
-}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://velora.app";
@@ -56,6 +25,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
   ];
+
+  if (!isFirebaseAdminConfigured) {
+    logger.warn("[Sitemap Generator] Firebase Admin is not configured. Returning static sitemaps only.");
+    return sitemaps;
+  }
 
   try {
     const db = admin.firestore();

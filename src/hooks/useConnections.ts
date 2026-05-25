@@ -3,8 +3,8 @@ import { logger } from "@/lib/logger";
 
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { onConnectionsChange } from "@/lib/firestore";
+import { useAuth } from "@/providers/AuthProvider";
+import { onConnectionsChange } from "@/services";
 import type { VeloraConnection } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -21,10 +21,11 @@ export function useConnections() {
     loading: boolean;
   }>({ uid: null, connections: [], loading: false });
 
-  // Update state during render when uid changes
-  if (state.uid !== uid) {
+  // Reset connections state when the authenticated user changes.
+  // This replaces the former mid-render setState which React 18+ flags as unstable.
+  useEffect(() => {
     setState({ uid, connections: [], loading: !!uid });
-  }
+  }, [uid]);
 
   useEffect(() => {
     if (!uid) return;

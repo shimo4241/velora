@@ -51,10 +51,10 @@ export async function GET(req: Request) {
   try {
     // Basic verification for local testing or CRON triggers
     const authHeader = req.headers.get("Authorization");
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      // Allow GET requests without auth header for local development/testing convenience
-      const url = new URL(req.url);
-      if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+    const url = new URL(req.url);
+    if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+      const cronSecret = process.env.CRON_SECRET;
+      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }

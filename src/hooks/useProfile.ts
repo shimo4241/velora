@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { useProfileContext } from "@/components/providers/ProfileProvider";
+import { useAuth } from "@/providers/AuthProvider";
+import { useProfileContext } from "@/providers/ProfileProvider";
 import {
   onPortfolioChange,
   onExperienceChange,
-} from "@/lib/firestore";
+} from "@/services";
 import type { PortfolioItem, ExperienceEntry } from "@/types";
 
 /* ═══════════════════════════════════════════════════
@@ -26,78 +26,63 @@ export function useProfile() {
   return useProfileNullable();
 }
 
-export function usePortfolio() {
+/**
+ * Generic helper hook to subscribe to any user subcollection (e.g. portfolio, experience).
+ */
+function useFirestoreSubcollection<T>(
+  onSubcollectionChange: (
+    uid: string,
+    onNext: (items: T[]) => void,
+    onError: (err: Error) => void
+  ) => (() => void) | undefined
+) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
   const [state, setState] = useState<{
     uid: string | null;
-    portfolio: PortfolioItem[];
-  }>({ uid: null, portfolio: [] });
+    items: T[];
+    loading: boolean;
+  }>({ uid: null, items: [], loading: false });
 
   useEffect(() => {
+    setState({ uid, items: [], loading: !!uid });
+  }, [uid]);
+
+  useEffect(() => {
+    if (!uid) return;
     let active = true;
 
-    if (!uid) {
-      return () => {
-        active = false;
-      };
-    }
-
-    const unsubscribe = onPortfolioChange(uid, (items) => {
-      if (!active) return;
-      setState({ uid, portfolio: items });
-    }, () => {
-      if (!active) return;
-      setState({ uid, portfolio: [] });
-    });
+    const unsubscribe = onSubcollectionChange(
+      uid,
+      (items) => {
+        if (!active) return;
+        setState({ uid, items, loading: false });
+      },
+      () => {
+        if (!active) return;
+        setState({ uid, items: [], loading: false });
+      }
+    );
 
     return () => {
       active = false;
       unsubscribe?.();
     };
-  }, [uid]);
+  }, [uid, onSubcollectionChange]);
 
   const isCurrent = state.uid === uid;
-  const portfolio = uid && isCurrent ? state.portfolio : [];
-  const loading = Boolean(uid && !isCurrent);
+  const items = uid && isCurrent ? state.items : [];
+  const loading = Boolean(uid && (!isCurrent || state.loading));
 
-  return { portfolio, loading };
+  return { items, loading };
+}
+
+export function usePortfolio() {
+  const { items, loading } = useFirestoreSubcollection<PortfolioItem>(onPortfolioChange);
+  return { portfolio: items, loading };
 }
 
 export function useExperience() {
-  const { user } = useAuth();
-  const uid = user?.uid ?? null;
-  const [state, setState] = useState<{
-    uid: string | null;
-    experience: ExperienceEntry[];
-  }>({ uid: null, experience: [] });
-
-  useEffect(() => {
-    let active = true;
-
-    if (!uid) {
-      return () => {
-        active = false;
-      };
-    }
-
-    const unsubscribe = onExperienceChange(uid, (entries) => {
-      if (!active) return;
-      setState({ uid, experience: entries });
-    }, () => {
-      if (!active) return;
-      setState({ uid, experience: [] });
-    });
-
-    return () => {
-      active = false;
-      unsubscribe?.();
-    };
-  }, [uid]);
-
-  const isCurrent = state.uid === uid;
-  const experience = uid && isCurrent ? state.experience : [];
-  const loading = Boolean(uid && !isCurrent);
-
-  return { experience, loading };
+  const { items, loading } = useFirestoreSubcollection<ExperienceEntry>(onExperienceChange);
+  return { experience: items, loading };
 }

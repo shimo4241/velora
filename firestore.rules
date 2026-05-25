@@ -85,9 +85,13 @@ service cloud.firestore {
       allow create: if isOwner(userId)
         && validUsername(request.resource.data.username)
         && hasUsernameReservationAfter(userId, request.resource.data.username)
-        && !("location_geo" in request.resource.data);
+        && !("location_geo" in request.resource.data)
+        && (!("role" in request.resource.data) || request.resource.data.role == "free")
+        && (!("isVerified" in request.resource.data) || request.resource.data.isVerified == false)
+        && (!("isPremium" in request.resource.data) || request.resource.data.isPremium == false)
+        && (!("isNoir" in request.resource.data) || request.resource.data.isNoir == false);
       allow update: if isOwner(userId)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["location_geo"])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["location_geo", "role", "isVerified", "isPremium", "isNoir"])
         && (
           (
             resource.data.username == request.resource.data.username
@@ -273,7 +277,7 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.userId == request.auth.uid;
       allow delete: if signedIn()
-                    && request.resource.data.userId == request.auth.uid;
+                    && resource.data.userId == request.auth.uid;
     }
   }
 }

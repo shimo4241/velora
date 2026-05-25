@@ -4,9 +4,9 @@ import {
   getProfileByUsername,
   getPortfolio,
   getExperience,
-} from "@/lib/firestore";
-import { getProfileUrl } from "@/lib/profileUrls";
-import { normalizeUsernameInput, validateUsername } from "@/lib/usernames";
+} from "@/services";
+import { getProfileUrl } from "@/utils/profileUrls";
+import { normalizeUsernameInput, validateUsername } from "@/utils/usernames";
 import PublicProfileClient from "./PublicProfileClient";
 
 export const dynamic = "force-dynamic";
@@ -34,16 +34,20 @@ export async function generateMetadata({
     : "Connect with me on VELORA, the exclusive networking platform.";
   
   const isPrivate = profile.settings?.privacy?.allowIndexing === false;
+  const profileUrl = getProfileUrl(profile.username);
 
   return {
     title,
     description,
     robots: isPrivate ? "noindex, nofollow" : "index, follow",
+    alternates: {
+      canonical: profileUrl,
+    },
     openGraph: {
       title,
       description,
       images: profile.avatarUrl ? [profile.avatarUrl] : [],
-      url: getProfileUrl(profile.username),
+      url: profileUrl,
       siteName: "VELORA",
     },
     twitter: {
@@ -105,6 +109,9 @@ export default async function PublicProfilePage({
               "image": profile.avatarUrl || undefined,
               "description": profile.bio || undefined,
               "url": getProfileUrl(profile.username),
+              "telephone": profile.fixedPhone || profile.whatsapp || profile.phone || undefined,
+              "email": profile.email || undefined,
+              "address": profile.clinicAddress || profile.location || undefined,
               "sameAs": profile.socialLinks?.map((link) => link.url) || [],
             }),
           }}

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProfile, getPortfolio, getExperience } from "@/lib/firestore";
+import { getProfile, getPortfolio, getExperience } from "@/services";
 import PublicProfileByIdClient from "./PublicProfileByIdClient";
 
 export const dynamic = "force-dynamic";

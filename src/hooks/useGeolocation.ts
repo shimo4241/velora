@@ -3,11 +3,11 @@ import { logger } from "@/lib/logger";
 
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { calculateHaversineDistance, getCoarseCoordinates } from "@/lib/geolocation";
+import { calculateHaversineDistance, getCoarseCoordinates } from "@/utils/geolocation";
 
 export type PermissionStateExtended = PermissionState | "unsupported";
 
@@ -16,11 +16,21 @@ export function useGeolocation() {
   const { profile, updateProfile } = useProfile();
   const uid = user?.uid ?? null;
 
+  // Use a ref to make updateProfile stable and prevent geolocation watcher re-runs
+  const updateProfileRef = useRef(updateProfile);
+  useEffect(() => {
+    updateProfileRef.current = updateProfile;
+  }, [updateProfile]);
+
+  const stableUpdateProfile = useCallback(
+    (data: Parameters<typeof updateProfile>[0]) => {
+      return updateProfileRef.current(data);
+    },
+    []
+  );
+
   // Local permissions & states
-  const [permissionState, setPermissionState] = useState<PermissionStateExtended>(() => {
-    if (typeof window === "undefined" || !navigator.geolocation) return "unsupported";
-    return "prompt";
-  });
+  const [permissionState, setPermissionState] = useState<PermissionStateExtended>("unsupported");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +48,11 @@ export function useGeolocation() {
   // Sync permission state
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
+      setPermissionState("unsupported");
       return;
     }
+
+    setPermissionState("prompt");
 
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions
@@ -93,7 +106,7 @@ export function useGeolocation() {
 
         // B. Store rounded coarse coordinates on public user doc only if active & not ghost
         const coarse = getCoarseCoordinates(lat, lng);
-        await updateProfile({
+        await stableUpdateProfile({
           location_geo_coarse: isSharing && !ghostMode
             ? {
                 lat: coarse.lat,
@@ -116,7 +129,7 @@ export function useGeolocation() {
         logger.error("[Geolocation] Failed to write coordinates to Firestore:", err);
       }
     },
-    [uid, isSharing, ghostMode, updateProfile]
+    [uid, isSharing, ghostMode, stableUpdateProfile]
   );
 
   // Watch position callback handlers
@@ -158,16 +171,28 @@ export function useGeolocation() {
     }
   }, []);
 
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  const prevSharingRef = useRef<{ isSharing: boolean; ghostMode: boolean }>({ isSharing, ghostMode });
+
   // Set up the Geolocation listener
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation || !uid) {
       return;
     }
 
+    const prev = prevSharingRef.current;
+    const isSharingChanged = prev.isSharing !== isSharing || prev.ghostMode !== ghostMode;
+    prevSharingRef.current = { isSharing, ghostMode };
+
     if (!isSharing || ghostMode) {
       // If user disabled sharing or enabled ghost mode, clear their public coordinates/visibility
-      if (profile?.location_geo_coarse || (ghostMode && profile?.isVisible !== false)) {
-        updateProfile({
+      const currentProfile = profileRef.current;
+      if (currentProfile?.location_geo_coarse || (ghostMode && currentProfile?.isVisible !== false)) {
+        void stableUpdateProfile({
           location_geo_coarse: null,
           ...(ghostMode ? { isVisible: false, ghostMode: true } : {})
         });
@@ -190,11 +215,16 @@ export function useGeolocation() {
     navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
 
     // Watch position for movement updates
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      handleSuccess,
-      handleError,
-      options
-    );
+    if (watchIdRef.current === null || isSharingChanged) {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        handleSuccess,
+        handleError,
+        options
+      );
+    }
 
     return () => {
       if (watchIdRef.current !== null) {
@@ -202,7 +232,7 @@ export function useGeolocation() {
         watchIdRef.current = null;
       }
     };
-  }, [uid, isSharing, ghostMode, handleSuccess, handleError, updateProfile, profile?.location_geo_coarse, profile?.isVisible]);
+  }, [uid, isSharing, ghostMode, handleSuccess, handleError, stableUpdateProfile]);
 
   // Request permissions manual trigger
   const requestPermissions = useCallback(() => {
@@ -228,7 +258,7 @@ export function useGeolocation() {
     async (enabled: boolean) => {
       if (!uid) return;
       try {
-        await updateProfile({
+        await stableUpdateProfile({
           locationSharing: enabled,
           isVisible: enabled && !ghostMode,
           location_geo_coarse: enabled && coords && !ghostMode
@@ -248,7 +278,7 @@ export function useGeolocation() {
         logger.error("[Geolocation] Failed to toggle location sharing state:", err);
       }
     },
-    [uid, coords, ghostMode, updateProfile]
+    [uid, coords, ghostMode, stableUpdateProfile]
   );
 
   // Toggle Ghost mode
@@ -268,13 +298,13 @@ export function useGeolocation() {
             lastUpdateCoordsRef.current = null;
             lastUpdateTimeRef.current = 0;
 
-            await updateProfile({
+            await stableUpdateProfile({
               ghostMode: true,
               isVisible: false,
               location_geo_coarse: null,
             });
           } else {
-            await updateProfile({
+            await stableUpdateProfile({
               ghostMode: false,
               isVisible: isSharing,
               location_geo_coarse: isSharing && coords
@@ -290,7 +320,7 @@ export function useGeolocation() {
         }
       }
     },
-    [uid, isSharing, coords, updateProfile]
+    [uid, isSharing, coords, stableUpdateProfile]
   );
 
   return {

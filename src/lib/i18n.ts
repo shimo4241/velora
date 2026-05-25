@@ -57,18 +57,14 @@ export function setAppLocale(lang: Locale) {
  * React hook for translations. Reacts to locale changes.
  */
 export function useTranslation(defaultLocale: Locale = "fr") {
-  const [activeLocale, setActiveLocale] = useState<Locale>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("velora_lang") as Locale;
-      if (saved && locales[saved]) {
-        return saved;
-      }
-    }
-    return defaultLocale;
-  });
+  const [activeLocale, setActiveLocale] = useState<Locale>(defaultLocale);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("velora_lang") as Locale;
+    if (saved && locales[saved] && saved !== defaultLocale) {
+      setActiveLocale(saved);
+    }
 
     const handleLocaleChange = (e: Event) => {
       const customEvent = e as CustomEvent<Locale>;
@@ -81,7 +77,7 @@ export function useTranslation(defaultLocale: Locale = "fr") {
     return () => {
       window.removeEventListener("velora_locale_change", handleLocaleChange);
     };
-  }, []);
+  }, [defaultLocale]);
 
   const t = createTranslator(activeLocale);
   const isRtl = activeLocale === "ar";

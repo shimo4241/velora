@@ -1,0 +1,172 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useConnections } from "@/hooks/useConnections";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserCheck, Search, Sparkles, Loader2, User } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/OptimizedImage";
+import { useTranslation } from "@/lib/i18n";
+import { ChatModal } from "@/components/features/network/ChatModal";
+import type { VeloraConnection } from "@/types";
+
+export default function MesReseaux() {
+  const router = useRouter();
+  const { connections, loading } = useConnections();
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { t } = useTranslation();
+  const [activeChatConnection, setActiveChatConnection] = useState<VeloraConnection | null>(null);
+
+  // Filter connections by name or headline
+  const filteredConnections = connections.filter((conn) => {
+    const search = searchQuery.toLowerCase().trim();
+    if (!search) return true;
+    const name = conn.displayName || conn.profile?.fullName || "";
+    const headline = conn.profile?.title || "";
+    return (
+      name.toLowerCase().includes(search) ||
+      headline.toLowerCase().includes(search)
+    );
+  });
+
+  return (
+    <div className="w-full max-w-xl mx-auto px-4 py-6">
+      {/* Header section */}
+      <div className="mb-6 flex flex-col gap-1">
+        <h2 className="text-xl font-bold tracking-tight text-velora-text flex items-center gap-2">
+          {t("network_title")}
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-velora-gold/10 text-velora-gold font-medium border border-velora-gold/20">
+            {connections.length} {connections.length > 1 ? t("network_members") : t("network_member")}
+          </span>
+        </h2>
+        <p className="text-xs text-velora-text-muted">
+          {t("network_subtitle")}
+        </p>
+      </div>
+
+      {/* Search Bar */}
+      {connections.length > 0 && (
+        <div className="relative mb-6">
+          <span className="absolute inset-y-0 left-3.5 flex items-center text-velora-text-muted pointer-events-none">
+            <Search size={16} />
+          </span>
+          <input
+            type="text"
+            placeholder={t("network_search_placeholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-velora-text placeholder-velora-text-muted focus:outline-none focus:border-velora-gold/30 transition-colors"
+          />
+        </div>
+      )}
+
+      {/* Content Area */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="animate-spin text-velora-gold" size={24} />
+          <p className="text-xs text-velora-text-muted">{t("network_loading")}</p>
+        </div>
+      ) : connections.length === 0 ? (
+        <div className="relative overflow-hidden rounded-[24px] border border-white/5 bg-white/[0.02] p-8 text-center backdrop-blur-md">
+          <div className="mx-auto w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-velora-gold/60 mb-4">
+            <Sparkles size={20} />
+          </div>
+          <h3 className="text-sm font-semibold text-velora-text mb-1">{t("network_empty_title")}</h3>
+          <p className="text-xs text-velora-text-muted max-w-[280px] mx-auto mb-5 leading-relaxed">
+            {t("network_empty_desc")}
+          </p>
+        </div>
+      ) : filteredConnections.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-sm text-velora-text-muted">{t("network_no_results")} &quot;{searchQuery}&quot;.</p>
+        </div>
+      ) : (
+        <motion.div
+          layout
+          className="space-y-3"
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredConnections.map((conn, index) => {
+              const profile = conn.profile;
+              const uid = conn.uid || profile?.id;
+              const username = conn.username || profile?.username;
+              const displayName = conn.displayName || profile?.fullName || t("network_default_name");
+              const photoURL = conn.photoURL || profile?.avatarUrl;
+              const headline = profile?.title || t("network_default_title");
+
+              return (
+                <motion.div
+                  key={uid}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, delay: index * 0.04 }}
+                  onClick={() => {
+                    if (username) {
+                      router.push(`/u/${username}`);
+                    } else {
+                      router.push(`/p/${uid}`);
+                    }
+                  }}
+                  className="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-3.5 hover:border-velora-gold/30 hover:bg-white/[0.04] transition-all cursor-pointer flex items-center justify-between shadow-md"
+                >
+                  {/* Contact Preview Info */}
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-black/40">
+                      {photoURL ? (
+                        <OptimizedImage
+                          src={photoURL}
+                          type="avatar"
+                          alt={displayName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center text-velora-gold text-sm font-bold uppercase">
+                          <User size={18} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold text-velora-text truncate group-hover:text-velora-gold transition-colors">
+                        {displayName}
+                      </h4>
+                      {headline && (
+                        <p className="text-xs text-velora-text-muted truncate mt-0.5 leading-normal">
+                          {headline}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Badge Connecté / Chat Action */}
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveChatConnection(conn)}
+                      className="inline-flex items-center justify-center h-8 px-3 rounded-full border border-velora-gold/20 bg-velora-gold/10 text-xs font-semibold text-velora-gold hover:bg-velora-gold/20 transition-colors"
+                    >
+                      Chat
+                    </button>
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-velora-text-muted bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
+                      <UserCheck size={10} />
+                      {t("network_connected_badge") || "Connecté"}
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
+      )}
+      <AnimatePresence>
+        {activeChatConnection && (
+          <ChatModal
+            connection={activeChatConnection}
+            onClose={() => setActiveChatConnection(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

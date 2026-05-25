@@ -4,8 +4,8 @@ import { logger } from "@/lib/logger";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { useToast } from "@/components/providers/ToastProvider";
+import { useAuth } from "@/providers/AuthProvider";
+import { useToast } from "@/providers/ToastProvider";
 import { useTranslation } from "@/lib/i18n";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
@@ -14,7 +14,7 @@ import { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
 import { Shield, Sparkles, UserCheck, MapPin, Briefcase, ArrowLeft, Star, ChevronLeft } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { applyVisualTheme } from "@/themes";
-import { getActiveTheme } from "@/app/u/[username]/PublicProfileClient";
+import { getActiveTheme } from "@/components/features/profile/public/publicShared";
 
 interface PublicProfileByIdClientProps {
   profile: VeloraProfile;
@@ -43,12 +43,13 @@ export default function PublicProfileByIdClient({
   const [loadingConnection, setLoadingConnection] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  const [lastUid, setLastUid] = useState<string | undefined>(user?.uid);
-  if (user?.uid !== lastUid) {
-    setLastUid(user?.uid);
-    setLoadingConnection(true);
+  const uid = user?.uid ?? null;
+
+  // Reset connection state when user session changes
+  useEffect(() => {
     setIsConnected(false);
-  }
+    setLoadingConnection(!!uid);
+  }, [uid]);
 
   useEffect(() => {
     if (profile.syncThemeToPublic && profile.visualTheme) {
@@ -61,23 +62,34 @@ export default function PublicProfileByIdClient({
   }, [profile.syncThemeToPublic, profile.visualTheme]);
 
   useEffect(() => {
-    if (!isAuthReady || !user) return;
+    if (!uid) {
+      setLoadingConnection(false);
+      return;
+    }
 
-    const docRef = doc(db, "users", user.uid, "network", profile.id);
+    let active = true;
+    setLoadingConnection(true);
+
+    const docRef = doc(db, "users", uid, "network", profile.id);
     const unsub = onSnapshot(
       docRef,
       (snap) => {
+        if (!active) return;
         setIsConnected(snap.exists());
         setLoadingConnection(false);
       },
       (err) => {
+        if (!active) return;
         logger.error("Error reading connection snapshot:", err);
         setLoadingConnection(false);
       }
     );
 
-    return () => unsub();
-  }, [user, isAuthReady, profile.id]);
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [uid, profile.id]);
 
   const handleConnect = async () => {
     if (!user) {

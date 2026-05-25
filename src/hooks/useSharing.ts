@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { useAuth } from "@/components/providers/AuthProvider";
-import { logShare, trackAnalyticsEvent } from "@/lib/firestore";
-import { getProfileShortUrl, getProfileUrl } from "@/lib/profileUrls";
+import { useAuth } from "@/providers/AuthProvider";
+import { logShare, trackAnalyticsEvent } from "@/services";
+import { getProfileShortUrl, getProfileUrl } from "@/utils/profileUrls";
 import type { VeloraProfile, ConnectionMethod } from "@/types";
 
 /* ═══════════════════════════════════════════════════

@@ -1,8 +1,6 @@
-"use client";
-
+import { memo, type ReactNode, useId } from "react";
 import { motion, type Easing } from "framer-motion";
-import { MOTION } from "@/lib/constants";
-import type { ReactNode } from "react";
+import { MOTION } from "@/constants";
 
 /* ═══════════════════════════════════════════════════
    VELORA — UI Atoms
@@ -20,7 +18,7 @@ interface GlassCardProps {
   onClick?: () => void;
 }
 
-export function GlassCard({
+export const GlassCard = memo(function GlassCard({
   children,
   className = "",
   gold = false,
@@ -35,13 +33,12 @@ export function GlassCard({
     <Tag
       className={`${baseClass} ${hoverClass} rounded-[var(--radius-card)] ${className}`}
       onClick={onClick}
-      whileHover={hover ? { y: -3, scale: 1.006 } : undefined}
       whileTap={onClick ? { scale: 0.98 } : undefined}
     >
       {children}
     </Tag>
   );
-}
+});
 
 /* ── Gold Button ── */
 interface GoldButtonProps {
@@ -54,7 +51,7 @@ interface GoldButtonProps {
   disabled?: boolean;
 }
 
-export function GoldButton({
+export const GoldButton = memo(function GoldButton({
   children,
   onClick,
   fullWidth = false,
@@ -75,7 +72,7 @@ export function GoldButton({
     glass: "btn-3d-glass text-velora-text",
     whatsapp: "btn-3d-whatsapp text-white",
     identity: "btn-3d-identity text-velora-black",
-  }[variant] || "btn-3d-primary text-velora-black";
+  }[variant];
 
   return (
     <motion.button
@@ -96,7 +93,7 @@ export function GoldButton({
       {children}
     </motion.button>
   );
-}
+});
 
 /* ── Gold Badge ── */
 interface GoldBadgeProps {
@@ -105,7 +102,7 @@ interface GoldBadgeProps {
   className?: string;
 }
 
-export function GoldBadge({
+export const GoldBadge = memo(function GoldBadge({
   children,
   variant = "default",
   className = "",
@@ -132,7 +129,7 @@ export function GoldBadge({
       {children}
     </span>
   );
-}
+});
 
 /* ── Progress Ring ── */
 interface ProgressRingProps {
@@ -141,7 +138,7 @@ interface ProgressRingProps {
   strokeWidth?: number;
 }
 
-export function ProgressRing({
+export const ProgressRing = memo(function ProgressRing({
   progress,
   size = 48,
   strokeWidth = 2.5,
@@ -149,18 +146,21 @@ export function ProgressRing({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
+  const uniqueId = useId().replace(/:/g, "");
+  const gradientId = `goldGradientRing-${uniqueId}`;
+  const glowFilterId = `goldGlow-${uniqueId}`;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90 overflow-visible">
         <defs>
-          <linearGradient id="goldGradientRing" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="var(--color-velora-gold)" />
             <stop offset="30%" stopColor="var(--color-velora-gold-light)" />
             <stop offset="70%" stopColor="var(--color-velora-gold-muted)" />
             <stop offset="100%" stopColor="var(--color-velora-gold-light)" />
           </linearGradient>
-          <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id={glowFilterId} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -183,8 +183,8 @@ export function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="url(#goldGradientRing)"
-          filter="url(#goldGlow)"
+          stroke={`url(#${gradientId})`}
+          filter={`url(#${glowFilterId})`}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -203,9 +203,9 @@ export function ProgressRing({
       </div>
     </div>
   );
-}
+});
 
 /* ── Divider ── */
-export function Divider({ className = "" }: { className?: string }) {
+export const Divider = memo(function Divider({ className = "" }: { className?: string }) {
   return <div className={`divider ${className}`} />;
-}
+});
