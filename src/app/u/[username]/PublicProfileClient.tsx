@@ -2,22 +2,25 @@
 
 import { logger } from "@/lib/logger";
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, Users, Clock, MapPin, MessageCircle, Globe, Shield, Star } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
+import { useCanGoBack } from "@/hooks/useCanGoBack";
 import { useSearchParams, useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, onSnapshot, query, collection, where, limit, type DocumentData } from "firebase/firestore";
 import dynamic from "next/dynamic";
 
 import {
+  EMPTY_PUBLIC_RELATIONSHIP_STATE,
   sendContactRequest,
   removeConnection,
   updateConnectionNotesAndTags,
   blockUser,
   onConnectionsChange,
+  onPublicRelationshipChange,
   getDailyStats,
 } from "@/services";
 
@@ -31,8 +34,6 @@ import type {
 import {
   getActiveTheme,
   PROJECT_FALLBACKS,
-  type RelationshipStatus,
-  type RelationshipSnapshot,
   type CssVarStyle,
 } from "@/components/features/profile/public/publicShared";
 
@@ -61,21 +62,13 @@ export default function PublicProfileClient({
   experience,
 }: PublicProfileClientProps) {
   const { t, dir, isRtl } = useTranslation(profile.locale || "fr");
-  const { user, isAuthReady } = useAuth();
+  const { user } = useAuth();
   const { profile: currentUserProfile } = useProfile();
   const searchParams = useSearchParams();
   const source = searchParams?.get("src") || null;
   const router = useRouter();
-  const [showBackButton, setShowBackButton] = useState(false);
+  const showBackButton = useCanGoBack();
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      setShowBackButton(true);
-    }
-  }, []);
-
-  const [relationship, setRelationship] = useState<RelationshipStatus>({ status: "none" });
-  const [connectionsCount, setConnectionsCount] = useState(0);
   const [localTab, setLocalTab] = useState<"overview" | "activity">("overview");
   const [stats, setStats] = useState<DailyStats>({ views: 0, taps: 0, scans: 0, clicks: 0 });
 
@@ -86,157 +79,36 @@ export default function PublicProfileClient({
       .catch((err) => logger.error("Failed to load daily stats:", err));
   }, [profile.id]);
 
-  const [loading, setLoading] = useState(false);
-
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // Connection data states to pass as default/saved state
-  const [notes, setNotes] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [locationName, setLocationName] = useState("");
-  const [eventName, setEventName] = useState("");
+  const [addLocationName, setAddLocationName] = useState("");
+  const addEventName = "";
 
   const uid = user?.uid ?? null;
-
-  // Reset relationship state when auth/user changes
-  useEffect(() => {
-    setRelationship({ status: "none" });
-    setNotes("");
-    setSelectedTags([]);
-    setLocationName("");
-    setEventName("");
-  }, [uid]);
-
-  // Real-time listener for the relationship
-  useEffect(() => {
-    if (!uid || !profile.id || uid === profile.id) {
-      return;
-    }
-
-    let active = true;
-
-    const reqSentRef = doc(db, "contact_requests", `${uid}_${profile.id}`);
-    const reqRecvRef = doc(db, "contact_requests", `${profile.id}_${uid}`);
-    const connQuery = query(
-      collection(db, "connections"),
-      where("userId", "==", uid),
-      where("connectedUserId", "==", profile.id),
-      limit(1)
-    );
-    const subDocRef = doc(db, "users", uid, "network", profile.id);
-
-    let statusReqSent: RelationshipSnapshot = null;
-    let statusReqRecv: RelationshipSnapshot = null;
-    let statusConn: RelationshipSnapshot = null;
-    let statusSubDoc: DocumentData | null = null;
-
-    function updateState() {
-      if (!active) return;
-      if (statusSubDoc && (statusSubDoc.status === "connected" || statusSubDoc.status === "accepted")) {
-        setRelationship({ status: "connected", connectionId: profile.id });
-        setNotes(statusSubDoc.personalNote || "");
-        setSelectedTags(statusSubDoc.tags || []);
-        setLocationName(statusSubDoc.locationName || "");
-        setEventName(statusSubDoc.event || "");
-      } else if (statusConn) {
-        setRelationship({ status: "connected", connectionId: statusConn.id });
-        setNotes(statusConn.personalNote || "");
-        setSelectedTags(statusConn.tags || []);
-        setLocationName(statusConn.locationName || "");
-        setEventName(statusConn.event || "");
-      } else if (statusReqSent && statusReqSent.status === "pending") {
-        setRelationship({ status: "pending_sent", requestId: statusReqSent.id });
-      } else if (statusReqRecv && statusReqRecv.status === "pending") {
-        setRelationship({ status: "pending_received", requestId: statusReqRecv.id });
-      } else {
-        setRelationship({ status: "none" });
-      }
-    }
-
-    const unsubReqSent = onSnapshot(
-      reqSentRef,
-      (snap) => {
-        if (!active) return;
-        statusReqSent = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-        updateState();
-      },
-      (err) => {
-        logger.error(`[PublicProfileClient] Error in reqSent listener for ${uid}_${profile.id}:`, err);
-      }
-    );
-
-    const unsubReqRecv = onSnapshot(
-      reqRecvRef,
-      (snap) => {
-        if (!active) return;
-        statusReqRecv = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-        updateState();
-      },
-      (err) => {
-        logger.error(`[PublicProfileClient] Error in reqRecv listener for ${profile.id}_${uid}:`, err);
-      }
-    );
-
-    const unsubConn = onSnapshot(
-      connQuery,
-      (snap) => {
-        if (!active) return;
-        statusConn = !snap.empty ? { id: snap.docs[0].id, ...snap.docs[0].data() } : null;
-        updateState();
-      },
-      (err) => {
-        logger.error(`[PublicProfileClient] Error in connQuery listener for uid=${uid} connectedUserId=${profile.id}:`, err);
-      }
-    );
-
-    const unsubSubDoc = onSnapshot(
-      subDocRef,
-      (snap) => {
-        if (!active) return;
-        statusSubDoc = snap.exists() ? snap.data() : null;
-        updateState();
-      },
-      (err) => {
-        logger.error(`[PublicProfileClient] Error in network subDoc listener for uid=${uid} contactId=${profile.id}:`, err);
-      }
-    );
-
-    return () => {
-      active = false;
-      unsubReqSent();
-      unsubReqRecv();
-      unsubConn();
-      unsubSubDoc();
-    };
-  }, [uid, profile.id]);
-
-  // Real-time connections count listener
-  useEffect(() => {
-    if (!profile.id) return;
-    let active = true;
-    const unsub = onConnectionsChange(
-      profile.id,
-      (conns) => {
-        if (!active) return;
-        setConnectionsCount(conns.length);
-      },
-      (err) => {
-        logger.error(`[PublicProfileClient] Error in connections count listener for profile ${profile.id}:`, err);
-      }
-    );
-    return () => {
-      active = false;
-      unsub?.();
-    };
-  }, [profile.id]);
+  const relationshipSnapshot = useFirestoreListener(
+    uid && profile.id && uid !== profile.id ? `public-relationship:${uid}:${profile.id}` : null,
+    uid && profile.id && uid !== profile.id
+      ? (onNext, onError) => onPublicRelationshipChange(uid, profile.id, onNext, onError)
+      : null,
+    EMPTY_PUBLIC_RELATIONSHIP_STATE
+  );
+  const relationshipState = relationshipSnapshot.data ?? EMPTY_PUBLIC_RELATIONSHIP_STATE;
+  const relationship = relationshipState.relationship;
+  const connectionsCountSnapshot = useFirestoreListener<number>(
+    profile.id ? `public-connections-count:${profile.id}` : null,
+    profile.id
+      ? (onNext, onError) => onConnectionsChange(profile.id, (connections) => onNext(connections.length), onError)
+      : null,
+    0
+  );
+  const connectionsCount = connectionsCountSnapshot.data ?? 0;
 
   // Suggest adding to network if opened via QR/NFC
   useEffect(() => {
     if (!user?.uid || !profile.id || user.uid === profile.id) return;
     if (relationship.status === "none" && (source === "qr" || source === "nfc")) {
       const timer = setTimeout(() => {
-        setLocationName(source === "qr" ? "QR Scan" : "NFC Tap");
+        setAddLocationName(source === "qr" ? "QR Scan" : "NFC Tap");
         setShowAddModal(true);
       }, 1000);
       return () => clearTimeout(timer);
@@ -250,7 +122,6 @@ export default function PublicProfileClient({
     eventName: string;
   }) => {
     if (!user?.uid || !currentUserProfile) return;
-    setLoading(true);
     try {
       await sendContactRequest({
         senderId: user.uid,
@@ -267,47 +138,36 @@ export default function PublicProfileClient({
       navigator.vibrate?.(24);
     } catch (err) {
       logger.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSaveConnection = async (notesVal: string, tagsVal: string[]) => {
     if (!user?.uid) return;
-    setLoading(true);
     try {
       await updateConnectionNotesAndTags(user.uid, profile.id, notesVal, tagsVal);
       setShowEditModal(false);
     } catch (e) {
       logger.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleRemoveConnection = async () => {
     if (!user?.uid) return;
-    setLoading(true);
     try {
       await removeConnection(user.uid, profile.id);
       setShowEditModal(false);
     } catch (e) {
       logger.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleBlockUser = async () => {
     if (!user?.uid) return;
-    setLoading(true);
     try {
       await blockUser(user.uid, profile.id);
       setShowEditModal(false);
     } catch (e) {
       logger.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -582,13 +442,12 @@ export default function PublicProfileClient({
 
                   {/* Activity picture placeholder */}
                   <div className="mt-2.5 relative h-12 w-full overflow-hidden rounded-lg border border-white/5 bg-white/5">
-                    <img
+                    <Image
                       src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60"
                       alt="Activity visualization"
-                      className="h-full w-full object-cover opacity-50"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 220px"
+                      className="object-cover opacity-50"
                     />
                   </div>
                 </div>
@@ -678,13 +537,12 @@ export default function PublicProfileClient({
                     <div className="grid grid-cols-2 gap-1 mt-1">
                       {portfolio.slice(0, 2).map((item, i) => (
                         <div key={item.id} className="relative aspect-video rounded overflow-hidden border border-white/5 bg-white/5">
-                          <img
+                          <Image
                             src={item.imageUrl || PROJECT_FALLBACKS[i % PROJECT_FALLBACKS.length]}
                             alt={item.title}
-                            className="h-full w-full object-cover opacity-80"
-                            onError={(e) => {
-                              e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60";
-                            }}
+                            fill
+                            sizes="(max-width: 768px) 45vw, 220px"
+                            className="object-cover opacity-80"
                           />
                         </div>
                       ))}
@@ -773,8 +631,8 @@ export default function PublicProfileClient({
             isOpen={showAddModal}
             onClose={() => setShowAddModal(false)}
             onSave={handleSendRequest}
-            initialLocationName={locationName}
-            initialEventName={eventName}
+            initialLocationName={addLocationName}
+            initialEventName={addEventName}
             theme={theme}
             t={t}
           />
@@ -787,10 +645,10 @@ export default function PublicProfileClient({
           <ConnectionEditModal
             isOpen={showEditModal}
             onClose={() => setShowEditModal(false)}
-            initialNotes={notes}
-            initialTags={selectedTags}
-            locationName={locationName}
-            eventName={eventName}
+            initialNotes={relationshipState.notes}
+            initialTags={relationshipState.selectedTags}
+            locationName={relationshipState.locationName}
+            eventName={relationshipState.eventName}
             onSave={handleSaveConnection}
             onRemove={handleRemoveConnection}
             onBlock={handleBlockUser}

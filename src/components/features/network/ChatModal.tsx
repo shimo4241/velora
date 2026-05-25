@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import Image from "next/image";
 import { X, Send, Shield, Star, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ModalPortal } from "@/components/ui/ModalPortal";
@@ -111,9 +112,9 @@ export function ChatModal({ connection, onClose }: ChatModalProps) {
           <div className="flex shrink-0 items-center justify-between border-b border-white/5 bg-velora-dark/80 backdrop-blur-md px-5 py-4">
             <div className="flex items-center gap-3.5 min-w-0">
               <div className="relative shrink-0">
-                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-velora-gold/20 bg-black/25">
+                <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-velora-gold/20 bg-black/25">
                   {profile.avatarUrl ? (
-                    <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    <Image src={profile.avatarUrl} alt="" fill sizes="44px" className="object-cover" />
                   ) : (
                     <span className="font-[family-name:var(--font-display)] text-sm font-semibold text-velora-gold">
                       {profile.fullName?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}

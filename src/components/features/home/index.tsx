@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { GlassCard, ProgressRing } from "@/components/ui";
@@ -94,6 +95,8 @@ function NetworkingPulse() {
   const { connections } = useConnections();
   const { t } = useTranslation(profile?.locale || "fr");
   const recentConnection = connections?.[0];
+  const recentConnectionAvatar =
+    recentConnection?.profile?.avatarUrl || recentConnection?.photoURL || "";
 
   if (!isProfileReady || !profile) return null;
 
@@ -153,11 +156,13 @@ function NetworkingPulse() {
             className="flex items-center gap-3 p-3 rounded-[var(--radius-md)] bg-velora-black/35 border border-white/5 cursor-pointer hover:border-velora-gold/30 hover:bg-white/[0.03] transition-all group relative z-10"
           >
             <div className="w-10 h-10 rounded-full overflow-hidden border border-velora-gold/20 bg-velora-gold-dim flex items-center justify-center flex-shrink-0 bg-black/40 relative">
-              {recentConnection.profile?.avatarUrl || recentConnection.photoURL ? (
-                <img
-                  src={recentConnection.profile?.avatarUrl || recentConnection.photoURL}
+              {recentConnectionAvatar ? (
+                <Image
+                  src={recentConnectionAvatar}
                   alt=""
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fill
+                  sizes="40px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
                 <span className="text-xs font-semibold text-velora-gold">
@@ -367,7 +372,7 @@ export function HomeScreen({ onTabChange }: { onTabChange?: (tab: AppTab) => voi
 
         <FadeUp delay={0.4}>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {PROFESSIONAL_MODES.map((mode: any) => {
+            {PROFESSIONAL_MODES.map((mode) => {
               const Icon = MODE_ICONS[mode.id] || Zap;
               const isActive = selectedMode === mode.id;
               return (

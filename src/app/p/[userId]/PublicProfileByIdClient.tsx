@@ -8,10 +8,13 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useToast } from "@/providers/ToastProvider";
 import { useTranslation } from "@/lib/i18n";
 import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { onNetworkConnectionStatusChange } from "@/services";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
+import { useCanGoBack } from "@/hooks/useCanGoBack";
 import { VeloraProfile, PortfolioItem, ExperienceEntry } from "@/types";
 
-import { Shield, Sparkles, UserCheck, MapPin, Briefcase, ArrowLeft, Star, ChevronLeft } from "lucide-react";
+import { Shield, Sparkles, UserCheck, MapPin, Briefcase, Star, ChevronLeft } from "lucide-react";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import { applyVisualTheme } from "@/themes";
 import { getActiveTheme } from "@/components/features/profile/public/publicShared";
@@ -31,25 +34,19 @@ export default function PublicProfileByIdClient({
   const { user, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const { t } = useTranslation();
-  const [showBackButton, setShowBackButton] = useState(false);
+  const showBackButton = useCanGoBack();
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      setShowBackButton(true);
-    }
-  }, []);
-
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [loadingConnection, setLoadingConnection] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   const uid = user?.uid ?? null;
-
-  // Reset connection state when user session changes
-  useEffect(() => {
-    setIsConnected(false);
-    setLoadingConnection(!!uid);
-  }, [uid]);
+  const shouldCheckConnection = Boolean(uid && profile.id && uid !== profile.id);
+  const connectionSnapshot = useFirestoreListener<boolean>(
+    shouldCheckConnection ? `network-status:${uid}:${profile.id}` : null,
+    shouldCheckConnection && uid
+      ? (onNext, onError) => onNetworkConnectionStatusChange(uid, profile.id, onNext, onError)
+      : null,
+    false
+  );
 
   useEffect(() => {
     if (profile.syncThemeToPublic && profile.visualTheme) {
@@ -60,36 +57,6 @@ export default function PublicProfileByIdClient({
       };
     }
   }, [profile.syncThemeToPublic, profile.visualTheme]);
-
-  useEffect(() => {
-    if (!uid) {
-      setLoadingConnection(false);
-      return;
-    }
-
-    let active = true;
-    setLoadingConnection(true);
-
-    const docRef = doc(db, "users", uid, "network", profile.id);
-    const unsub = onSnapshot(
-      docRef,
-      (snap) => {
-        if (!active) return;
-        setIsConnected(snap.exists());
-        setLoadingConnection(false);
-      },
-      (err) => {
-        if (!active) return;
-        logger.error("Error reading connection snapshot:", err);
-        setLoadingConnection(false);
-      }
-    );
-
-    return () => {
-      active = false;
-      unsub();
-    };
-  }, [uid, profile.id]);
 
   const handleConnect = async () => {
     if (!user) {
@@ -138,7 +105,8 @@ export default function PublicProfileByIdClient({
     }
   };
 
-  const showLoading = !isAuthReady || (user ? loadingConnection : false);
+  const showLoading = !isAuthReady || Boolean(user && connectionSnapshot.loading);
+  const isConnected = Boolean(uid && connectionSnapshot.data);
   const isSelf = user?.uid === profile.id;
 
   const theme = getActiveTheme(profile);

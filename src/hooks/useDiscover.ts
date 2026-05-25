@@ -1,105 +1,73 @@
 "use client";
-import { logger } from "@/lib/logger";
-import { useState, useEffect, useMemo } from "react";
+
+import { useMemo, useState } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useProfile } from "@/hooks/useProfile";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
 import { onDiscoverUsersChange } from "@/services";
 import { calculateHaversineDistance } from "@/utils/geolocation";
 import type { VeloraProfile } from "@/types";
 
-/* ═══════════════════════════════════════════════════
-   VELORA — useDiscover Hook
-   Extracts live discovery query, filtering, mapping,
-   sorting, and geolocation computations from UI views.
-   ═══════════════════════════════════════════════════ */
+const EMPTY_USERS: VeloraProfile[] = [];
+const DISCOVER_PAGE_SIZE = 100;
 
 export function useDiscover() {
   const { profile, isProfileReady } = useProfile();
   const geo = useGeolocation();
   const [query, setQuery] = useState("");
-  const [discoveredUsers, setDiscoveredUsers] = useState<VeloraProfile[]>([]);
-  const [loadingDiscover, setLoadingDiscover] = useState(true);
+  const profileId = isProfileReady ? profile?.id ?? null : null;
+  const { data, loading } = useFirestoreListener<VeloraProfile[]>(
+    profileId ? `discover:${profileId}:${DISCOVER_PAGE_SIZE}` : null,
+    profileId
+      ? (onNext, onError) => onDiscoverUsersChange(profileId, DISCOVER_PAGE_SIZE, onNext, onError)
+      : null,
+    EMPTY_USERS
+  );
+  const discoveredUsers = profileId ? data ?? EMPTY_USERS : EMPTY_USERS;
 
-  useEffect(() => {
-    if (!isProfileReady || !profile?.id) return;
-    
-    let active = true;
-    logger.info(`[useDiscover] Subscribing discovery candidates for profileId=${profile.id}`);
-    const unsub = onDiscoverUsersChange(
-      profile.id,
-      100, // Fetch more candidates so we have enough for both local and global networks
-      (users: VeloraProfile[]) => {
-        if (!active) return;
-        setDiscoveredUsers(users);
-        setLoadingDiscover(false);
-      },
-      (err: unknown) => {
-        if (!active) return;
-        logger.error("[useDiscover:onDiscoverUsersChange] failed:", err);
-        setLoadingDiscover(false);
-      }
-    );
-    return () => {
-      active = false;
-      logger.info(`[useDiscover] Unsubscribing discovery candidates for profileId=${profile.id}`);
-      unsub();
-    };
-  }, [profile?.id, isProfileReady]);
-
-  // Split discovered users into Nearby and Global suggestions
   const { nearbyUsers, globalUsers } = useMemo(() => {
-    if (!profile) return { nearbyUsers: [], globalUsers: [] };
-    
+    if (!profile) return { nearbyUsers: EMPTY_USERS, globalUsers: EMPTY_USERS };
+
     const myCoarse = profile.location_geo_coarse;
     const isSharing = profile.locationSharing && !profile.ghostMode;
-
     const nearby: VeloraProfile[] = [];
     const global: VeloraProfile[] = [];
 
-    discoveredUsers.forEach((u) => {
-      // Security: Exclude self, ghosts, and invisible users
-      if (u.id === profile.id || u.ghostMode === true || u.isVisible === false) {
+    discoveredUsers.forEach((candidate) => {
+      if (candidate.id === profile.id || candidate.ghostMode === true || candidate.isVisible === false) {
         return;
       }
 
-      if (!isSharing || !myCoarse || !u.location_geo_coarse) {
-        global.push(u);
+      if (!isSharing || !myCoarse || !candidate.location_geo_coarse) {
+        global.push(candidate);
         return;
       }
 
-      const dist = calculateHaversineDistance(
+      const distance = calculateHaversineDistance(
         myCoarse.lat,
         myCoarse.lng,
-        u.location_geo_coarse.lat,
-        u.location_geo_coarse.lng
+        candidate.location_geo_coarse.lat,
+        candidate.location_geo_coarse.lng
       );
 
-      // Truly local discovery threshold (2 km)
-      if (dist < 2000) {
-        let proximity: "close" | "medium" | "far" = "medium";
-        if (dist < 100) proximity = "close";
-        else if (dist > 500) proximity = "far";
-
+      if (distance < 2000) {
         nearby.push({
-          ...u,
-          proximityZone: proximity,
+          ...candidate,
+          proximityZone: distance < 100 ? "close" : distance > 500 ? "far" : "medium",
         });
       } else {
-        global.push(u);
+        global.push(candidate);
       }
     });
 
-    // Sort by compatibility priorities (Professional Mode alignment, then shared skills/interests)
     const sortByPriority = (a: VeloraProfile, b: VeloraProfile) => {
       const aMode = a.professionalMode === profile.professionalMode ? 1 : 0;
       const bMode = b.professionalMode === profile.professionalMode ? 1 : 0;
       if (aMode !== bMode) return bMode - aMode;
 
-      const aOverlap = a.skills?.filter(s => profile.skills?.includes(s)).length || 0;
-      const bOverlap = b.skills?.filter(s => profile.skills?.includes(s)).length || 0;
-      if (aOverlap !== bOverlap) return bOverlap - aOverlap;
-
-      return 0;
+      const aOverlap = a.skills?.filter((skill) => profile.skills?.includes(skill)).length || 0;
+      const bOverlap = b.skills?.filter((skill) => profile.skills?.includes(skill)).length || 0;
+      return bOverlap - aOverlap;
     };
 
     nearby.sort(sortByPriority);
@@ -108,26 +76,24 @@ export function useDiscover() {
     return { nearbyUsers: nearby, globalUsers: global };
   }, [discoveredUsers, profile]);
 
-  // Filter lists based on search query
+  const normalizedQuery = query.toLowerCase().trim();
   const filteredNearby = useMemo(() => {
-    return nearbyUsers.filter((u) => {
-      const search = query.toLowerCase().trim();
-      if (!search) return true;
-      const name = u.fullName || "";
-      const title = u.title || "";
-      return name.toLowerCase().includes(search) || title.toLowerCase().includes(search);
+    if (!normalizedQuery) return nearbyUsers;
+    return nearbyUsers.filter((candidate) => {
+      const name = candidate.fullName || "";
+      const title = candidate.title || "";
+      return name.toLowerCase().includes(normalizedQuery) || title.toLowerCase().includes(normalizedQuery);
     });
-  }, [nearbyUsers, query]);
+  }, [nearbyUsers, normalizedQuery]);
 
   const filteredGlobal = useMemo(() => {
-    return globalUsers.filter((u) => {
-      const search = query.toLowerCase().trim();
-      if (!search) return true;
-      const name = u.fullName || "";
-      const title = u.title || "";
-      return name.toLowerCase().includes(search) || title.toLowerCase().includes(search);
+    if (!normalizedQuery) return globalUsers;
+    return globalUsers.filter((candidate) => {
+      const name = candidate.fullName || "";
+      const title = candidate.title || "";
+      return name.toLowerCase().includes(normalizedQuery) || title.toLowerCase().includes(normalizedQuery);
     });
-  }, [globalUsers, query]);
+  }, [globalUsers, normalizedQuery]);
 
   return {
     profile,
@@ -137,7 +103,7 @@ export function useDiscover() {
     setQuery,
     nearbyUsers: filteredNearby,
     globalUsers: filteredGlobal,
-    loadingDiscover,
-    rawNearbyUsers: nearbyUsers, // In case raw proximity visualization or carousel needs unmodified list
+    loadingDiscover: Boolean(profileId && loading),
+    rawNearbyUsers: nearbyUsers,
   };
 }

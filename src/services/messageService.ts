@@ -14,6 +14,7 @@ import {
   type FirestoreDataConverter,
   type QueryDocumentSnapshot,
   type SnapshotOptions,
+  type WithFieldValue,
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -63,7 +64,7 @@ export async function getOrCreateConversation(uid1: string, uid2: string): Promi
   const docRef = doc(db, "conversations", cid).withConverter(conversationConverter);
   const snap = await getDoc(docRef);
   if (!snap.exists()) {
-    await setDoc(docRef, {
+    const initialConversation: WithFieldValue<Conversation> = {
       id: cid,
       participants: [uid1, uid2],
       lastMessage: "",
@@ -73,14 +74,16 @@ export async function getOrCreateConversation(uid1: string, uid2: string): Promi
         [uid2]: 0,
       },
       updatedAt: serverTimestamp(),
-    } as any);
+    };
+    await setDoc(docRef, initialConversation);
   }
   return cid;
 }
 
 export function subscribeToConversations(
   uid: string,
-  callback: (conversations: Conversation[]) => void
+  callback: (conversations: Conversation[]) => void,
+  onError?: (error: Error) => void
 ) {
   const q = query(
     collection(db, "conversations").withConverter(conversationConverter),
@@ -109,13 +112,15 @@ export function subscribeToConversations(
     },
     (error) => {
       logger.error(`[Firestore Error] subscribeToConversations failed for uid=${uid}`, error);
+      onError?.(error);
     }
   );
 }
 
 export function subscribeToMessages(
   conversationId: string,
-  callback: (messages: Message[]) => void
+  callback: (messages: Message[]) => void,
+  onError?: (error: Error) => void
 ) {
   const q = query(
     collection(db, "conversations", conversationId, "messages").withConverter(messageConverter)
@@ -135,6 +140,7 @@ export function subscribeToMessages(
     },
     (error) => {
       logger.error(`[Firestore Error] subscribeToMessages failed for conv=${conversationId}`, error);
+      onError?.(error);
     }
   );
 }
@@ -156,15 +162,16 @@ export async function sendMessage(
 
   const messagesRef = collection(db, "conversations", conversationId, "messages").withConverter(messageConverter);
   const newMsgRef = doc(messagesRef);
-
-  const batch = writeBatch(db);
-  batch.set(newMsgRef, {
+  const newMessage: WithFieldValue<Message> = {
     id: newMsgRef.id,
     senderId,
     text,
     createdAt: serverTimestamp(),
     read: false,
-  } as any);
+  };
+
+  const batch = writeBatch(db);
+  batch.set(newMsgRef, newMessage);
 
   const unreadCounts = { ...(data.unreadCounts || {}) };
   unreadCounts[recipientId] = (unreadCounts[recipientId] || 0) + 1;

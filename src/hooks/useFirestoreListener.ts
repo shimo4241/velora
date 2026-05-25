@@ -1,74 +1,193 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { logger } from "@/lib/logger";
 
-/**
- * Production-grade Firestore subscription hook.
- *
- * Solves:
- * - Post-unmount state updates (active flag)
- * - React StrictMode double-subscription (clean teardown→re-subscribe)
- * - Missing error handlers (always logs, optionally forwards)
- * - Stale closures (subscribeFn is called fresh on each effect run)
- *
- * @param key - Stable string key for logging (e.g. "connections:abc123")
- * @param subscribeFn - Function that sets up the listener and returns an unsubscribe fn.
- *                      Return `undefined` to skip subscription (e.g. when uid is null).
- *                      Receives `onNext` and `onError` callbacks that are already guarded.
- * @param deps - Dependency array for when to re-subscribe.
- */
-export function useFirestoreListener<T>(
-  key: string,
-  subscribeFn:
-    | ((
-        onNext: (data: T) => void,
-        onError: (err: Error) => void
-      ) => (() => void) | undefined)
-    | null,
-  deps: React.DependencyList
-): { data: T | undefined; loading: boolean; error: Error | null } {
-  const [data, setData] = useState<T | undefined>(undefined);
-  const [loading, setLoading] = useState<boolean>(!!subscribeFn);
-  const [error, setError] = useState<Error | null>(null);
+export type FirestoreUnsubscribe = () => void;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!subscribeFn) {
-      setData(undefined);
-      setLoading(false);
-      setError(null);
+export type FirestoreSubscribeFactory<T> = (
+  onNext: (data: T) => void,
+  onError: (err: Error) => void
+) => FirestoreUnsubscribe | undefined;
+
+export interface FirestoreListenerSnapshot<T> {
+  data: T | undefined;
+  loading: boolean;
+  error: Error | null;
+}
+
+const TEARDOWN_DELAY_MS = 250;
+
+type StoreListener = () => void;
+
+class FirestoreListenerStore<T> {
+  private snapshot: FirestoreListenerSnapshot<T>;
+  private readonly serverSnapshot: FirestoreListenerSnapshot<T>;
+  private readonly listeners = new Set<StoreListener>();
+  private unsubscribe: FirestoreUnsubscribe | undefined;
+  private teardownTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor(
+    private readonly key: string,
+    private subscribeFactory: FirestoreSubscribeFactory<T>,
+    initialData: T | undefined
+  ) {
+    this.snapshot = {
+      data: initialData,
+      loading: true,
+      error: null,
+    };
+    this.serverSnapshot = this.snapshot;
+  }
+
+  updateFactory(subscribeFactory: FirestoreSubscribeFactory<T>) {
+    this.subscribeFactory = subscribeFactory;
+  }
+
+  getSnapshot = () => this.snapshot;
+
+  getServerSnapshot = () => this.serverSnapshot;
+
+  subscribe = (listener: StoreListener) => {
+    this.listeners.add(listener);
+
+    if (this.teardownTimer) {
+      clearTimeout(this.teardownTimer);
+      this.teardownTimer = undefined;
+    }
+
+    this.start();
+
+    return () => {
+      this.listeners.delete(listener);
+      if (this.listeners.size === 0) {
+        this.scheduleStop();
+      }
+    };
+  };
+
+  private start() {
+    if (this.unsubscribe) return;
+
+    logger.debug(`[FirestoreStore:${this.key}] subscribing`);
+    this.setSnapshot({
+      data: this.snapshot.data,
+      loading: true,
+      error: null,
+    });
+
+    try {
+      const unsubscribe = this.subscribeFactory(
+        (data) => {
+          this.setSnapshot({ data, loading: false, error: null });
+        },
+        (error) => {
+          logger.error(`[FirestoreStore:${this.key}] listener error`, error);
+          this.setSnapshot({
+            data: this.snapshot.data,
+            loading: false,
+            error,
+          });
+        }
+      );
+
+      if (!unsubscribe) {
+        this.setSnapshot({
+          data: undefined,
+          loading: false,
+          error: null,
+        });
+        return;
+      }
+
+      this.unsubscribe = unsubscribe;
+    } catch (error) {
+      const normalizedError =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(`[FirestoreStore:${this.key}] subscribe failed`, normalizedError);
+      this.setSnapshot({
+        data: this.snapshot.data,
+        loading: false,
+        error: normalizedError,
+      });
+    }
+  }
+
+  private scheduleStop() {
+    if (this.teardownTimer) return;
+
+    this.teardownTimer = setTimeout(() => {
+      this.teardownTimer = undefined;
+      if (this.listeners.size > 0) return;
+      this.stop();
+      listenerStores.delete(this.key);
+    }, TEARDOWN_DELAY_MS);
+  }
+
+  private stop() {
+    if (!this.unsubscribe) return;
+    logger.debug(`[FirestoreStore:${this.key}] unsubscribing`);
+    this.unsubscribe();
+    this.unsubscribe = undefined;
+  }
+
+  private setSnapshot(nextSnapshot: FirestoreListenerSnapshot<T>) {
+    if (
+      Object.is(this.snapshot.data, nextSnapshot.data) &&
+      this.snapshot.loading === nextSnapshot.loading &&
+      Object.is(this.snapshot.error, nextSnapshot.error)
+    ) {
       return;
     }
 
-    let active = true;
-    setLoading(true);
-    setError(null);
+    this.snapshot = nextSnapshot;
+    this.listeners.forEach((listener) => listener());
+  }
+}
 
-    logger.debug(`[Firestore:${key}] subscribing`);
+const listenerStores = new Map<string, FirestoreListenerStore<unknown>>();
 
-    const unsubscribe = subscribeFn(
-      (nextData) => {
-        if (!active) return;
-        setData(nextData);
-        setLoading(false);
-      },
-      (err) => {
-        if (!active) return;
-        logger.error(`[Firestore:${key}] listener error`, err);
-        setError(err);
-        setLoading(false);
-      }
-    );
+function getOrCreateListenerStore<T>(
+  key: string,
+  subscribeFactory: FirestoreSubscribeFactory<T>,
+  initialData: T | undefined
+): FirestoreListenerStore<T> {
+  const existingStore = listenerStores.get(key);
+  if (existingStore) {
+    const typedStore = existingStore as FirestoreListenerStore<T>;
+    typedStore.updateFactory(subscribeFactory);
+    return typedStore;
+  }
 
-    return () => {
-      active = false;
-      logger.debug(`[Firestore:${key}] unsubscribing`);
-      unsubscribe?.();
-    };
-  }, deps);
+  const store = new FirestoreListenerStore(key, subscribeFactory, initialData);
+  listenerStores.set(key, store as FirestoreListenerStore<unknown>);
+  return store;
+}
 
-  return { data, loading, error };
+export function useFirestoreListener<T>(
+  key: string | null | undefined,
+  subscribeFactory: FirestoreSubscribeFactory<T> | null | undefined,
+  initialData?: T
+): FirestoreListenerSnapshot<T> {
+  const store = useMemo(() => {
+    if (!key || !subscribeFactory) return null;
+    return getOrCreateListenerStore(key, subscribeFactory, initialData);
+  }, [key, subscribeFactory, initialData]);
+
+  const disabledSnapshot = useMemo<FirestoreListenerSnapshot<T>>(
+    () => ({
+      data: initialData,
+      loading: false,
+      error: null,
+    }),
+    [initialData]
+  );
+
+  return useSyncExternalStore(
+    store?.subscribe ?? (() => () => undefined),
+    store?.getSnapshot ?? (() => disabledSnapshot),
+    store?.getServerSnapshot ?? (() => disabledSnapshot)
+  );
 }
 
 /**
@@ -80,15 +199,16 @@ export function useStableUid(user: { uid: string } | null | undefined): string |
 }
 
 /**
- * Creates a ref-stable version of a callback to avoid dependency churn.
- * The returned function always calls the latest version of `fn`.
+ * Creates a ref-stable callback for event handlers that need the latest closure.
  */
-export function useStableCallback<T extends (...args: never[]) => unknown>(fn: T): T {
-  const ref = useRef<T>(fn);
-  ref.current = fn;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useCallback(
-    ((...args: Parameters<T>) => ref.current(...args)) as T,
-    []
-  );
+export function useStableCallback<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => TResult
+): (...args: TArgs) => TResult {
+  const ref = useRef(fn);
+
+  useEffect(() => {
+    ref.current = fn;
+  }, [fn]);
+
+  return useCallback((...args: TArgs) => ref.current(...args), []);
 }

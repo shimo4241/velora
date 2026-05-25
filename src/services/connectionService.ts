@@ -130,6 +130,91 @@ export function normalizeContactRequest(id: string, data: DocumentData): Contact
   };
 }
 
+export interface PublicRelationshipState {
+  relationship: {
+    status: "connected" | "pending_sent" | "pending_received" | "blocked" | "blocked_by" | "none";
+    connectionId?: string;
+    requestId?: string;
+  };
+  notes: string;
+  selectedTags: string[];
+  locationName: string;
+  eventName: string;
+}
+
+interface RelationshipDocument {
+  id: string;
+  status?: string;
+  personalNote: string;
+  notes: string;
+  tags: string[];
+  locationName: string;
+  eventName: string;
+}
+
+export const EMPTY_PUBLIC_RELATIONSHIP_STATE: PublicRelationshipState = {
+  relationship: { status: "none" },
+  notes: "",
+  selectedTags: [],
+  locationName: "",
+  eventName: "",
+};
+
+function normalizeRelationshipDocument(id: string, data: DocumentData): RelationshipDocument {
+  return {
+    id,
+    status: asString(data.status),
+    personalNote: asString(data.personalNote),
+    notes: asString(data.notes),
+    tags: Array.isArray(data.tags) ? data.tags.map((tag) => String(tag)) : [],
+    locationName: asString(data.locationName),
+    eventName: asString(data.eventName || data.event),
+  };
+}
+
+function resolvePublicRelationshipState(params: {
+  targetUserId: string;
+  sentRequest: RelationshipDocument | null;
+  receivedRequest: RelationshipDocument | null;
+  connection: RelationshipDocument | null;
+  networkDoc: RelationshipDocument | null;
+}): PublicRelationshipState {
+  const { targetUserId, sentRequest, receivedRequest, connection, networkDoc } = params;
+  const connectedDoc =
+    networkDoc && (networkDoc.status === "connected" || networkDoc.status === "accepted")
+      ? networkDoc
+      : connection;
+
+  if (connectedDoc) {
+    return {
+      relationship: {
+        status: "connected",
+        connectionId: connectedDoc === networkDoc ? targetUserId : connectedDoc.id,
+      },
+      notes: connectedDoc.personalNote || connectedDoc.notes,
+      selectedTags: connectedDoc.tags,
+      locationName: connectedDoc.locationName,
+      eventName: connectedDoc.eventName,
+    };
+  }
+
+  if (sentRequest?.status === "pending") {
+    return {
+      ...EMPTY_PUBLIC_RELATIONSHIP_STATE,
+      relationship: { status: "pending_sent", requestId: sentRequest.id },
+    };
+  }
+
+  if (receivedRequest?.status === "pending") {
+    return {
+      ...EMPTY_PUBLIC_RELATIONSHIP_STATE,
+      relationship: { status: "pending_received", requestId: receivedRequest.id },
+    };
+  }
+
+  return EMPTY_PUBLIC_RELATIONSHIP_STATE;
+}
+
 export const connectionConverter: FirestoreDataConverter<VeloraConnection> = {
   toFirestore(conn: VeloraConnection): DocumentData {
     return conn;
@@ -463,6 +548,129 @@ export async function getRelationshipStatus(
     logger.error("Error in getRelationshipStatus:", error);
     return { status: "none" };
   }
+}
+
+export function onNetworkConnectionStatusChange(
+  currentUserId: string,
+  targetUserId: string,
+  callback: (isConnected: boolean) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+    callback(false);
+    return () => undefined;
+  }
+
+  return onSnapshot(
+    doc(db, "users", currentUserId, "network", targetUserId),
+    (snapshot) => callback(snapshot.exists()),
+    (error) => {
+      logger.error(
+        `[Firestore Error] Network connection status failed uid=${currentUserId} target=${targetUserId}`,
+        error
+      );
+      onError?.(error);
+    }
+  );
+}
+
+export function onPublicRelationshipChange(
+  currentUserId: string,
+  targetUserId: string,
+  callback: (state: PublicRelationshipState) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+    callback(EMPTY_PUBLIC_RELATIONSHIP_STATE);
+    return () => undefined;
+  }
+
+  let active = true;
+  let sentRequest: RelationshipDocument | null = null;
+  let receivedRequest: RelationshipDocument | null = null;
+  let connection: RelationshipDocument | null = null;
+  let networkDoc: RelationshipDocument | null = null;
+
+  const notify = () => {
+    if (!active) return;
+    callback(
+      resolvePublicRelationshipState({
+        targetUserId,
+        sentRequest,
+        receivedRequest,
+        connection,
+        networkDoc,
+      })
+    );
+  };
+
+  const sentRequestRef = doc(db, "contact_requests", `${currentUserId}_${targetUserId}`);
+  const receivedRequestRef = doc(db, "contact_requests", `${targetUserId}_${currentUserId}`);
+  const connectionQuery = query(
+    collection(db, "connections"),
+    where("userId", "==", currentUserId),
+    where("connectedUserId", "==", targetUserId),
+    limit(1)
+  );
+  const networkDocRef = doc(db, "users", currentUserId, "network", targetUserId);
+
+  const unsubSentRequest = onSnapshot(
+    sentRequestRef,
+    (snapshot) => {
+      sentRequest = snapshot.exists() ? normalizeRelationshipDocument(snapshot.id, snapshot.data()) : null;
+      notify();
+    },
+    (error) => {
+      logger.error(`[PublicRelationship] sent request listener failed ${currentUserId}_${targetUserId}`, error);
+      onError?.(error);
+    }
+  );
+
+  const unsubReceivedRequest = onSnapshot(
+    receivedRequestRef,
+    (snapshot) => {
+      receivedRequest = snapshot.exists() ? normalizeRelationshipDocument(snapshot.id, snapshot.data()) : null;
+      notify();
+    },
+    (error) => {
+      logger.error(`[PublicRelationship] received request listener failed ${targetUserId}_${currentUserId}`, error);
+      onError?.(error);
+    }
+  );
+
+  const unsubConnection = onSnapshot(
+    connectionQuery,
+    (snapshot) => {
+      connection = !snapshot.empty
+        ? normalizeRelationshipDocument(snapshot.docs[0].id, snapshot.docs[0].data())
+        : null;
+      notify();
+    },
+    (error) => {
+      logger.error(`[PublicRelationship] connection listener failed uid=${currentUserId} target=${targetUserId}`, error);
+      onError?.(error);
+    }
+  );
+
+  const unsubNetworkDoc = onSnapshot(
+    networkDocRef,
+    (snapshot) => {
+      networkDoc = snapshot.exists() ? normalizeRelationshipDocument(snapshot.id, snapshot.data()) : null;
+      notify();
+    },
+    (error) => {
+      logger.error(`[PublicRelationship] network doc listener failed uid=${currentUserId} target=${targetUserId}`, error);
+      onError?.(error);
+    }
+  );
+
+  return () => {
+    active = false;
+    unsubSentRequest();
+    unsubReceivedRequest();
+    unsubConnection();
+    unsubNetworkDoc();
+  };
 }
 
 export async function sendContactRequest(params: {

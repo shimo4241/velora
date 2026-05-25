@@ -52,7 +52,7 @@ export class AppErrorBoundary extends Component<Props, State> {
               Nous avons rencontré un problème lors du chargement de cet onglet. Veuillez réinitialiser ou rafraîchir.
             </p>
             <GoldButton onClick={this.handleReset} fullWidth size="sm">
-              Réinitialiser l'onglet
+              Réinitialiser l&apos;onglet
             </GoldButton>
           </GlassCard>
         </div>

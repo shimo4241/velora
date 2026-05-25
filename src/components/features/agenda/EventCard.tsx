@@ -2,12 +2,12 @@
 import { logger } from "@/lib/logger";
 
 
-import React, { useState, useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { toggleEventInterest, subscribeToEventAttendees } from "@/services";
+import React, { useCallback, useState } from "react";
+import Image from "next/image";
+import { toggleEventInterest, subscribeToAttendeeStatus, subscribeToEventAttendees } from "@/services";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
 import { useTranslation } from "@/lib/i18n";
 import { VeloraEvent, EventAttendee } from "@/types";
 import { CategoryBadge } from "./CategoryBadge";
@@ -21,6 +21,8 @@ interface EventCardProps {
   onTap: () => void;
   className?: string;
 }
+
+const EMPTY_ATTENDEES: EventAttendee[] = [];
 
 export const downloadIcsFile = (event: VeloraEvent) => {
   const title = event.title;
@@ -62,59 +64,25 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onTap, className = 
   const { user } = useAuth();
   const { profile } = useProfile();
   const { t, locale, isRtl } = useTranslation();
-
-  const [isInterested, setIsInterested] = useState(false);
-  const [attendees, setAttendees] = useState<EventAttendee[]>([]);
   const [toggleLoading, setToggleLoading] = useState(false);
 
   const uid = user?.uid ?? null;
+  const attendeeStatus = useFirestoreListener<EventAttendee | null>(
+    uid && event.id ? `event:${event.id}:attendee:${uid}` : null,
+    uid && event.id
+      ? (onNext, onError) => subscribeToAttendeeStatus(event.id, uid, onNext, onError)
+      : null,
+    null
+  );
+  const attendeesSnapshot = useFirestoreListener<EventAttendee[]>(
+    event.id ? `event:${event.id}:attendees` : null,
+    event.id ? (onNext, onError) => subscribeToEventAttendees(event.id, onNext, onError) : null,
+    EMPTY_ATTENDEES
+  );
+  const isInterested = Boolean(attendeeStatus.data);
+  const attendees = attendeesSnapshot.data ?? EMPTY_ATTENDEES;
 
-  // Subscribe to user interest
-  useEffect(() => {
-    if (!uid || !event.id) {
-      setIsInterested(false);
-      return;
-    }
-    let active = true;
-    const attendeeId = `${event.id}_${uid}`;
-    const docRef = doc(db, "event_attendees", attendeeId);
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snap) => {
-        if (!active) return;
-        setIsInterested(snap.exists());
-      },
-      (err) => {
-        logger.error(`[EventCard] Error subscribing to interest for user ${uid} and event ${event.id}:`, err);
-      }
-    );
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [uid, event.id]);
-
-  // Subscribe to attendees
-  useEffect(() => {
-    if (!event.id) return;
-    let active = true;
-    const unsubscribe = subscribeToEventAttendees(
-      event.id,
-      (data) => {
-        if (!active) return;
-        setAttendees(data);
-      },
-      (err) => {
-        logger.error(`[EventCard] Error subscribing to attendees for event ${event.id}:`, err);
-      }
-    );
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [event.id]);
-
-  const handleInterestClick = async (e: React.MouseEvent) => {
+  const handleInterestClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user || !profile) {
       // Redirect to login or show simple feedback (tapped profile works similarly)
@@ -128,20 +96,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onTap, className = 
     } finally {
       setToggleLoading(false);
     }
-  };
+  }, [event.id, isInterested, profile, user]);
 
-  const handleCalendarClick = (e: React.MouseEvent) => {
+  const handleCalendarClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     downloadIcsFile(event);
-  };
+  }, [event]);
 
-  const handleMapsClick = (e: React.MouseEvent) => {
+  const handleMapsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     const queryStr = event.mapsUrl || (event.lat && event.lng 
       ? `https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.title + ", " + event.venue + ", " + event.city)}`);
     window.open(queryStr, "_blank");
-  };
+  }, [event]);
 
   const formatEventDate = (dateStr: string) => {
     try {
@@ -173,12 +141,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onTap, className = 
     >
       {/* Event Banner */}
       <div className="event-banner relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={event.imageUrl}
           alt={event.title}
-          className="transition-transform duration-700 group-hover:scale-105"
-          loading="lazy"
+          fill
+          sizes="(max-width: 768px) 100vw, 420px"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
         {/* Badges Overlaid on Image */}
@@ -200,12 +168,15 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onTap, className = 
         {/* Organizer info */}
         <div className="flex items-center gap-2 mb-3">
           {event.organizerAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={event.organizerAvatarUrl}
-              alt={event.organizer}
-              className="w-5 h-5 rounded-full object-cover border border-white/10"
-            />
+            <span className="relative block h-5 w-5 overflow-hidden rounded-full border border-white/10">
+              <Image
+                src={event.organizerAvatarUrl}
+                alt={event.organizer}
+                fill
+                sizes="20px"
+                className="object-cover"
+              />
+            </span>
           ) : (
             <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] text-velora-gold font-bold">
               {event.organizer.slice(0, 1).toUpperCase()}

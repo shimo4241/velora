@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -469,13 +470,12 @@ export function ProfileScreen({ onNavigate }: { onNavigate?: (tab: AppTab) => vo
 
                   {/* Activity picture placeholder */}
                   <div className="mt-2.5 relative h-12 w-full overflow-hidden rounded-lg border border-white/5 bg-white/5">
-                    <img
+                    <Image
                       src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60"
                       alt="Activity visualization"
-                      className="h-full w-full object-cover opacity-50"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 220px"
+                      className="object-cover opacity-50"
                     />
                   </div>
                 </div>
@@ -566,13 +566,12 @@ export function ProfileScreen({ onNavigate }: { onNavigate?: (tab: AppTab) => vo
                       <div className="grid grid-cols-2 gap-1 mt-1">
                         {effectivePortfolio.slice(0, 2).map((item, i) => (
                           <div key={item.id} className="relative aspect-video rounded overflow-hidden border border-white/5 bg-white/5">
-                            <img
+                            <Image
                               src={item.imageUrl || PROJECT_FALLBACKS[i % PROJECT_FALLBACKS.length]}
                               alt={item.title}
-                              className="h-full w-full object-cover opacity-80"
-                              onError={(e) => {
-                                e.currentTarget.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=60";
-                              }}
+                              fill
+                              sizes="(max-width: 768px) 45vw, 220px"
+                              className="object-cover opacity-80"
                             />
                           </div>
                         ))}
@@ -764,7 +763,6 @@ function OwnerCommandDock({
     </Reveal>
   );
 }
-
 
 
 

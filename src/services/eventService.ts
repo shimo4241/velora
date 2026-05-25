@@ -280,7 +280,8 @@ export async function checkInToEvent(
 export function subscribeToAttendeeStatus(
   eventId: string,
   userId: string,
-  callback: (attendee: EventAttendee | null) => void
+  callback: (attendee: EventAttendee | null) => void,
+  onError?: (err: Error) => void
 ): Unsubscribe {
   const docRef = doc(db, "event_attendees", `${eventId}_${userId}`);
   return onSnapshot(
@@ -294,6 +295,7 @@ export function subscribeToAttendeeStatus(
     },
     (error) => {
       logger.error(`[Firestore Error] subscribeToAttendeeStatus failed for eventId=${eventId} userId=${userId}`, error);
+      onError?.(error);
     }
   );
 }

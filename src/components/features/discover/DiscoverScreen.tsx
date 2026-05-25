@@ -42,23 +42,6 @@ export function DiscoverScreen() {
 
   if (!isProfileReady || !profile) return null;
 
-  // Filter lists based on search query
-  const filteredNearby = nearbyUsers.filter((u) => {
-    const search = query.toLowerCase().trim();
-    if (!search) return true;
-    const name = u.fullName || "";
-    const title = u.title || "";
-    return name.toLowerCase().includes(search) || title.toLowerCase().includes(search);
-  });
-
-  const filteredGlobal = globalUsers.filter((u) => {
-    const search = query.toLowerCase().trim();
-    if (!search) return true;
-    const name = u.fullName || "";
-    const title = u.title || "";
-    return name.toLowerCase().includes(search) || title.toLowerCase().includes(search);
-  });
-
   return (
     <div className="discover-screen min-h-screen pb-28 text-velora-text">
       {/* Ambient gold glow at top */}

@@ -1,8 +1,7 @@
 "use client";
-import { logger } from "@/lib/logger";
 
-
-import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { useState } from "react";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinary";
 
 interface OptimizedImageProps {
@@ -13,91 +12,72 @@ interface OptimizedImageProps {
   style?: React.CSSProperties;
 }
 
-export function OptimizedImage({
-  src,
+function getInitials(name: string): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+function getSizes(type: OptimizedImageProps["type"]) {
+  if (type === "avatar") return "96px";
+  if (type === "cover") return "100vw";
+  return "(max-width: 768px) 100vw, 50vw";
+}
+
+function shouldBypassOptimization(src: string) {
+  return src.startsWith("blob:") || src.startsWith("data:");
+}
+
+function FallbackImage({
   type,
-  alt = "",
-  className = "",
+  alt,
+  className,
   style,
-}: OptimizedImageProps) {
-  const [prevSrc, setPrevSrc] = useState(src);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  if (src !== prevSrc) {
-    setPrevSrc(src);
-    setLoaded(false);
-    setError(false);
-  }
-
-  // 1. Sync checks for cached images on mount or src change
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    if (img.complete) {
-      if (img.naturalWidth === 0) {
-        setError(true);
-      } else {
-        setLoaded(true);
-      }
-    }
-  }, [src]);
-
-  // 2. Loading Timeout Fallback: force loaded state if stuck > 3.5s to bypass skeletons
-  useEffect(() => {
-    if (!src || loaded || error) return;
-
-    const timer = setTimeout(() => {
-      logger.warn(`[OptimizedImage] Loading timeout triggered for: ${src}`);
-      setLoaded(true);
-    }, 3500);
-
-    return () => clearTimeout(timer);
-  }, [src, loaded, error]);
-
-  const getInitials = (name: string): string => {
-    if (!name) return "";
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-  };
-
-  const renderFallback = () => {
-    if (type === "avatar") {
-      const initials = getInitials(alt || "U");
-      return (
-        <div
-          className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,var(--color-velora-gold-dim),transparent_48%),var(--color-velora-dark)] font-[family-name:var(--font-display)] font-semibold text-[var(--identity-accent,var(--color-velora-gold))] text-3xl ${className}`}
-          style={style}
-        >
-          {initials}
-        </div>
-      );
-    }
-
+}: Required<Pick<OptimizedImageProps, "type" | "alt" | "className">> &
+  Pick<OptimizedImageProps, "style">) {
+  if (type === "avatar") {
+    const initials = getInitials(alt || "U");
     return (
       <div
-        className={`bg-velora-surface/40 flex items-center justify-center text-velora-text-muted ${className}`}
+        className={`flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_20%,var(--color-velora-gold-dim),transparent_48%),var(--color-velora-dark)] font-[family-name:var(--font-display)] font-semibold text-[var(--identity-accent,var(--color-velora-gold))] text-3xl ${className}`}
         style={style}
       >
-        <span className="text-[10px] uppercase tracking-wider font-semibold">No Image</span>
+        {initials}
       </div>
     );
-  };
-
-  if (!src) {
-    return renderFallback();
   }
 
-  // Optimize URLs using Cloudinary delivery features
-  const optimizedUrl = getOptimizedCloudinaryUrl(src, type);
-  const placeholderUrl = getOptimizedCloudinaryUrl(src, "placeholder");
+  return (
+    <div
+      className={`bg-velora-surface/40 flex items-center justify-center text-velora-text-muted ${className}`}
+      style={style}
+    >
+      <span className="text-[10px] uppercase tracking-wider font-semibold">No Image</span>
+    </div>
+  );
+}
+
+function OptimizedImageFrame({
+  optimizedUrl,
+  placeholderUrl,
+  type,
+  alt,
+  className,
+  style,
+}: {
+  optimizedUrl: string;
+  placeholderUrl: string;
+  type: OptimizedImageProps["type"];
+  alt: string;
+  className: string;
+  style?: React.CSSProperties;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
   return (
     <div className={`relative overflow-hidden ${className}`} style={style}>
-      {/* 1. Blurred Tiny Placeholder */}
       {!loaded && !error && (
         <div
           className="absolute inset-0 bg-cover bg-center blur-md scale-105 transition-opacity duration-500 ease-out"
@@ -105,18 +85,17 @@ export function OptimizedImage({
         />
       )}
 
-      {/* 2. Premium Shimmer Skeleton Loader */}
       {!loaded && !error && (
         <div className="premium-skeleton absolute inset-0 w-full h-full pointer-events-none" />
       )}
 
-      {/* 3. Main Image with elegant fade-in */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imgRef}
+      <Image
         src={optimizedUrl}
         alt={alt}
-        className={`h-full w-full object-cover transition-all duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        fill
+        sizes={getSizes(type)}
+        unoptimized={shouldBypassOptimization(optimizedUrl)}
+        className={`object-cover transition-all duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
           loaded && !error ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[1.03] blur-[4px]"
         }`}
         onLoad={() => {
@@ -127,15 +106,40 @@ export function OptimizedImage({
           setError(true);
           setLoaded(true);
         }}
-        loading="lazy"
       />
 
-      {/* 4. Error State Fallback */}
       {error && (
         <div className="absolute inset-0 h-full w-full">
-          {renderFallback()}
+          <FallbackImage type={type} alt={alt} className={className} style={style} />
         </div>
       )}
     </div>
+  );
+}
+
+export function OptimizedImage({
+  src,
+  type,
+  alt = "",
+  className = "",
+  style,
+}: OptimizedImageProps) {
+  if (!src) {
+    return <FallbackImage type={type} alt={alt} className={className} style={style} />;
+  }
+
+  const optimizedUrl = getOptimizedCloudinaryUrl(src, type);
+  const placeholderUrl = getOptimizedCloudinaryUrl(src, "placeholder");
+
+  return (
+    <OptimizedImageFrame
+      key={optimizedUrl}
+      optimizedUrl={optimizedUrl}
+      placeholderUrl={placeholderUrl}
+      type={type}
+      alt={alt}
+      className={className}
+      style={style}
+    />
   );
 }

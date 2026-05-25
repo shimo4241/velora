@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import type { UploadOptions } from "@/services/cloudinaryService";
 
 import type {
   AvailabilityStatus,
@@ -321,9 +322,9 @@ export function ProfileEditorSheet({
   onSaveProfile: (data: Partial<Omit<VeloraProfile, "id" | "username">>) => Promise<void>;
   onSavePortfolio: (items: PortfolioItem[]) => Promise<void>;
   onSaveExperience: (items: ExperienceEntry[]) => Promise<void>;
-  onUploadAvatar: (file: File, options?: any) => Promise<string>;
-  onUploadCover: (file: File, options?: any) => Promise<string>;
-  onUploadPortfolioImage: (file: File, options?: any) => Promise<string>;
+  onUploadAvatar: (file: File, options?: UploadOptions) => Promise<string>;
+  onUploadCover: (file: File, options?: UploadOptions) => Promise<string>;
+  onUploadPortfolioImage: (file: File, options?: UploadOptions) => Promise<string>;
 }) {
   return (
     <AnimatePresence>

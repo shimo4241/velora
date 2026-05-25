@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { VeloraProfile } from "@/types";
 import {
-  ContactAction,
   IdentityTheme,
   LUXURY_EASE,
   Reveal,

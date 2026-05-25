@@ -34,8 +34,6 @@ import type { VeloraProfile, ProfileService as ProfileServiceType } from "@/type
 import {
   uploadAvatarImage,
   uploadCoverImage,
-  updatePortfolioItem,
-  updateExperienceEntry,
   type UploadOptions,
 } from "./cloudinaryService";
 import { deleteImageFromCloudinary } from "@/lib/cloudinary";

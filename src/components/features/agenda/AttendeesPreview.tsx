@@ -3,6 +3,7 @@ import { logger } from "@/lib/logger";
 
 
 import React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { EventAttendee } from "@/types";
 import { useTranslation } from "@/lib/i18n";
@@ -58,15 +59,16 @@ export const AttendeesPreview: React.FC<AttendeesPreviewProps> = ({
             <button
               key={attendee.id}
               onClick={(e) => handleAttendeeClick(attendee, e)}
-              className="relative inline-block h-8 w-8 rounded-full border border-black bg-velora-black focus:outline-none focus:ring-1 focus:ring-velora-gold transition-transform hover:scale-110 hover:z-10"
+              className="relative inline-block h-8 w-8 overflow-hidden rounded-full border border-black bg-velora-black focus:outline-none focus:ring-1 focus:ring-velora-gold transition-transform hover:scale-110 hover:z-10"
               title={attendee.userName}
             >
               {hasAvatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={attendee.userAvatarUrl}
                   alt={attendee.userName}
-                  className="h-full w-full rounded-full object-cover"
+                  fill
+                  sizes="32px"
+                  className="object-cover"
                 />
               ) : (
                 <span className="flex h-full w-full items-center justify-center rounded-full bg-velora-gold/15 text-[10px] font-bold text-velora-gold">

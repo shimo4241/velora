@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import fr from "../locales/fr.json";
 import en from "../locales/en.json";
 import ar from "../locales/ar.json";
@@ -53,36 +53,38 @@ export function setAppLocale(lang: Locale) {
   }
 }
 
+function isLocale(value: string | null | undefined): value is Locale {
+  return value === "fr" || value === "ar" || value === "en" || value === "es";
+}
+
+function subscribeToLocaleChange(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener("velora_locale_change", onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener("velora_locale_change", onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getLocaleSnapshot(defaultLocale: Locale): Locale {
+  if (typeof window === "undefined") return defaultLocale;
+  const saved = localStorage.getItem("velora_lang");
+  return isLocale(saved) ? saved : defaultLocale;
+}
+
 /**
  * React hook for translations. Reacts to locale changes.
  */
 export function useTranslation(defaultLocale: Locale = "fr") {
-  const [activeLocale, setActiveLocale] = useState<Locale>(defaultLocale);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("velora_lang") as Locale;
-    if (saved && locales[saved] && saved !== defaultLocale) {
-      setActiveLocale(saved);
-    }
-
-    const handleLocaleChange = (e: Event) => {
-      const customEvent = e as CustomEvent<Locale>;
-      if (customEvent.detail && locales[customEvent.detail]) {
-        setActiveLocale(customEvent.detail);
-      }
-    };
-
-    window.addEventListener("velora_locale_change", handleLocaleChange);
-    return () => {
-      window.removeEventListener("velora_locale_change", handleLocaleChange);
-    };
-  }, [defaultLocale]);
-
-  const t = createTranslator(activeLocale);
+  const activeLocale = useSyncExternalStore(
+    subscribeToLocaleChange,
+    () => getLocaleSnapshot(defaultLocale),
+    () => defaultLocale
+  );
+  const t = useMemo(() => createTranslator(activeLocale), [activeLocale]);
   const isRtl = activeLocale === "ar";
   const dir = isRtl ? "rtl" : "ltr";
 
   return { t, locale: activeLocale, getGreetingKey, isRtl, dir };
 }
-

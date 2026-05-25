@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslation } from "@/lib/i18n";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, X, Clipboard, ExternalLink } from "lucide-react";
 import { useToast } from "@/providers/ToastProvider";

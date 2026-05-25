@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 import { useToast } from "@/providers/ToastProvider";
@@ -171,11 +172,12 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
         <div className="flex-1 overflow-y-auto pb-32">
           {/* Hero Banner */}
           <div className="event-detail-hero relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={event.imageUrl}
               alt={event.title}
-              className="w-full h-full object-cover"
+              fill
+              sizes="100vw"
+              className="object-cover"
             />
             
             {/* Dark gradient overlay is applied via globals.css .event-detail-hero::after */}
@@ -192,12 +194,15 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
             {/* Organizer */}
             <div className="flex items-center gap-2.5 mb-3.5">
               {event.organizerAvatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={event.organizerAvatarUrl}
-                  alt={event.organizer}
-                  className="w-7 h-7 rounded-full object-cover border border-white/10"
-                />
+                <span className="relative block h-7 w-7 overflow-hidden rounded-full border border-white/10">
+                  <Image
+                    src={event.organizerAvatarUrl}
+                    alt={event.organizer}
+                    fill
+                    sizes="28px"
+                    className="object-cover"
+                  />
+                </span>
               ) : (
                 <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-velora-gold font-bold">
                   {event.organizer.slice(0, 1).toUpperCase()}
@@ -268,12 +273,15 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                       className="flex items-center gap-2.5 p-3 rounded-2xl bg-white/[0.02] border border-white/5"
                     >
                       {speaker.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={speaker.avatarUrl}
-                          alt={speaker.name}
-                          className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/10"
-                        />
+                        <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10">
+                          <Image
+                            src={speaker.avatarUrl}
+                            alt={speaker.name}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        </span>
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-velora-gold shrink-0 font-bold">
                           {speaker.name.slice(0, 1).toUpperCase()}
@@ -300,14 +308,14 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                     {event.galleryUrls.map((url, index) => (
                       <div
                         key={index}
-                        className="w-48 aspect-video rounded-2xl overflow-hidden border border-white/5 bg-white/5"
+                        className="relative w-48 aspect-video rounded-2xl overflow-hidden border border-white/5 bg-white/5"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={url}
                           alt={`Gallery image ${index + 1}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
+                          fill
+                          sizes="192px"
+                          className="object-cover"
                         />
                       </div>
                     ))}
@@ -374,11 +382,12 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                       >
                         <div className="relative h-11 w-11 rounded-full border border-white/10 overflow-hidden bg-velora-black transition-transform group-hover:scale-105 group-active:scale-95">
                           {hasAvatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={attendee.userAvatarUrl}
                               alt={attendee.userName}
-                              className="h-full w-full object-cover"
+                              fill
+                              sizes="44px"
+                              className="object-cover"
                             />
                           ) : (
                             <span className="flex h-full w-full items-center justify-center bg-velora-gold/15 text-xs font-bold text-velora-gold">
@@ -429,11 +438,12 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
                           {/* Avatar */}
                           <div className="relative h-11 w-11 rounded-full border border-white/10 overflow-hidden bg-velora-black shrink-0">
                             {hasAvatar ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
+                              <Image
                                 src={suggestion.avatarUrl}
                                 alt={suggestion.fullName}
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="44px"
+                                className="object-cover"
                               />
                             ) : (
                               <span className="flex h-full w-full items-center justify-center bg-velora-gold/10 text-xs font-bold text-velora-gold">

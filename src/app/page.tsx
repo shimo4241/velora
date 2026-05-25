@@ -199,7 +199,7 @@ function VeloraAppInner() {
     const tab = params.get("tab");
     const target = (tab || screen) as AppTab;
     if (target && appTabs.includes(target)) {
-      handleTabChange(target);
+      window.queueMicrotask(() => handleTabChange(target));
       // Clear URL params to clean address bar
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);

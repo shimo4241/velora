@@ -1,12 +1,14 @@
 "use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { logger } from "@/lib/logger";
-
-
-import { useState, useEffect, useMemo } from "react";
 import { subscribeToEvents } from "@/services";
-import { VeloraEvent, AgendaFilter, EventCategory } from "@/types";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
+import type { AgendaFilter, EventCategory, VeloraEvent } from "@/types";
 import { calculateHaversineDistance } from "@/utils/geolocation";
 import { useProfile } from "@/hooks/useProfile";
+
+const EMPTY_EVENTS: VeloraEvent[] = [];
 
 export function useEvents(
   activeFilter: AgendaFilter,
@@ -14,12 +16,15 @@ export function useEvents(
   selectedCity: string | null = null
 ) {
   const { profile } = useProfile();
-  const [events, setEvents] = useState<VeloraEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const { data, loading, error } = useFirestoreListener<VeloraEvent[]>(
+    "events:approved:all",
+    (onNext, onError) => subscribeToEvents(null, onNext, onError),
+    EMPTY_EVENTS
+  );
+  const events = data ?? EMPTY_EVENTS;
+  const professionalMode = profile?.professionalMode ?? null;
 
-  // Request browser geolocation for local distance calculations
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
 
@@ -32,8 +37,8 @@ export function useEvents(
           lng: position.coords.longitude,
         });
       },
-      (err) => {
-        logger.warn("[useEvents] Local geolocation query failed:", err.message);
+      (geoError) => {
+        logger.warn("[useEvents] Local geolocation query failed:", geoError.message);
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
@@ -43,131 +48,105 @@ export function useEvents(
     };
   }, []);
 
-  // Subscribe to raw approved events from Firestore
-  useEffect(() => {
-    let active = true;
-    const unsubscribe = subscribeToEvents(
-      null, // Fetch all approved events and filter client-side
-      (fetchedEvents) => {
-        if (!active) return;
-        setEvents(fetchedEvents);
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        if (!active) return;
-        setError(err);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, []);
-
-  // Process, filter and sort events
   const processedEvents = useMemo(() => {
-    let result = [...events];
+    let result = events;
 
-    // 1. City Filter
-    if (selectedCity && selectedCity !== "All" && selectedCity !== "Tout" && selectedCity !== "الكل") {
+    if (selectedCity && selectedCity !== "All" && selectedCity !== "Tout" && selectedCity !== "Ø§Ù„ÙƒÙ„") {
       result = result.filter(
-        (e) => e.city.toLowerCase() === selectedCity.toLowerCase()
+        (event) => event.city.toLowerCase() === selectedCity.toLowerCase()
       );
     }
 
-    // 2. Category Filter
     if (selectedCategory) {
-      result = result.filter((e) => e.category === selectedCategory);
+      result = result.filter((event) => event.category === selectedCategory);
     }
 
-    // 3. Compute distance for all events if coordinates available
-    result = result.map((event) => {
-      if (userCoords && event.lat !== undefined && event.lng !== undefined) {
-        const distanceM = calculateHaversineDistance(
-          userCoords.lat,
-          userCoords.lng,
-          event.lat,
-          event.lng
-        );
-        return { ...event, distance: distanceM };
-      }
-      return event;
-    });
+    if (userCoords) {
+      result = result.map((event) => ({
+        ...event,
+        distance: calculateHaversineDistance(userCoords.lat, userCoords.lng, event.lat, event.lng),
+      }));
+    }
 
-    // 4. Apply Time/Status Filters
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
     const dayOfWeek = now.getDay();
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
-    const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 7, 23, 59, 59, 999);
-
+    const endOfWeek = new Date(
+      startOfWeek.getFullYear(),
+      startOfWeek.getMonth(),
+      startOfWeek.getDate() + 7,
+      23,
+      59,
+      59,
+      999
+    );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
     if (activeFilter === "today") {
-      result = result.filter((e) => {
-        const start = new Date(e.date);
-        const end = e.endDate ? new Date(e.endDate) : start;
+      result = result.filter((event) => {
+        const start = new Date(event.date);
+        const end = event.endDate ? new Date(event.endDate) : start;
         return start <= endOfToday && end >= startOfToday;
       });
     } else if (activeFilter === "this-week") {
-      result = result.filter((e) => {
-        const start = new Date(e.date);
-        const end = e.endDate ? new Date(e.endDate) : start;
+      result = result.filter((event) => {
+        const start = new Date(event.date);
+        const end = event.endDate ? new Date(event.endDate) : start;
         return start <= endOfWeek && end >= startOfWeek;
       });
     } else if (activeFilter === "this-month") {
-      result = result.filter((e) => {
-        const start = new Date(e.date);
-        const end = e.endDate ? new Date(e.endDate) : start;
+      result = result.filter((event) => {
+        const start = new Date(event.date);
+        const end = event.endDate ? new Date(event.endDate) : start;
         return start <= endOfMonth && end >= startOfMonth;
       });
     } else if (activeFilter === "nearby") {
-      // Sort by distance ascending, filtering out those without computed distance
-      result = result.filter((e) => e.distance !== undefined);
-      result.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+      result = result
+        .filter((event) => event.distance !== undefined)
+        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
     } else if (activeFilter === "trending") {
-      // Sort by interestedCount desc
-      result.sort((a, b) => (b.interestedCount || 0) - (a.interestedCount || 0));
+      result = [...result].sort((a, b) => (b.interestedCount || 0) - (a.interestedCount || 0));
     }
 
-    // 5. Smart Discovery: Prioritize user's professional mode matches
-    // Only apply prioritization if we are not actively sorting by nearby or trending
-    if (profile?.professionalMode && activeFilter !== "nearby" && activeFilter !== "trending") {
-      const mode = profile.professionalMode;
-
+    if (professionalMode && activeFilter !== "nearby" && activeFilter !== "trending") {
       const isMatch = (event: VeloraEvent) => {
-        const cat = event.category;
-        if (mode === "dentist" && cat === "medical-dental") return true;
+        const category = event.category;
+        if (professionalMode === "dentist" && category === "medical-dental") return true;
         if (
-          (mode === "entrepreneur" || mode === "business" || mode === "corporate" || mode === "luxury") &&
-          (cat === "startup" || cat === "business-summit" || cat === "networking" || cat === "tech-conference")
-        )
+          (professionalMode === "entrepreneur" ||
+            professionalMode === "business" ||
+            professionalMode === "corporate" ||
+            professionalMode === "luxury") &&
+          (category === "startup" ||
+            category === "business-summit" ||
+            category === "networking" ||
+            category === "tech-conference")
+        ) {
           return true;
-        if ((mode === "nightlife" || mode === "vip") && (cat === "nightlife-vip" || cat === "concert")) return true;
+        }
         if (
-          (mode === "creative" || mode === "artist" || mode === "creator") &&
-          (cat === "art-fashion" || cat === "festival" || cat === "exposition")
-        )
+          (professionalMode === "nightlife" || professionalMode === "vip") &&
+          (category === "nightlife-vip" || category === "concert")
+        ) {
           return true;
-        return false;
+        }
+        return (
+          (professionalMode === "creative" ||
+            professionalMode === "artist" ||
+            professionalMode === "creator") &&
+          (category === "art-fashion" || category === "festival" || category === "exposition")
+        );
       };
 
-      result.sort((a, b) => {
-        const matchA = isMatch(a) ? 1 : 0;
-        const matchB = isMatch(b) ? 1 : 0;
-        return matchB - matchA; // Put matching events at the top
-      });
+      result = [...result].sort((a, b) => Number(isMatch(b)) - Number(isMatch(a)));
     }
 
     return result;
-  }, [events, activeFilter, selectedCategory, selectedCity, userCoords, profile]);
+  }, [activeFilter, events, professionalMode, selectedCategory, selectedCity, userCoords]);
 
   return {
     events: processedEvents,

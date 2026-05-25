@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { WifiOff, Loader2, Inbox, RefreshCw } from "lucide-react";
 import { GlassCard, GoldButton } from "@/components/ui";
 import { useTranslation } from "@/lib/i18n";

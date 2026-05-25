@@ -11,7 +11,7 @@ import {
   Phone,
   type LucideIcon,
 } from "lucide-react";
-import type { VeloraProfile, ProfessionalMode, SocialLink } from "@/types";
+import type { VeloraProfile, ProfessionalMode } from "@/types";
 
 export type CssVarStyle = React.CSSProperties & Record<`--${string}`, string>;
 
@@ -45,7 +45,12 @@ export type RelationshipStatus = {
 export type RelationshipSnapshot = {
   id: string;
   status?: string;
-  [key: string]: any;
+  personalNote?: string;
+  notes?: string;
+  tags?: string[];
+  locationName?: string;
+  event?: string;
+  eventName?: string;
 } | null;
 
 export const LUXURY_EASE: Easing = [0.16, 1, 0.3, 1];

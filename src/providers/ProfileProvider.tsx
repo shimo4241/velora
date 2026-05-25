@@ -6,13 +6,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useAuth } from "./AuthProvider";
+import { useFirestoreListener } from "@/hooks/useFirestoreListener";
 import {
   ensureGoogleUserProfile,
   getProfile,
@@ -39,126 +38,160 @@ export interface ProfileContextValue {
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
+interface ProfileBootstrapSnapshot {
+  pending: boolean;
+  error: Error | null;
+}
+
+const idleBootstrapSnapshot: ProfileBootstrapSnapshot = {
+  pending: false,
+  error: null,
+};
+
+type BootstrapListener = () => void;
+
+class ProfileBootstrapStore {
+  private listeners = new Set<BootstrapListener>();
+  private snapshot: ProfileBootstrapSnapshot = { pending: true, error: null };
+  private started = false;
+
+  constructor(
+    private readonly uid: string,
+    private user: Parameters<typeof ensureGoogleUserProfile>[0]
+  ) {}
+
+  updateUser(user: Parameters<typeof ensureGoogleUserProfile>[0]) {
+    this.user = user;
+  }
+
+  getSnapshot = () => this.snapshot;
+
+  getServerSnapshot = () => this.snapshot;
+
+  subscribe = (listener: BootstrapListener) => {
+    this.listeners.add(listener);
+    this.start();
+
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  retry() {
+    if (this.snapshot.pending) return;
+    this.started = false;
+    this.setSnapshot({ pending: true, error: null });
+    this.start();
+  }
+
+  private start() {
+    if (this.started) return;
+    this.started = true;
+
+    logger.debug("[Profile] bootstrap:start", { uid: this.uid });
+
+    void ensureGoogleUserProfile(this.user)
+      .then((profile) => {
+        logger.debug("[Profile] bootstrap:complete", {
+          uid: this.uid,
+          username: profile.username || null,
+        });
+        this.setSnapshot({ pending: false, error: null });
+      })
+      .catch((bootstrapError) => {
+        const error =
+          bootstrapError instanceof Error
+            ? bootstrapError
+            : new Error("Failed to initialize profile");
+        logger.debug("[Profile] bootstrap:error", {
+          uid: this.uid,
+          message: error.message,
+        });
+        this.setSnapshot({ pending: false, error });
+      });
+  }
+
+  private setSnapshot(snapshot: ProfileBootstrapSnapshot) {
+    if (
+      this.snapshot.pending === snapshot.pending &&
+      Object.is(this.snapshot.error, snapshot.error)
+    ) {
+      return;
+    }
+
+    this.snapshot = snapshot;
+    this.listeners.forEach((listener) => listener());
+  }
+}
+
+const profileBootstrapStores = new Map<string, ProfileBootstrapStore>();
+
+function getProfileBootstrapStore(
+  uid: string,
+  user: Parameters<typeof ensureGoogleUserProfile>[0]
+) {
+  const existingStore = profileBootstrapStores.get(uid);
+  if (existingStore) {
+    existingStore.updateUser(user);
+    return existingStore;
+  }
+
+  const store = new ProfileBootstrapStore(uid, user);
+  profileBootstrapStores.set(uid, store);
+  return store;
+}
+
+function useProfileBootstrap(
+  uid: string | null,
+  user: Parameters<typeof ensureGoogleUserProfile>[0] | null,
+  enabled: boolean
+) {
+  const store = useMemo(() => {
+    if (!enabled || !uid || !user) return null;
+    return getProfileBootstrapStore(uid, user);
+  }, [enabled, uid, user]);
+
+  return useSyncExternalStore(
+    store?.subscribe ?? (() => () => undefined),
+    store?.getSnapshot ?? (() => idleBootstrapSnapshot),
+    store?.getServerSnapshot ?? (() => idleBootstrapSnapshot)
+  );
+}
+
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, isAuthReady } = useAuth();
   const uid = user?.uid ?? null;
   const authReady = isAuthReady && !authLoading;
-  const [profileState, setProfileState] = useState<{
-    uid: string | null;
-    profile: VeloraProfile | null;
-    isLoading: boolean;
-    error: Error | null;
-  }>({ uid: null, profile: null, isLoading: false, error: null });
-  const activeUidRef = useRef<string | null>(null);
-  const bootstrapUidRef = useRef<string | null>(null);
+  const profileSnapshot = useFirestoreListener<VeloraProfile | null>(
+    authReady && uid ? `profile:${uid}` : null,
+    authReady && uid
+      ? (onNext, onError) => onProfileChange(uid, onNext, onError)
+      : null,
+    null
+  );
 
-  useEffect(() => {
-    let active = true;
-
-    if (!authReady) {
-      activeUidRef.current = null;
-      logger.debug("[Profile] waiting for auth hydration");
-      return () => {
-        active = false;
-      };
-    }
-
-    if (!uid || !user) {
-      activeUidRef.current = null;
-      bootstrapUidRef.current = null;
-      logger.debug("[Profile] cleared unauthenticated state");
-      return () => {
-        active = false;
-      };
-    }
-
-    activeUidRef.current = uid;
-    logger.debug("[Profile] hydration:start", { uid });
-
-    const unsubscribe = onProfileChange(uid, async (p) => {
-      if (!active) return;
-
-      if (p) {
-        logger.debug("[Profile] hydration:snapshot", {
-          uid,
-          username: p.username || null,
-          profileSetupComplete: p.onboarding?.profileSetupComplete ?? false,
-          productTourComplete: p.onboarding?.productTourComplete ?? false,
-        });
-        setProfileState({ uid, profile: p, isLoading: false, error: null });
-        return;
-      }
-
-      logger.debug("[Profile] hydration:missing profile, bootstrapping", { uid });
-      setProfileState({ uid, profile: null, isLoading: true, error: null });
-
-      if (bootstrapUidRef.current === uid) return;
-      bootstrapUidRef.current = uid;
-
-      try {
-        const bootstrappedProfile = await ensureGoogleUserProfile(user);
-        if (!active) return;
-        logger.debug("[Profile] hydration:bootstrapped", {
-          uid,
-          username: bootstrappedProfile.username || null,
-        });
-        setProfileState({ uid, profile: bootstrappedProfile, isLoading: false, error: null });
-      } catch (bootstrapError) {
-        bootstrapUidRef.current = null;
-        if (!active) return;
-        const normalizedError =
-          bootstrapError instanceof Error
-            ? bootstrapError
-            : new Error("Failed to initialize profile");
-        logger.debug("[Profile] hydration:error", {
-          uid,
-          message: normalizedError.message,
-        });
-        setProfileState({ uid, profile: null, isLoading: false, error: normalizedError });
-      }
-    }, (listenerError) => {
-      if (!active) return;
-      logger.debug("[Profile] hydration:listener error", {
-        uid,
-        message: listenerError.message,
-      });
-      setProfileState({ uid, profile: null, isLoading: false, error: listenerError });
-    });
-
-    return () => {
-      active = false;
-      unsubscribe?.();
-    };
-  }, [authReady, uid, user]);
+  const shouldBootstrapProfile = Boolean(
+    authReady &&
+      uid &&
+      user &&
+      !profileSnapshot.loading &&
+      profileSnapshot.data === null &&
+      !profileSnapshot.error
+  );
+  const bootstrapSnapshot = useProfileBootstrap(uid, user, shouldBootstrapProfile);
 
   const refreshProfile = useCallback(async () => {
-    if (!uid) {
-      setProfileState({ uid: null, profile: null, isLoading: false, error: null });
-      return null;
-    }
-
-    setProfileState((current) => ({
-      uid,
-      profile: current.uid === uid ? current.profile : null,
-      isLoading: true,
-      error: null,
-    }));
+    if (!uid) return null;
 
     try {
       const latestProfile = await getProfile(uid);
       const resolvedProfile = latestProfile || (user ? await ensureGoogleUserProfile(user) : null);
-      if (activeUidRef.current === uid) {
-        setProfileState({ uid, profile: resolvedProfile, isLoading: false, error: null });
-      }
       return resolvedProfile;
     } catch (refreshError) {
       const normalizedError =
         refreshError instanceof Error
           ? refreshError
           : new Error("Failed to refresh profile");
-      if (activeUidRef.current === uid) {
-        setProfileState({ uid, profile: null, isLoading: false, error: normalizedError });
-      }
       throw normalizedError;
     }
   }, [uid, user]);
@@ -183,10 +216,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return firestoreUploadPortfolioImage(uid, file, options);
   }, [uid]);
 
-  const isCurrentProfile = profileState.uid === uid;
-  const profile = authReady && uid && isCurrentProfile ? profileState.profile : null;
-  const error = authReady && uid && isCurrentProfile ? profileState.error : null;
-  const isLoading = !authReady || Boolean(uid && (!isCurrentProfile || profileState.isLoading));
+  const profile = authReady && uid ? profileSnapshot.data ?? null : null;
+  const error = authReady && uid ? profileSnapshot.error || bootstrapSnapshot.error : null;
+  const isLoading = !authReady || Boolean(
+    uid && (profileSnapshot.loading || bootstrapSnapshot.pending || shouldBootstrapProfile)
+  );
   const hasCompletedProfileSetup = Boolean(
     profile?.onboarding?.profileSetupComplete ||
     (profile?.title && (profile?.whatsapp || profile?.phone))

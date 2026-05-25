@@ -1,110 +1,171 @@
 "use client";
+
+import { useCallback, useEffect, useReducer, useRef } from "react";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { logger } from "@/lib/logger";
-
-
-import { useState, useEffect, useRef, useCallback } from "react";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useStableCallback } from "@/hooks/useFirestoreListener";
 import { calculateHaversineDistance, getCoarseCoordinates } from "@/utils/geolocation";
 
 export type PermissionStateExtended = PermissionState | "unsupported";
+
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+interface GeolocationState {
+  permissionState: PermissionStateExtended;
+  coords: Coordinates | null;
+  loading: boolean;
+  error: string | null;
+}
+
+type GeolocationAction =
+  | { type: "permission"; permissionState: PermissionStateExtended }
+  | { type: "request" }
+  | { type: "success"; coords: Coordinates }
+  | { type: "error"; permissionState?: PermissionStateExtended; error: string }
+  | { type: "clear-coords" };
+
+const initialState: GeolocationState = {
+  permissionState: "unsupported",
+  coords: null,
+  loading: false,
+  error: null,
+};
+
+function geolocationReducer(state: GeolocationState, action: GeolocationAction): GeolocationState {
+  switch (action.type) {
+    case "permission":
+      return { ...state, permissionState: action.permissionState };
+    case "request":
+      return { ...state, loading: true, error: null };
+    case "success":
+      return {
+        permissionState: "granted",
+        coords: action.coords,
+        loading: false,
+        error: null,
+      };
+    case "error":
+      return {
+        ...state,
+        permissionState: action.permissionState ?? state.permissionState,
+        loading: false,
+        error: action.error,
+      };
+    case "clear-coords":
+      return { ...state, coords: null };
+    default:
+      return state;
+  }
+}
+
+function getGeolocationErrorMessage(err: GeolocationPositionError) {
+  switch (err.code) {
+    case err.PERMISSION_DENIED:
+      return {
+        permissionState: "denied" as const,
+        error: "Permission de geolocalisation refusee.",
+      };
+    case err.POSITION_UNAVAILABLE:
+      return { error: "Position geographique indisponible." };
+    case err.TIMEOUT:
+      return { error: "Delai d'attente depasse." };
+    default:
+      return { error: err.message };
+  }
+}
 
 export function useGeolocation() {
   const { user } = useAuth();
   const { profile, updateProfile } = useProfile();
   const uid = user?.uid ?? null;
-
-  // Use a ref to make updateProfile stable and prevent geolocation watcher re-runs
-  const updateProfileRef = useRef(updateProfile);
-  useEffect(() => {
-    updateProfileRef.current = updateProfile;
-  }, [updateProfile]);
-
-  const stableUpdateProfile = useCallback(
-    (data: Parameters<typeof updateProfile>[0]) => {
-      return updateProfileRef.current(data);
-    },
-    []
-  );
-
-  // Local permissions & states
-  const [permissionState, setPermissionState] = useState<PermissionStateExtended>("unsupported");
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Ghost mode is derived directly from the profile document
-  const ghostMode = Boolean(profile?.ghostMode);
-
-  // References for battery optimization / throttling
+  const [state, dispatch] = useReducer(geolocationReducer, initialState);
+  const stableUpdateProfile = useStableCallback(updateProfile);
   const watchIdRef = useRef<number | null>(null);
-  const lastUpdateTimeRef = useRef<number>(0);
-  const lastUpdateCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastUpdateTimeRef = useRef(0);
+  const lastUpdateCoordsRef = useRef<Coordinates | null>(null);
 
+  const ghostMode = Boolean(profile?.ghostMode);
   const isSharing = Boolean(profile?.locationSharing);
+  const hasPublicLocation = Boolean(profile?.location_geo_coarse);
+  const publicVisibility = profile?.isVisible;
 
-  // Sync permission state
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      setPermissionState("unsupported");
+      dispatch({ type: "permission", permissionState: "unsupported" });
       return;
     }
 
-    setPermissionState("prompt");
+    dispatch({ type: "permission", permissionState: "prompt" });
+    if (!navigator.permissions?.query) return;
 
-    if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions
-        .query({ name: "geolocation" as PermissionName })
-        .then((result) => {
-          setPermissionState(result.state);
-          result.onchange = () => {
-            setPermissionState(result.state);
-          };
-        })
-        .catch(() => {
-          // Fallback if query fails on some browsers
-          setPermissionState("prompt");
-        });
-    }
+    let active = true;
+    let permissionsStatus: PermissionStatus | null = null;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((result) => {
+        if (!active) return;
+        permissionsStatus = result;
+        dispatch({ type: "permission", permissionState: result.state });
+        result.onchange = () => {
+          dispatch({ type: "permission", permissionState: result.state });
+        };
+      })
+      .catch(() => {
+        if (active) {
+          dispatch({ type: "permission", permissionState: "prompt" });
+        }
+      });
+
+    return () => {
+      active = false;
+      if (permissionsStatus) {
+        permissionsStatus.onchange = null;
+      }
+    };
   }, []);
 
-  // Update Firestore locations with throttle & battery efficiency algorithms
+  const stopWatch = useCallback(() => {
+    if (watchIdRef.current === null || typeof navigator === "undefined") return;
+    navigator.geolocation.clearWatch(watchIdRef.current);
+    watchIdRef.current = null;
+  }, []);
+
   const updateFirebaseLocation = useCallback(
     async (lat: number, lng: number, accuracy?: number) => {
-      if (!uid || ghostMode) return; // Stop live location updates when Ghost Mode is ON
+      if (!uid || ghostMode) return;
 
       const now = Date.now();
       const lastTime = lastUpdateTimeRef.current;
       const lastCoords = lastUpdateCoordsRef.current;
 
-      // 1. Time Check: Minimum interval of 60 seconds
       if (lastTime > 0 && now - lastTime < 60000) {
-        logger.debug("[Geolocation] Update throttled: Less than 60s since last write.");
+        logger.debug("[Geolocation] Update throttled: less than 60s since last write.");
         return;
       }
 
-      // 2. Distance Check: Minimum movement of 80 meters
       if (lastCoords) {
         const distance = calculateHaversineDistance(lastCoords.lat, lastCoords.lng, lat, lng);
         if (distance < 80) {
-          logger.debug(`[Geolocation] Update throttled: Moved only ${distance.toFixed(1)}m (min: 80m).`);
+          logger.debug(`[Geolocation] Update throttled: moved only ${distance.toFixed(1)}m.`);
           return;
         }
       }
 
       try {
-        // A. Store exact raw coordinates securely in owner-only private collection
-        const privateLocRef = doc(db, "users", uid, "private_data", "location");
-        await setDoc(privateLocRef, {
+        await setDoc(doc(db, "users", uid, "private_data", "location"), {
           lat,
           lng,
           accuracy: accuracy || null,
           updatedAt: serverTimestamp(),
         });
 
-        // B. Store rounded coarse coordinates on public user doc only if active & not ghost
         const coarse = getCoarseCoordinates(lat, lng);
         await stableUpdateProfile({
           location_geo_coarse: isSharing && !ghostMode
@@ -117,35 +178,26 @@ export function useGeolocation() {
           isVisible: isSharing && !ghostMode,
         });
 
-        // Update local reference states
         lastUpdateTimeRef.current = now;
         lastUpdateCoordsRef.current = { lat, lng };
-        logger.debug("[Geolocation] Firestore location synchronized successfully.", {
-          ghostMode,
-          isSharing,
-          coarse,
-        });
       } catch (err) {
         logger.error("[Geolocation] Failed to write coordinates to Firestore:", err);
       }
     },
-    [uid, isSharing, ghostMode, stableUpdateProfile]
+    [ghostMode, isSharing, stableUpdateProfile, uid]
   );
 
-  // Watch position callback handlers
   const handleSuccess = useCallback(
     (position: GeolocationPosition) => {
-      const { latitude, longitude, accuracy } = position.coords;
-      const newCoords = { lat: latitude, lng: longitude };
+      const coords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
 
-      setCoords(newCoords);
-      setPermissionState("granted");
-      setLoading(false);
-      setError(null);
+      dispatch({ type: "success", coords });
 
-      // Sync if location sharing is allowed
       if (isSharing) {
-        updateFirebaseLocation(latitude, longitude, accuracy);
+        void updateFirebaseLocation(coords.lat, coords.lng, position.coords.accuracy);
       }
     },
     [isSharing, updateFirebaseLocation]
@@ -153,182 +205,136 @@ export function useGeolocation() {
 
   const handleError = useCallback((err: GeolocationPositionError) => {
     logger.warn("[Geolocation] Error code:", err.code, err.message);
-    setLoading(false);
-
-    switch (err.code) {
-      case err.PERMISSION_DENIED:
-        setPermissionState("denied");
-        setError("Permission de géolocalisation refusée.");
-        break;
-      case err.POSITION_UNAVAILABLE:
-        setError("Position géographique indisponible.");
-        break;
-      case err.TIMEOUT:
-        setError("Délai d'attente dépassé.");
-        break;
-      default:
-        setError(err.message);
-    }
+    dispatch({ type: "error", ...getGeolocationErrorMessage(err) });
   }, []);
 
-  const profileRef = useRef(profile);
-  useEffect(() => {
-    profileRef.current = profile;
-  }, [profile]);
-
-  const prevSharingRef = useRef<{ isSharing: boolean; ghostMode: boolean }>({ isSharing, ghostMode });
-
-  // Set up the Geolocation listener
   useEffect(() => {
     if (typeof window === "undefined" || !navigator.geolocation || !uid) {
+      stopWatch();
       return;
     }
-
-    const prev = prevSharingRef.current;
-    const isSharingChanged = prev.isSharing !== isSharing || prev.ghostMode !== ghostMode;
-    prevSharingRef.current = { isSharing, ghostMode };
 
     if (!isSharing || ghostMode) {
-      // If user disabled sharing or enabled ghost mode, clear their public coordinates/visibility
-      const currentProfile = profileRef.current;
-      if (currentProfile?.location_geo_coarse || (ghostMode && currentProfile?.isVisible !== false)) {
+      if (hasPublicLocation || (ghostMode && publicVisibility !== false)) {
         void stableUpdateProfile({
           location_geo_coarse: null,
-          ...(ghostMode ? { isVisible: false, ghostMode: true } : {})
+          ...(ghostMode ? { isVisible: false, ghostMode: true } : {}),
         });
       }
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
+      stopWatch();
       return;
     }
 
-    // Battery Optimization: enableHighAccuracy: false
     const options: PositionOptions = {
       enableHighAccuracy: false,
       timeout: 15000,
-      maximumAge: 60000, // cache for 60s
+      maximumAge: 60000,
     };
 
-    // Fetch initial location immediately
     navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
+    stopWatch();
+    watchIdRef.current = navigator.geolocation.watchPosition(handleSuccess, handleError, options);
 
-    // Watch position for movement updates
-    if (watchIdRef.current === null || isSharingChanged) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        handleSuccess,
-        handleError,
-        options
-      );
-    }
+    return stopWatch;
+  }, [
+    ghostMode,
+    hasPublicLocation,
+    handleError,
+    handleSuccess,
+    isSharing,
+    publicVisibility,
+    stableUpdateProfile,
+    stopWatch,
+    uid,
+  ]);
 
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
-  }, [uid, isSharing, ghostMode, handleSuccess, handleError, stableUpdateProfile]);
-
-  // Request permissions manual trigger
   const requestPermissions = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      setError("La géolocalisation n'est pas supportée par cet appareil.");
+      dispatch({
+        type: "error",
+        permissionState: "unsupported",
+        error: "La geolocalisation n'est pas supportee par cet appareil.",
+      });
       return;
     }
 
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        handleSuccess(pos);
-      },
-      (err) => {
-        handleError(err);
-      },
-      { enableHighAccuracy: false }
-    );
-  }, [handleSuccess, handleError]);
+    dispatch({ type: "request" });
+    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+      enableHighAccuracy: false,
+    });
+  }, [handleError, handleSuccess]);
 
-  // Toggle sharing active state on/off
   const toggleLocationSharing = useCallback(
     async (enabled: boolean) => {
       if (!uid) return;
+
       try {
         await stableUpdateProfile({
           locationSharing: enabled,
           isVisible: enabled && !ghostMode,
-          location_geo_coarse: enabled && coords && !ghostMode
+          location_geo_coarse: enabled && state.coords && !ghostMode
             ? {
-                ...getCoarseCoordinates(coords.lat, coords.lng),
+                ...getCoarseCoordinates(state.coords.lat, state.coords.lng),
                 lastActive: new Date().toISOString(),
               }
             : null,
         });
 
         if (!enabled) {
-          setCoords(null);
+          dispatch({ type: "clear-coords" });
           lastUpdateCoordsRef.current = null;
           lastUpdateTimeRef.current = 0;
+          stopWatch();
         }
       } catch (err) {
         logger.error("[Geolocation] Failed to toggle location sharing state:", err);
       }
     },
-    [uid, coords, ghostMode, stableUpdateProfile]
+    [ghostMode, stableUpdateProfile, state.coords, stopWatch, uid]
   );
 
-  // Toggle Ghost mode
   const toggleGhostMode = useCallback(
     async (enabled: boolean) => {
-      // Immediately update public profile document to add/remove coarse position
-      if (uid) {
-        try {
-          if (enabled) {
-            // Stop geolocation watchers
-            if (watchIdRef.current !== null) {
-              navigator.geolocation.clearWatch(watchIdRef.current);
-              watchIdRef.current = null;
-            }
-            // Clear cached visibility state
-            setCoords(null);
-            lastUpdateCoordsRef.current = null;
-            lastUpdateTimeRef.current = 0;
+      if (!uid) return;
 
-            await stableUpdateProfile({
-              ghostMode: true,
-              isVisible: false,
-              location_geo_coarse: null,
-            });
-          } else {
-            await stableUpdateProfile({
-              ghostMode: false,
-              isVisible: isSharing,
-              location_geo_coarse: isSharing && coords
-                ? {
-                    ...getCoarseCoordinates(coords.lat, coords.lng),
-                    lastActive: new Date().toISOString(),
-                  }
-                : null,
-            });
-          }
-        } catch (err) {
-          logger.error("[Geolocation] Failed to apply ghost mode on public profile:", err);
+      try {
+        if (enabled) {
+          stopWatch();
+          dispatch({ type: "clear-coords" });
+          lastUpdateCoordsRef.current = null;
+          lastUpdateTimeRef.current = 0;
+
+          await stableUpdateProfile({
+            ghostMode: true,
+            isVisible: false,
+            location_geo_coarse: null,
+          });
+          return;
         }
+
+        await stableUpdateProfile({
+          ghostMode: false,
+          isVisible: isSharing,
+          location_geo_coarse: isSharing && state.coords
+            ? {
+                ...getCoarseCoordinates(state.coords.lat, state.coords.lng),
+                lastActive: new Date().toISOString(),
+              }
+            : null,
+        });
+      } catch (err) {
+        logger.error("[Geolocation] Failed to apply ghost mode on public profile:", err);
       }
     },
-    [uid, isSharing, coords, stableUpdateProfile]
+    [isSharing, stableUpdateProfile, state.coords, stopWatch, uid]
   );
 
   return {
-    isSupported: permissionState !== "unsupported",
-    permissionState,
-    location: coords,
-    loading,
-    error,
+    isSupported: state.permissionState !== "unsupported",
+    permissionState: state.permissionState,
+    location: state.coords,
+    loading: state.loading,
+    error: state.error,
     isSharing,
     ghostMode,
     toggleLocationSharing,

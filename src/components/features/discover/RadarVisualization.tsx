@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { PREMIUM_EASE } from "@/components/features/motion/animations";
 import type { VeloraProfile } from "@/types";
@@ -312,7 +313,7 @@ export function RadarVisualization({ discoveredUsers = [], isVisible = true }: R
                 }}
               >
                 {person.avatar ? (
-                  <img src={person.avatar} alt={person.name} className="w-full h-full object-cover" />
+                  <Image src={person.avatar} alt={person.name} fill sizes="32px" className="object-cover" />
                 ) : (
                   <span>{person.initials}</span>
                 )}

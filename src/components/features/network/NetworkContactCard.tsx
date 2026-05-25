@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Briefcase, MapPin, MessageSquare, Shield, Sparkles, Star, StickyNote, Users } from "lucide-react";
@@ -78,9 +79,15 @@ export const NetworkContactCard = memo(function NetworkContactCard({
           className="flex flex-1 items-start gap-3.5 cursor-pointer min-w-0 group"
         >
           <div className="relative shrink-0">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,var(--color-velora-gold-muted),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))] group-hover:border-velora-gold/50 transition-colors">
+            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-velora-gold/20 bg-[radial-gradient(circle_at_50%_18%,var(--color-velora-gold-muted),rgba(255,255,255,0.04)_58%,rgba(0,0,0,0.35))] group-hover:border-velora-gold/50 transition-colors">
               {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <Image
+                  src={profile.avatarUrl}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
               ) : (
                 <span className="font-[family-name:var(--font-display)] text-lg font-semibold text-velora-gold">
                   {initials(profile.fullName)}

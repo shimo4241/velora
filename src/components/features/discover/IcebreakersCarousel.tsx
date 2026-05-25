@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { PREMIUM_EASE } from "@/components/features/motion/animations";
@@ -191,9 +192,9 @@ export function IcebreakersCarousel({ users = [], loading = false }: Icebreakers
 
               {/* Profile snippet */}
               <div className="relative flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-black/60 border border-white/10 flex items-center justify-center">
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-black/60 border border-white/10 flex items-center justify-center">
                   {card.avatar ? (
-                    <img src={card.avatar} alt={card.name} className="w-full h-full object-cover" />
+                    <Image src={card.avatar} alt={card.name} fill sizes="40px" className="object-cover" />
                   ) : (
                     <span className="text-xs font-bold text-velora-gold">{card.initials}</span>
                   )}
