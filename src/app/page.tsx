@@ -13,6 +13,8 @@ import { ProfileSetupScreen } from "@/components/features/onboarding/ProfileSetu
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfileNullable } from "@/hooks/useProfile";
 import { LoadingScreen, ProfileErrorState } from "@/components/ui/States";
+import { OfflineScreen } from "@/components/ui/OfflineScreen";
+import { useOnlineStatus } from "@/lib/beta";
 import { AppErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useTranslation } from "@/lib/i18n";
 import type { AppTab } from "@/types";
@@ -94,6 +96,7 @@ function getStoredOnboardingSnapshot() {
 
 function VeloraAppInner() {
   const { t } = useTranslation();
+  const isOnline = useOnlineStatus();
   const { user, loading: authLoading, isAuthReady } = useAuth();
   const {
     profile,
@@ -104,6 +107,13 @@ function VeloraAppInner() {
     updateProfile,
   } = useProfileNullable();
   
+  const [hasCachedUser, setHasCachedUser] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHasCachedUser(Boolean(localStorage.getItem("velora_cached_user")));
+    }
+  }, []);
+
   const [splashFinished, setSplashFinished] = useState(false);
   const [onboardingAcknowledged, setOnboardingAcknowledged] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("home");
@@ -245,6 +255,15 @@ function VeloraAppInner() {
   }, [renderApp]);
 
   if (phase === "loading") {
+    if (!isOnline && !hasCachedUser) {
+      return (
+        <OfflineScreen
+          onRetry={() => {
+            window.location.reload();
+          }}
+        />
+      );
+    }
     return (
       <LoadingScreen
         message={isAuthRestoring ? t("loading_session") : t("loading_profile")}

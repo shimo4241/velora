@@ -174,7 +174,7 @@ export function ProfileSetupScreen({ onComplete }: { onComplete: () => void }) {
     .join("") || "V";
 
   return (
-    <ModalPortal>
+    <ModalPortal id="profile-setup">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

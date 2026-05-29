@@ -309,7 +309,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
   ];
 
   return (
-    <ModalPortal>
+    <ModalPortal id="edit-profile">
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}

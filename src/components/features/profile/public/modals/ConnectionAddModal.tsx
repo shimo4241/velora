@@ -53,7 +53,7 @@ export default function ConnectionAddModal({
   };
 
   return (
-    <ModalPortal>
+    <ModalPortal id="connection-add">
       <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
         <motion.div
           className="fixed inset-0 bg-black/75"

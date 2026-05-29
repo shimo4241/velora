@@ -3,15 +3,27 @@ import { logger } from "@/lib/logger";
 
 
 import { useEffect, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { AuthProvider } from "./AuthProvider";
 import { ProfileProvider } from "./ProfileProvider";
 import { ToastProvider } from "./ToastProvider";
 import { useNativeRuntime } from "@/lib/nativeRuntime";
+import { forceUnlockScroll } from "@/lib/scrollLock";
 
 import { LazyMotion, domMax } from "framer-motion";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   useNativeRuntime();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Ensure scroll lock is released and viewport is reset to top on route change complete
+    const timeoutId = setTimeout(() => {
+      forceUnlockScroll();
+      window.scrollTo(0, 0);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, [pathname]);
 
   useEffect(() => {
     try {

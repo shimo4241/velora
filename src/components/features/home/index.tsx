@@ -271,7 +271,7 @@ export function HomeScreen({ onTabChange }: { onTabChange?: (tab: AppTab) => voi
           <FadeUp>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[20px] font-medium text-velora-text-secondary/80 font-[family-name:var(--font-display)]">
+                <div className="text-[20px] font-medium text-white/70 font-[family-name:var(--font-display)]">
                   {t(greetingKey)},
                 </div>
                 <h1 className="text-display text-3xl font-extrabold text-gold-gradient tracking-wide mt-1">
@@ -305,7 +305,7 @@ export function HomeScreen({ onTabChange }: { onTabChange?: (tab: AppTab) => voi
                     <div className="text-sm font-bold text-velora-text font-[family-name:var(--font-display)] tracking-wide">
                       {t("profile_completion")} {completion}%
                     </div>
-                    <div className="text-xs text-velora-text-muted mt-0.5 font-medium">
+                    <div className="text-xs text-white/65 mt-0.5 font-medium">
                       {completion < 100 ? "Complétez votre profil pour plus de visibilité" : "Profil complet ✓"}
                     </div>
                   </div>

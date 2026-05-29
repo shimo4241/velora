@@ -186,7 +186,7 @@ export function CheckInButton({
       {/* NFC / QR Method Selection Sheet */}
       <AnimatePresence>
         {showOptions && (
-          <ModalPortal>
+          <ModalPortal id="check-in-options">
             <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center">
               <motion.div
                 className="absolute inset-0 bg-black/60"
@@ -250,7 +250,7 @@ export function CheckInButton({
       {/* NFC Listening Overlay */}
       <AnimatePresence>
         {showNfcListening && (
-          <ModalPortal>
+          <ModalPortal id="check-in-nfc">
             <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-6">
               <motion.div
                 className="absolute inset-0 bg-black/85 backdrop-blur-sm"

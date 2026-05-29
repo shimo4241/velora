@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfileContext } from "@/providers/ProfileProvider";
 import { onExperienceChange, onPortfolioChange } from "@/services";
@@ -32,15 +34,57 @@ function useFirestoreSubcollection<T>(
 ) {
   const { user } = useAuth();
   const uid = user?.uid ?? null;
+
+  const [cachedItems, setCachedItems] = useState<T[]>(() => {
+    if (typeof window !== "undefined" && uid) {
+      try {
+        const stored = localStorage.getItem(`velora_cached_${name}_${uid}`);
+        return stored ? JSON.parse(stored) : emptyItems;
+      } catch (e) {
+        logger.error(`[useFirestoreSubcollection] Failed to parse cached ${name}:`, e);
+      }
+    }
+    return emptyItems;
+  });
+
+  // Watch uid changes to update cached state
+  useEffect(() => {
+    if (typeof window !== "undefined" && uid) {
+      try {
+        const stored = localStorage.getItem(`velora_cached_${name}_${uid}`);
+        setCachedItems(stored ? JSON.parse(stored) : emptyItems);
+      } catch (e) {
+        logger.error(`[useFirestoreSubcollection] Failed to parse cached ${name} on uid change:`, e);
+      }
+    } else {
+      setCachedItems(emptyItems);
+    }
+  }, [uid, name, emptyItems]);
+
   const { data, loading } = useFirestoreListener<T[]>(
     uid ? `user:${uid}:${name}` : null,
-    uid ? (onNext, onError) => onSubcollectionChange(uid, onNext, onError) : null,
+    uid
+      ? (onNext, onError) =>
+          onSubcollectionChange(
+            uid,
+            (items) => {
+              if (typeof window !== "undefined" && uid) {
+                localStorage.setItem(`velora_cached_${name}_${uid}`, JSON.stringify(items));
+              }
+              setCachedItems(items);
+              onNext(items);
+            },
+            onError
+          )
+      : null,
     emptyItems
   );
 
+  const items = uid ? (data !== undefined ? data : cachedItems) : emptyItems;
+
   return {
-    items: uid ? data ?? emptyItems : emptyItems,
-    loading: Boolean(uid && loading),
+    items,
+    loading: Boolean(uid && loading && items === emptyItems),
   };
 }
 

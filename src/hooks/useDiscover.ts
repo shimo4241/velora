@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { logger } from "@/lib/logger";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useProfile } from "@/hooks/useProfile";
 import { useFirestoreListener } from "@/hooks/useFirestoreListener";
@@ -16,14 +17,40 @@ export function useDiscover() {
   const geo = useGeolocation();
   const [query, setQuery] = useState("");
   const profileId = isProfileReady ? profile?.id ?? null : null;
+
+  const [cachedUsers, setCachedUsers] = useState<VeloraProfile[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("velora_cached_discovered_users");
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        logger.error("[useDiscover] Failed to parse cached discovered users:", e);
+      }
+    }
+    return [];
+  });
+
   const { data, loading } = useFirestoreListener<VeloraProfile[]>(
     profileId ? `discover:${profileId}:${DISCOVER_PAGE_SIZE}` : null,
     profileId
-      ? (onNext, onError) => onDiscoverUsersChange(profileId, DISCOVER_PAGE_SIZE, onNext, onError)
+      ? (onNext, onError) =>
+          onDiscoverUsersChange(
+            profileId,
+            DISCOVER_PAGE_SIZE,
+            (users) => {
+              if (typeof window !== "undefined") {
+                localStorage.setItem("velora_cached_discovered_users", JSON.stringify(users));
+              }
+              setCachedUsers(users);
+              onNext(users);
+            },
+            onError
+          )
       : null,
     EMPTY_USERS
   );
-  const discoveredUsers = profileId ? data ?? EMPTY_USERS : EMPTY_USERS;
+
+  const discoveredUsers = profileId ? (data !== undefined ? data : cachedUsers) : [];
 
   const { nearbyUsers, globalUsers } = useMemo(() => {
     if (!profile) return { nearbyUsers: EMPTY_USERS, globalUsers: EMPTY_USERS };

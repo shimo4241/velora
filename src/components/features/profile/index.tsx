@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useScrollLock } from "@/utils/scrollLock";
+import { useScrollLock } from "@/lib/scrollLock";
 import { AnimatePresence, motion, useScroll, useTransform, type PanInfo } from "framer-motion";
 import {
   Shield,
@@ -376,7 +376,7 @@ export function PremiumPortfolioGallery({
   const [scale, setScale] = useState(1);
   const [dragEnabled, setDragEnabled] = useState(false);
 
-  useScrollLock(activeIndex !== null);
+  useScrollLock(activeIndex !== null, "portfolio-gallery");
 
   const move = (direction: -1 | 1) => {
     if (activeIndex === null || portfolio.length === 0) return;

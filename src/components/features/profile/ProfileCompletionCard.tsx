@@ -105,7 +105,7 @@ export function ProfileCompletionCard({
             <Sparkles size={12} className="text-[var(--theme-accent)]" />
             {t("completion_title_main")}
           </h3>
-          <p className="mt-1 text-[11px] leading-relaxed text-velora-text-muted">
+          <p className="mt-1 text-[11px] leading-relaxed text-white/65">
             {t("completion_subtitle_desc") || `${incompleteItems.length} étapes restantes pour un profil à fort impact.`}
           </p>
         </div>

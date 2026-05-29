@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { useScrollLock } from "@/utils/scrollLock";
+import { useScrollLock } from "@/lib/scrollLock";
 
 /**
  * ModalPortal — renders children directly into document.body.
@@ -15,10 +15,16 @@ import { useScrollLock } from "@/utils/scrollLock";
  *
  * Body scroll is locked while mounted. The portal node is cleaned up on unmount.
  */
-export function ModalPortal({ children }: { children: React.ReactNode }) {
-  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+interface ModalPortalProps {
+  children: React.ReactNode;
+  id?: string;
+}
 
-  useScrollLock(true);
+export function ModalPortal({ children, id }: ModalPortalProps) {
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const [portalId] = useState(() => id || `modal-${Math.random().toString(36).substr(2, 9)}`);
+
+  useScrollLock(true, portalId);
 
   useEffect(() => {
     // Create a dedicated container appended to body

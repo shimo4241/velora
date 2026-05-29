@@ -88,7 +88,7 @@ export function ChatModal({ connection, onClose }: ChatModalProps) {
   };
 
   return (
-    <ModalPortal>
+    <ModalPortal id="chat">
       <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-0 sm:p-4 pt-[calc(env(safe-area-inset-top))] pb-[calc(env(safe-area-inset-bottom))]">
         {/* Backdrop */}
         <motion.div

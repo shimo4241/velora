@@ -98,7 +98,7 @@ export default function QrScannerModal({ isOpen, onClose, onScanSuccess }: QrSca
   return (
     <AnimatePresence>
       {isOpen && (
-        <ModalPortal>
+        <ModalPortal id="qr-scanner">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

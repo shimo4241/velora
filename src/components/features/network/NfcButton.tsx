@@ -170,7 +170,7 @@ export default function NfcButton({ onScanProfile }: NfcButtonProps) {
       {/* Premium iOS Fallback sheet/modal */}
       <AnimatePresence>
         {showFallbackModal && (
-          <ModalPortal>
+          <ModalPortal id="nfc-modal">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

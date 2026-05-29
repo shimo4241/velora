@@ -17,13 +17,51 @@ export function useEvents(
 ) {
   const { profile } = useProfile();
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const { data, loading, error } = useFirestoreListener<VeloraEvent[]>(
-    "events:approved:all",
-    (onNext, onError) => subscribeToEvents(null, onNext, onError),
-    EMPTY_EVENTS
-  );
-  const events = data ?? EMPTY_EVENTS;
+  const [events, setEvents] = useState<VeloraEvent[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("velora_cached_events");
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        logger.error("[useEvents] Failed to parse cached events:", e);
+      }
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !localStorage.getItem("velora_cached_events");
+    }
+    return true;
+  });
+  const [error, setError] = useState<Error | null>(null);
   const professionalMode = profile?.professionalMode ?? null;
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = subscribeToEvents(
+      null,
+      (fetchedEvents) => {
+        if (!active) return;
+        setEvents(fetchedEvents);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("velora_cached_events", JSON.stringify(fetchedEvents));
+        }
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        if (!active) return;
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;

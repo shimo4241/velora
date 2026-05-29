@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { Eye, Play, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { useScrollLock } from "@/utils/scrollLock";
+import { useScrollLock } from "@/lib/scrollLock";
 import { isVideoAsset } from "@/components/features/profile";
 import { OptimizedImage } from "@/components/ui/OptimizedImage";
 import type { PortfolioItem } from "@/types";
@@ -24,7 +24,7 @@ export default function PortfolioShowcase({ portfolio, theme }: PortfolioShowcas
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const activeProject = activeIndex === null ? null : portfolio[activeIndex];
 
-  useScrollLock(activeIndex !== null);
+  useScrollLock(activeIndex !== null, "public-profile");
 
   const move = (direction: -1 | 1) => {
     if (activeIndex === null) return;
